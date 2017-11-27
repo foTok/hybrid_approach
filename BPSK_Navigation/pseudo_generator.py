@@ -8,11 +8,11 @@ class Pseudo:
     """
     Generate the pseudo code by shifting
     """
-    def __init__(self, sample_rate, initial_code=None):
+    def __init__(self, initial_code=None, code_rate=None, sample_rate=None):
         self.initial_code = [0, 1, 0, 0, 1, 0, 1] if initial_code is None else initial_code
+        self.code_rate = 1023000 if code_rate is None else code_rate
+        self.sample_rate = 10230000 if sample_rate is None else sample_rate
         self.code = self.initial_code
-        self.code_rate = 1023000
-        self.sample_rate = sample_rate
         self.initial_time = fractions.Fraction(0)
         #fault parameters
         self.delta_code_rate = 0
