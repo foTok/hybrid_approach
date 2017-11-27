@@ -1,9 +1,12 @@
 """
 bpsk navigation module
 """
-from pseudo_generator import Pseudo
-import numpy as np
 import fractions
+from math import sqrt
+from math import cos
+import numpy as np
+from pseudo_generator import Pseudo
+
 
 class Bpsk:
     """
@@ -32,10 +35,10 @@ class Bpsk:
             self.delta_amplify = parameter
         elif fault == "tma":
             self.delta_pseudo_tma = parameter
-            self.pseudo.insert_fault("tma",parameter)
+            self.pseudo.insert_fault("tma", parameter)
         elif fault == "pseudo_rate":
             self.delta_pseudo_rate = parameter
-            self.pseudo.insert_fault("code_rate",parameter)
+            self.pseudo.insert_fault("code_rate", parameter)
         elif fault == "carrier_rate":
             self.delta_carrier_rate = parameter
         elif fault == "carrier_leak":
@@ -48,6 +51,7 @@ class Bpsk:
         set the fault time
         """
         self.fault_time = fault_time
+        self.pseudo.set_fault_time(fault_time)
 
     def clear_faults(self):
         """
@@ -68,9 +72,36 @@ class Bpsk:
         self.clear_faults()
         self.pseudo.re_init()
 
-    def generate_signal(self, fault_time, end_time):
+    def modulate(self, msg, time):
         """
-        generate similation signal, t is the end time
+        modulate one signal point
         """
-        sample_step = fractions.Fraction(1,self.sample_rate)
-        #TODO
+        code = self.pseudo.sample(time)
+        if time < self.fault_time:
+            return self.amplify\
+                * msg * code\
+                * cos(self.omiga * time + self.phi)
+        else:
+            return (self.amplify + self.delta_amplify)\
+                * (sqrt(1-self.alpha) * msg * code + sqrt(self.alpha))\
+                * cos((self.omiga + self.delta_carrier_rate) * time + self.phi)
+
+    def generate_signal(self, end_time):
+        """
+        generate similation signal
+        the unit of end_time is s(second)
+        """
+        length = end_time*self.sample_rate
+        sample_step = fractions.Fraction(1, self.sample_rate)
+        data = np.zeros([length, 3])
+        #generate input signal randomly
+        for i in range(length):
+            msg = np.random.random()
+            msg = 1 if msg < 0.5 else -1
+            time = i * sample_step
+            sig = self.modulate(msg, time)
+            data[i, 0] = time
+            data[i, 1] = msg
+            data[i, 2] = sig
+        return data
+        
