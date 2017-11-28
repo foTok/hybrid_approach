@@ -6,13 +6,14 @@ from math import sqrt
 from math import cos
 from math import pi
 import numpy as np
-from .pseudo_generator import Pseudo
-from .msg_generator import Msg
+from pseudo_generator import Pseudo
+from msg_generator import Msg
 
 
 class Bpsk:
     """
     r(t) = AD(t)C(t)cos(omiga*t+phi)
+    Faults parameter are !!! Relative Values !!!
     """
     def __init__(self, amplify=None, initial_code=None, code_rate=None, sample_rate=None):
         #normal parameters
@@ -86,9 +87,9 @@ class Bpsk:
                 * msg * code\
                 * cos(2 * pi * self.code_rate * time + self.phi)
         else:
-            sig = (self.amplify + self.delta_amplify)\
+            sig = (self.amplify * (1 + self.delta_amplify))\
                 * (sqrt(1-self.alpha) * msg * code + sqrt(self.alpha))\
-                * cos((2 * pi * (self.code_rate + self.delta_carrier_rate)) * time + self.phi)
+                * cos((2 * pi * self.code_rate * (1 + self.delta_carrier_rate)) * time + self.phi)
         return sig
 
     def generate_signal(self, end_time):

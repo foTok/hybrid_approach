@@ -7,6 +7,7 @@ import fractions
 class Pseudo:
     """
     Generate the pseudo code by shifting
+    Faults parameter are !!! Relative Values !!!
     """
     def __init__(self, initial_code=None, code_rate=None, sample_rate=None):
         self.initial_code = [-1, 1, -1, -1, 1, -1, 1] if initial_code is None else initial_code
@@ -28,7 +29,7 @@ class Pseudo:
         if time < self.fault_time:
             time_step = fractions.Fraction(1, self.code_rate)
         else:
-            time_step = fractions.Fraction(1, self.code_rate+self.delta_code_rate)
+            time_step = fractions.Fraction(1, int(self.code_rate * (1 + self.delta_code_rate)))
 
         if (time - self.initial_time) > time_step:
             self.initial_time = self.initial_time + time_step
@@ -41,7 +42,7 @@ class Pseudo:
             return self.code[-1]
         else:
             if (self.code[-1] == -1)\
-           and ((time - self.initial_time) < (time_step * self.delta_tma)):
+           and ((time - self.initial_time) <= (time_step * self.delta_tma)):
                 return self.code[0]
             else:
                 return self.code[-1]

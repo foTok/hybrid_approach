@@ -4,6 +4,7 @@ test the bpsk module
 import os
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../bpsk_navigate')))
 
 import matplotlib.pyplot as pl
 from bpsk_navigate.bpsk import Bpsk
@@ -11,16 +12,16 @@ from bpsk_navigate.bpsk import Bpsk
 BPSK = Bpsk()
 
 #Amplifier fault
-#BPSK.insert_fault("amplify", 1.0)
+BPSK.insert_fault("amplify", 0.1)
 
 #TMA
-BPSK.insert_fault("tma", 0.3)
+#BPSK.insert_fault("tma", 0.11)
 
 #pseudo_rate
-#BPSK.insert_fault("pseudo_rate", 1023000*10)
+#BPSK.insert_fault("pseudo_rate", 0.01)
 
 #carrier_rate
-#BPSK.insert_fault("carrier_rate", 1023000*10)
+#BPSK.insert_fault("carrier_rate", 0.001)
 
 #carrier_leak
 #BPSK.insert_fault("carrier_leak", 0.1)
