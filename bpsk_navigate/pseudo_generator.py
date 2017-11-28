@@ -41,7 +41,7 @@ class Pseudo:
             return self.code[-1]
         else:
             if (self.code[-1] == -1)\
-           and ((time - self.initial_time) < (time_step + self.delta_tma)):
+           and ((time - self.initial_time) < (time_step * self.delta_tma)):
                 return self.code[0]
             else:
                 return self.code[-1]

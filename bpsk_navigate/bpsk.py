@@ -76,11 +76,10 @@ class Bpsk:
         self.clear_faults()
         self.pseudo.re_init()
 
-    def modulate(self, msg, time):
+    def modulate(self, msg, code, time):
         """
         modulate one signal point
         """
-        code = self.pseudo.sample(time)
         sig = 0
         if time < self.fault_time:
             sig = self.amplify\
@@ -99,14 +98,16 @@ class Bpsk:
         """
         length = int(end_time*self.sample_rate)
         sample_step = fractions.Fraction(1, self.sample_rate)
-        data = np.zeros([length, 3])
+        data = np.zeros([length, 4])
         #generate input signal randomly
         for i in range(length):
             time = i * sample_step
             msg = self.msg.sample(time)
-            sig = self.modulate(msg, time)
+            code = self.pseudo.sample(time)
+            sig = self.modulate(msg, code, time)
             data[i, 0] = time
             data[i, 1] = msg
-            data[i, 2] = sig
+            data[i, 2] = code
+            data[i, 3] = sig
         return data
         
