@@ -11,7 +11,7 @@ from bpsk_navigate.bpsk_generator import Bpsk
 BPSK = Bpsk()
 
 #Amplifier fault
-BPSK.insert_fault("amplify", 0.1)
+#BPSK.insert_fault("amplify", 0.1)
 
 #TMA
 #BPSK.insert_fault("tma", 0.11)
@@ -23,7 +23,7 @@ BPSK.insert_fault("amplify", 0.1)
 #BPSK.insert_fault("carrier_rate", 0.001)
 
 #carrier_leak
-#BPSK.insert_fault("carrier_leak", 0.1)
+BPSK.insert_fault("carrier_leak", 0.1)
 
 #set fault time
 BPSK.set_fault_time(0.0001/2)

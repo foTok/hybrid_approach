@@ -4,12 +4,11 @@ the main file to conduct the computation
 
 from ann_diagnoser.diagnoser_full_connect import DiagnoerFullConnect
 from data_manger.data_tank import DataTank
-import numpy as np
-import torch
 from torch.autograd import Variable
 import torch.nn as nn
-import torch.nn.functional as F
 import torch.optim as optim
+import matplotlib.pyplot as pl
+import numpy as np
 
 
 #prepare data
@@ -40,6 +39,7 @@ optimzer = optim.SGD(diagnoser.parameters(), lr=lr, momentum=momentum)
 episode = 2000
 batch = 50
 
+train_loss = []
 for epoch in range(episode):
     running_loss = 0.0
     inputs, labels = mana.random_batch(batch)
@@ -55,6 +55,8 @@ for epoch in range(episode):
     loss.backward()
     optimzer.step()
 
+    train_loss.append(loss.data[0])
+
     running_loss += loss.data[0]
     if epoch % 10 == 9:
         print('%d loss: %.5f' %(epoch + 1, running_loss / 10))
@@ -62,13 +64,34 @@ for epoch in range(episode):
 
 print('Finished Training')
 
+#create two figures
+pl.figure(1)
+pl.figure(2)
+
+#choose figure 1
+pl.figure(1)
+pl.plot(np.array(train_loss))
+pl.title("Training Loss")
+pl.xlabel("Epoch")
+pl.ylabel("MSE Loss")
+
 #test
 diagnoser.eval()
+eval_loss = []
 test_len = 100
 for i in range(test_len):
     inputs, labels = mana.random_batch(1)
     inputs, labels = Variable(inputs), Variable(labels)
     outputs = diagnoser(inputs)
     loss = criterion(outputs, labels)
+    eval_loss.append(loss.data[0])
     print('%d loss: %.5f' %(i + 1, loss.data[0]))
     print(outputs)
+
+#choose figure 2
+pl.figure(2)
+pl.plot(np.array(eval_loss))
+pl.title("Evaluation Loss")
+pl.xlabel("Sample")
+pl.ylabel("MSE Loss")
+pl.show()
