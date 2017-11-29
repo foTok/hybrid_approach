@@ -3,6 +3,9 @@ data tank to manage data
 """
 
 from collections import defaultdict
+import torch
+import time
+from torch.autograd import Variable
 import numpy as np
 from utilities import read_data
 
@@ -57,3 +60,32 @@ class DataTank():
                 rand = int(np.random.random() * len_data)
                 chosen_data.append(the_data[rand])
         return chosen_data
+
+    def step_len(self):
+        """
+        return the step_len
+        """
+        normal_state = tuple([0] * len(self.fault_type))
+        normal_data = self.data[normal_state]
+        return len(normal_data[0])
+
+    def random_batch(self, batch):
+        """
+        choose some data and return in torch Tensor
+        warning: bathc here is the number of each fault/normal data
+        Not the whole chosen data
+        """
+        #np.random.seed(int(time.time()))
+        input_data = []
+        target = []
+        for mode in self.data:
+            the_data = self.data[mode]
+            len_data = len(the_data)
+            for _ in range(batch):
+                rand = int(np.random.random() * len_data)
+                chosen_data = the_data[rand]
+                #flatten_data = [val for sublist in chosen_data for val in sublist]
+                flatten_data = [sublist[1] for sublist in chosen_data]
+                input_data.append(flatten_data)
+                target.append(list(mode))
+        return torch.Tensor(input_data), torch.Tensor(target)

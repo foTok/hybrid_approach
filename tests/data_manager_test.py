@@ -30,4 +30,7 @@ chosen_data4 = mana.choose_data_randomly([0, 0, 0, 1, 0], 10)
 chosen_data5 = mana.choose_data_randomly([0, 0, 0, 0, 1], 10)
 chosen_data6 = mana.choose_data_randomly([1, 1, 0, 0, 0], 10)
 
+
+input_data, target = mana.random_batch(10)
+
 print("test end!")
