@@ -10,7 +10,7 @@ def read_data(file_name, step_len=None, split_point=None):
     read data, and re-organise them
     """
     sig = np.load(file_name)
-    split_point = (len(sig) / 2) if split_point is None else split_point
+    split_point = int(len(sig) / 2) if split_point is None else split_point
     step_len = 100 if step_len is None else step_len
     #normal data
     normal = []

@@ -3,7 +3,7 @@ generate data
 """
 import sys
 import numpy as np
-from bpsk import Bpsk
+from bpsk_generator import Bpsk
 
 def generate_signal(file_name, fault, parameter, time=None, fault_time=None):
     """
