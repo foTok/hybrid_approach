@@ -1,7 +1,8 @@
 """
 the main file to conduct the computation
 """
-
+import os
+import sys
 from ann_diagnoser.diagnoser_full_connect import DiagnoerFullConnect
 from data_manger.data_tank import DataTank
 from torch.autograd import Variable
@@ -12,16 +13,18 @@ import numpy as np
 
 
 #prepare data
-data_path = "bpsk_navigate/data"
+path = os.path.abspath(os.path.join(os.path.dirname(__file__), '.'))
+data_path = path + "/bpsk_navigate/data"
 mana = DataTank()
 
 step_len=100
-mana.set_fault_type(["amplify", "tma", "pseudo_rate", "carrier_rate", "carrier_leak"])
+mana.set_fault_type(["amplify", "tma", "tmb", "pseudo_rate", "carrier_rate", "carrier_leak"])
 mana.read_data(data_path+"/amplify_0.1.npy", fault_type="amplify", step_len=step_len)
 mana.read_data(data_path+"/carrier_leak_0.1.npy", fault_type="carrier_leak", step_len=step_len)
 mana.read_data(data_path+"/carrier_rate_0.001.npy", fault_type="carrier_rate", step_len=step_len)
 mana.read_data(data_path+"/pseudo_rate_0.01.npy", fault_type="pseudo_rate", step_len=step_len)
 mana.read_data(data_path+"/tma_0.11.npy", fault_type="tma", step_len=step_len)
+mana.read_data(data_path+"/tmb_(8800000.0, 10000000).npy", fault_type="tmb", step_len=step_len)
 
 
 #set ann fullconnect diagnoser

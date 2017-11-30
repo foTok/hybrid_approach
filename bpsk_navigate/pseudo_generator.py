@@ -3,6 +3,10 @@ a pseudo code generator
 """
 
 import fractions
+from math import sin
+from math import cos
+from math import exp
+from math import pi
 
 class Pseudo:
     """
@@ -15,10 +19,15 @@ class Pseudo:
         self.sample_rate = 10230000 if sample_rate is None else sample_rate
         self.code = self.initial_code
         self.initial_time = fractions.Fraction(0)
+        self.real_initial_time = fractions.Fraction(0)
         #fault parameters
         self.delta_code_rate = 0
         self.delta_tma = 0
-        self.fault_time = float("Inf")
+        self.tmb_para = (0, 0)
+        self.tma_fault_time = float("Inf")
+        self.tmb_fault_time = float("Inf")
+        self.code_rate_fault_time = float("Inf")
+
 
     def sample(self, time):
         """
@@ -26,43 +35,72 @@ class Pseudo:
         time must increase from 0 to end, if jump to some point directly,
         the code will not be shifted right and the sample value will be wrong.
         """
-        if time < self.fault_time:
+        #code rate error
+        if time < self.code_rate_fault_time:
             time_step = fractions.Fraction(1, self.code_rate)
         else:
             time_step = fractions.Fraction(1, int(self.code_rate * (1 + self.delta_code_rate)))
-
+        #functionality
         if (time - self.initial_time) > time_step:
             self.initial_time = self.initial_time + time_step
+            self.real_initial_time = self.initial_time
             self.code = self.code[-1:] + self.code[:-1]
-
-        if time < self.fault_time:
-            return self.code[-1]
-
-        if self.delta_tma == 0:
-            return self.code[-1]
-        else:
-            if (self.code[-1] == -1)\
-           and ((time - self.initial_time) <= (time_step * self.delta_tma)):
-                return self.code[0]
+        the_code = self.code[-1]
+        #TMA
+        if (time >= self.tma_fault_time)\
+       and (self.delta_tma != 0)\
+       and (self.code[-1] == -1)\
+       and (self.code[0] == 1):
+            if(time - self.initial_time) <= (time_step * self.delta_tma):
+                self.real_initial_time = self.initial_time - time_step
+                the_code = 1
             else:
-                return self.code[-1]
+                self.real_initial_time = self.initial_time + time_step * self.delta_tma
+        #TMB
+        tmb = 1
+        if (time >= self.tmb_fault_time)\
+       and (self.tmb_para != (0, 0)):
+            sigma = self.tmb_para[0]
+            f_d = self.tmb_para[1]
+            elapse = time - self.real_initial_time
+            frq = 2 * pi * f_d
+            tmb_error = exp(-sigma * elapse)\
+                       *(cos(frq * elapse) + (sigma/frq) * sin(frq * elapse))
+            tmb = 1 + tmb_error
+        the_code = the_code * tmb
+        #return
+        return the_code
 
-    def insert_fault(self, fault, parameter):
+    def insert_fault_para(self, fault, parameter):
         """
         insert fault
         """
         if fault == "code_rate":
-            self.delta_code_rate = parameter
+            self.delta_code_rate = fractions.Fraction(parameter)
         elif fault == "tma":
             self.delta_tma = parameter
+        elif fault == "tmb":
+            self.tmb_para = parameter
         else:
             print("Unknown Fault!")
 
-    def set_fault_time(self, fault_time):
+
+    def insert_fault_time(self, fault, fault_time):
         """
-        set the fault time
+        insert the fault time
         """
-        self.fault_time = fault_time
+        if fault == "code_rate":
+            self.code_rate_fault_time = fault_time
+        elif fault == "tma":
+            self.tma_fault_time = fault_time
+        elif fault == "tmb":
+            self.tmb_fault_time = fault_time
+        elif fault == "all":
+            self.code_rate_fault_time = fault_time
+            self.tma_fault_time = fault_time
+            self.tmb_fault_time = fault_time
+        else:
+            print("Unknown Fault!")
 
     def clear_faults(self):
         """
@@ -70,7 +108,10 @@ class Pseudo:
         """
         self.delta_code_rate = 0
         self.delta_tma = 0
-        self.fault_time = float("Inf")
+        self.tmb_para = (0, 0)
+        self.tma_fault_time = float("Inf")
+        self.tmb_fault_time = float("Inf")
+        self.code_rate_fault_time = float("Inf")
 
     def re_init(self):
         """
@@ -80,3 +121,4 @@ class Pseudo:
         self.clear_faults()
         self.code = self.initial_code
         self.initial_time = fractions.Fraction(0)
+        self.real_initial_time = fractions.Fraction(0)

@@ -12,8 +12,8 @@ def generate_signal(file_name, fault, parameter, time=None, fault_time=None):
     time = 0.0001 if time is None else time
     fault_time = time / 2 if fault_time is None else fault_time
     bpsk = Bpsk()
-    bpsk.insert_fault(fault, parameter)
-    bpsk.set_fault_time(fault_time)
+    bpsk.insert_fault_para(fault, parameter)
+    bpsk.insert_fault_time("all", fault_time)
     data = bpsk.generate_signal(time)
     np.save(file_name, data)
 

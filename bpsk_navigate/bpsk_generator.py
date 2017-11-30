@@ -27,12 +27,19 @@ class Bpsk:
         #fault parameters
         self.delta_amplify = 0
         self.delta_pseudo_tma = 0
+        self.delta_pseudo_tmb = (0, 0)
         self.delta_pseudo_rate = 0
         self.delta_carrier_rate = 0
         self.alpha = 0
-        self.fault_time = float("Inf")
+        #fault time
+        self.amplify_fault_time = float("Inf")
+        self.tma_fault_time = float("Inf")
+        self.tmb_fault_time = float("Inf")
+        self.pseudo_rate_fault_time = float("Inf")
+        self.carrier_rate_fault_time = float("Inf")
+        self.carrier_leak_fault_time = float("Inf")
 
-    def insert_fault(self, fault, parameter):
+    def insert_fault_para(self, fault, parameter):
         """
         insert fault parameters
         """
@@ -40,10 +47,13 @@ class Bpsk:
             self.delta_amplify = parameter
         elif fault == "tma":
             self.delta_pseudo_tma = parameter
-            self.pseudo.insert_fault("tma", parameter)
+            self.pseudo.insert_fault_para("tma", parameter)
+        elif fault == "tmb":
+            self.delta_pseudo_tmb = parameter
+            self.pseudo.insert_fault_para("tmb", parameter)
         elif fault == "pseudo_rate":
-            self.delta_pseudo_rate = parameter
-            self.pseudo.insert_fault("code_rate", parameter)
+            self.delta_pseudo_rate = fractions.Fraction(parameter)
+            self.pseudo.insert_fault_para("code_rate", parameter)
         elif fault == "carrier_rate":
             self.delta_carrier_rate = parameter
         elif fault == "carrier_leak":
@@ -51,23 +61,54 @@ class Bpsk:
         else:
             print("Unknown Fault!")
 
-    def set_fault_time(self, fault_time):
+    def insert_fault_time(self, fault, fault_time):
         """
         set the fault time
         """
-        self.fault_time = fault_time
-        self.pseudo.set_fault_time(fault_time)
+        if fault == "amplify":
+            self.amplify_fault_time = fault_time
+        elif fault == "tma":
+            self.tma_fault_time = fault_time
+            self.pseudo.insert_fault_time("tma", fault_time)
+        elif fault == "tmb":
+            self.tmb_fault_time = fault_time
+            self.pseudo.insert_fault_para("tmb", fault_time)
+        elif fault == "pseudo_rate":
+            self.pseudo_rate_fault_time = fault_time
+            self.pseudo.insert_fault_para("code_rate", fault_time)
+        elif fault == "carrier_rate":
+            self.carrier_rate_fault_time = fault_time
+        elif fault == "carrier_leak":
+            self.carrier_leak_fault_time = fault_time
+        elif fault == "all":
+            self.amplify_fault_time = fault_time
+            self.tma_fault_time = fault_time
+            self.tmb_fault_time = fault_time
+            self.pseudo_rate_fault_time = fault_time
+            self.carrier_rate_fault_time = fault_time
+            self.carrier_leak_fault_time = fault_time
+            self.pseudo.insert_fault_time("all", fault_time)
+        else:
+            print("Unknown Fault!")
 
     def clear_faults(self):
         """
         clear all the faults
         """
+        #fault parameters
         self.delta_amplify = 0
         self.delta_pseudo_tma = 0
+        self.delta_pseudo_tmb = (0, 0)
         self.delta_pseudo_rate = 0
         self.delta_carrier_rate = 0
         self.alpha = 0
-        self.fault_time = float("Inf")
+        #fault time
+        self.amplify_fault_time = float("Inf")
+        self.tma_fault_time = float("Inf")
+        self.tmb_fault_time = float("Inf")
+        self.pseudo_rate_fault_time = float("Inf")
+        self.carrier_rate_fault_time = float("Inf")
+        self.carrier_leak_fault_time = float("Inf")
         self.pseudo.clear_faults()
 
     def re_init(self):
@@ -81,15 +122,15 @@ class Bpsk:
         """
         modulate one signal point
         """
-        sig = 0
-        if time < self.fault_time:
-            sig = self.amplify\
-                * msg * code\
-                * cos(2 * pi * self.code_rate * time + self.phi)
-        else:
-            sig = (self.amplify * (1 + self.delta_amplify))\
-                * (sqrt(1-self.alpha) * msg * code + sqrt(self.alpha))\
-                * cos((2 * pi * self.code_rate * (1 + self.delta_carrier_rate)) * time + self.phi)
+        amplify = self.amplify if time < self.amplify_fault_time \
+            else self.amplify * (1 + self.delta_amplify)
+        m_msg = msg * code if time < self.carrier_leak_fault_time \
+            else sqrt(1-self.alpha) * msg * code + sqrt(self.alpha)
+        carrier_rate = self.code_rate if time < self.carrier_rate_fault_time \
+            else self.code_rate * (1 + fractions.Fraction(self.delta_carrier_rate))
+        carrier = cos(2 * pi * carrier_rate * time + self.phi)
+        sig = amplify * m_msg * carrier
+
         return sig
 
     def generate_signal(self, end_time):

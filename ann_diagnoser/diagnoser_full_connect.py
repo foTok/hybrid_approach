@@ -19,7 +19,7 @@ class DiagnoerFullConnect(nn.Module):
         self.fc2 = nn.Linear(4*step_len, 2*step_len)
         self.fc3 = nn.Linear(2*step_len, step_len)
         self.fc4 = nn.Linear(step_len, int(step_len / 2))
-        self.fc5 = nn.Linear(int(step_len / 2), 5)
+        self.fc5 = nn.Linear(int(step_len / 2), 6)
 
     def forward(self, x):
         x = F.relu(self.fc1(x))
