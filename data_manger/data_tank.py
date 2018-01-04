@@ -72,7 +72,7 @@ class DataTank():
     def random_batch(self, batch):
         """
         choose some data and return in torch Tensor
-        warning: bathc here is the number of each fault/normal data
+        warning: batch here is the number of each fault/normal data
         Not the whole chosen data
         """
         #np.random.seed(int(time.time()))
