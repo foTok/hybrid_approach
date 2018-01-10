@@ -77,6 +77,7 @@ class DataOAU():
         #np.random.seed(int(time.time()))
         input_data = []
         target = []
+        residual = []
         for mode in self.data:
             the_data = self.data[mode]
             len_data = len(the_data)
@@ -86,7 +87,8 @@ class DataOAU():
                 chosen_data = the_data[rand]
                 input_data.append(chosen_data[0])
                 target.append(list(mode))
-        return torch.Tensor(input_data), torch.Tensor(target)
+                residual.append(chosen_data[1])
+        return torch.Tensor(input_data), torch.Tensor(target), residual
 
     def clear_sample_flag(self):
         """
@@ -101,6 +103,7 @@ class DataOAU():
         """
         input_data = []
         target = []
+        residual = []
         #type number of unsampled data
         type_num = 0
         for mode in self.sample_flag:
@@ -115,7 +118,8 @@ class DataOAU():
                 if flag == 0:
                     input_data.append(data[0])
                     target.append(list(mode))
-        return torch.Tensor(input_data), torch.Tensor(target)
+                    residual.append(data[1])
+        return torch.Tensor(input_data), torch.Tensor(target), residual
 
 if __name__ == '__main__':
     file_name = '../OAU/OAU1201.csv'

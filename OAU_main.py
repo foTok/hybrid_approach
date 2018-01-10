@@ -38,7 +38,7 @@ batch = 10
 train_loss = []
 for epoch in range(episode):
     running_loss = 0.0
-    inputs, labels = mana.random_batch(batch)
+    inputs, labels, _ = mana.random_batch(batch)
     #print(inputs)
     inputs, labels = Variable(inputs), Variable(labels)
 
@@ -77,12 +77,12 @@ eval_loss = []
 if random_test == 1:
     test_len = 1000
 if unsampled_test == 1:
-    test_inputs, test_outputs = mana.unsampled_data()
+    test_inputs, test_outputs, _ = mana.unsampled_data()
     test_len = len(test_inputs)
 
 for i in range(test_len):
     if random_test == 1:
-        inputs, labels = mana.random_batch(1)
+        inputs, labels, _ = mana.random_batch(1)
     if unsampled_test == 1:
         inputs, labels = test_inputs[i], test_outputs[i]
     inputs, labels = Variable(inputs), Variable(labels)
