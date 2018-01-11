@@ -20,7 +20,7 @@ FILE2 = "/data/tma_" + str(DELTA_T) + ".npy"
 generate_signal(path + FILE2, "tma", DELTA_T)
 
 #TMB
-#BPSK.insert_fault("tma", (8.8 * 10**6, 10 * 10**6))
+#BPSK.insert_fault("tmb", (8.8 * 10**6, 10 * 10**6))
 DELTA_F = (8.8 * 10**6, 10 * 10**6)
 FILE3 = "/data/tmb_" + str(DELTA_F) + ".npy"
 generate_signal(path + FILE3, "tmb", DELTA_F)

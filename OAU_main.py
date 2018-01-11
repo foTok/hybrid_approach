@@ -8,6 +8,12 @@ import torch.nn as nn
 import torch.optim as optim
 import matplotlib.pyplot as pl
 import numpy as np
+from scipy import stats
+
+
+alpha = 0.99
+x = stats.norm
+thresh = x.ppf(1-(1-alpha)/2)
 
 #settings
 random_test = 0
@@ -77,7 +83,7 @@ eval_loss = []
 if random_test == 1:
     test_len = 1000
 if unsampled_test == 1:
-    test_inputs, test_outputs, _ = mana.unsampled_data()
+    test_inputs, test_outputs, n_residuals = mana.unsampled_data()
     test_len = len(test_inputs)
 
 for i in range(test_len):
@@ -89,10 +95,14 @@ for i in range(test_len):
     outputs = diagnoser(inputs)
     loss = criterion(outputs, labels)
     eval_loss.append(loss.data[0])
-    if loss.data[0] > 0.2:
+    if loss.data[0] > 0.1:
+        r = n_residuals[i]
+        z0 = [abs(i) > thresh for i in r]
+        z = 0 if sum(z0) == 0 else 1
         print('%d loss: %.5f' %(i + 1, loss.data[0]))
         print(outputs)
         print(labels)
+        print("r={}".format(str(z)))
 
 #choose figure 2
 pl.figure(2)

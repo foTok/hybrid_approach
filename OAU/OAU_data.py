@@ -40,6 +40,8 @@ def get_data(file_name):
     for i in range(12, len(oau_data[0])):
         dis_data = oau_data[:, i]
         domain = list(set(dis_data))
+        if "On" in domain:
+            domain = ["Off", "On"]
         oau_data[:, i] = [domain.index(k) for k in dis_data]
 
     norm_oau_data = MinMaxScaler().fit_transform(oau_data)
@@ -70,10 +72,29 @@ def get_data(file_name):
                   for qe, qo, pe, po, ne, no, de, do in zip(Qe, Qo, Pe, Po, Ne, No, De, Do)]
     residuals = np.array(residuals)
 
-    normal_residuals = [i for i, j in zip(residuals, labels) if j == 0]
+    normal_residuals = [i for i, j in zip(residuals, labels) if j == 0 or j == 1]
     mean = np.mean(normal_residuals, 0)
     var = np.var(normal_residuals, 0)
     n_residuals = abs((residuals - mean)/(var**0.5))
+
+    length = 6
+    current_m0 = []
+    current_v0 = []
+    for i in range(length,len(residuals)):
+        if labels[i] == 0 or labels[i] == 1:
+            d0 = residuals[i-length:i]
+            m0 = np.mean(d0, 0)
+            current_m0 = m0
+            v0 = np.var(d0, 0)+0.0001
+            current_v0 = v0
+            r0 = abs((residuals[i] - m0)/(v0**0.5))
+            n_residuals[i] = r0
+        else:
+            m0 = current_m0
+            v0 = current_v0
+            r0 = abs((residuals[i] - m0)/(v0**0.5))
+            n_residuals[i] = r0
+
     #confidence alpha
     #alpha = 0.99
     #thresh_hold = st.norm.ppf(1 - (1 - alpha) / 2)

@@ -21,18 +21,20 @@ num_f1_r1 = 1
 Z_test = []
 for r, l in zip(n_residuals, labels):
     f = 0 if l == 0 or l == 1 else 1 #normal, off
-    z0 = [i > thresh for i in r]
+    z0 = [abs(i) > thresh for i in r]
     z = 0 if sum(z0) == 0 else 1
     Z_test.append(z)
     if f == 0 and z == 0:
         num_f0_r0 = num_f0_r0 + 1
     elif f == 0 and z == 1:
         num_f0_r1 = num_f0_r1 + 1
+        print("l={},f={},r={}".format(str(l), str(f), str(r)))
     elif f == 1 and z == 0:
         num_f1_r0 = num_f1_r0 + 1
+        print("l={},f={},r={}".format(str(l), str(f), str(r)))
     elif f == 1 and z == 1:
         num_f1_r1 = num_f1_r1 + 1
-    print("l={},r={}".format(str(l), str(r)))
+        
 
 P_f0_r0 = num_f0_r0 / (num_f0_r0 + num_f0_r1)
 P_f0_r1 = num_f0_r1 / (num_f0_r0 + num_f0_r1)
