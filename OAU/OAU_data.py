@@ -103,7 +103,7 @@ def get_data(file_name):
     return oau_data, norm_oau_data, n_residuals, labels
 
 if __name__ == '__main__':
-    _, _, _, labels = get_data('./OAU1201.csv')
+    _, _, _, labels = get_data('OAU1201.csv')
     # #############################################################################
     # Plot result
     import matplotlib.pyplot as plt
