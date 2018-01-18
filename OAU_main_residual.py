@@ -7,7 +7,7 @@ import numpy as np
 from OAU.OAU_data import get_data
 from scipy import stats
 
-file_name = 'OAU/OAU1201.csv'
+file_name = 'OAU\\OAU1201.csv'
 _, norm_oau_data, n_residuals, labels = get_data(file_name)
 
 alpha = 0.99

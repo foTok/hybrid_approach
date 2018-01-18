@@ -20,5 +20,5 @@ for i in range(len(faults)):
         bpsk.insert_fault_para(faults[j], parameters[j])
         bpsk.insert_fault_time("all", fault_time)
         data = bpsk.generate_signal(time)
-        file_name = path + "/data/" + str(faults[i]+"_"+faults[j]) + "3.npy"
+        file_name = path + "\\data\\" + str(faults[i]+"_"+faults[j]) + "3.npy"
         np.save(file_name, data)
