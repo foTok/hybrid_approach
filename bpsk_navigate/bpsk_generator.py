@@ -129,9 +129,10 @@ class Bpsk:
         carrier_rate = self.code_rate if time < self.carrier_rate_fault_time \
             else self.code_rate * (1 + fractions.Fraction(self.delta_carrier_rate))
         carrier = cos(2 * pi * carrier_rate * time + self.phi)
-        sig = amplify * m_msg * carrier
+        sig0 = m_msg * carrier
+        sig1 = amplify * sig0
 
-        return sig
+        return sig0, sig1
 
     def generate_signal(self, end_time):
         """
@@ -145,11 +146,11 @@ class Bpsk:
         for i in range(length):
             time = i * sample_step
             msg = self.msg.sample(time)
-            code = self.pseudo.sample(time)
-            sig = self.modulate(msg, code, time)
-            data[i, 0] = time
-            data[i, 1] = msg
-            data[i, 2] = code
-            data[i, 3] = sig
+            p_code = self.pseudo.sample(time)
+            sig0, sig1 = self.modulate(msg, p_code, time)
+            data[i, 0] = msg
+            data[i, 1] = p_code
+            data[i, 2] = sig0
+            data[i, 3] = sig1
         return data
         
