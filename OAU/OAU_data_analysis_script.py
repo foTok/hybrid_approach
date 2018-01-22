@@ -71,7 +71,6 @@ residuals = [[residual_airflow_balance(qe, de, k1, ne),\
                 residual_pressure_balance(pe, de, k3, ne),\
                 residual_pressure_balance(po, do, k4, no)] \
                 for qe, qo, pe, po, ne, no, de, do in zip(Qe, Qo, Pe, Po, Ne, No, De, Do)]
-residuals = np.array(residuals)
 
 #add data into different list based on the cluaters
 list1 = []
@@ -82,7 +81,115 @@ list5 = []
 list6 = []
 list7 = []
 
-#TODO
+for res, lab in zip(residuals, labels):
+    if lab == 0:
+        list1.append(res)
+    elif lab == 1:
+        list2.append(res)
+    elif lab == 2:
+        list3.append(res)
+    elif lab == 3:
+        list4.append(res)
+    elif lab == 4:
+        list5.append(res)
+    elif lab == 5:
+        list6.append(res)
+    elif lab == -1:
+        list7.append(res)
+
+residuals = np.array(residuals)
+normal_residuals = [i for i, j in zip(residuals, labels) if j == 0 or j == 1]
+mean = np.mean(normal_residuals, 0)
+var = np.var(normal_residuals, 0)
+n_residuals = abs((residuals - mean)/(var**0.5))
+
+n_residuals2 = abs((residuals - mean)/(var**0.5))
+k = 10
+for i in range(k, len(residuals)):
+    data = residuals[i-k:i,:]
+    mean = np.mean(data, 0)
+    var = np.var(data, 0) + 1e-6
+    n_residuals2[i] = abs((residuals[i] - mean)/(var**0.5))
+
+
+
+#confidence alpha
+alpha = 0.99
+thresh_hold = st.norm.ppf(1 - (1 - alpha) / 2)
+
+r1 = []
+r2 = []
+r3 = []
+r4 = []
+num_f0_r0 = 0
+num_f0_r1 = 0
+num_f1_r0 = 0
+num_f1_r1 = 0
+for r, l in zip(n_residuals, labels):
+    f = 0 if l == 0 or l == 1 else 1 #normal, off
+    z = 1 if r[0] > thresh_hold or r[1] > thresh_hold or r[2] > thresh_hold or r[3] > thresh_hold else 0
+    if f == 0 and z == 0:
+        num_f0_r0 = num_f0_r0 + 1
+    elif f == 0 and z == 1:
+        num_f0_r1 = num_f0_r1 + 1
+    elif f == 1 and z == 0:
+        num_f1_r0 = num_f1_r0 + 1
+    elif f == 1 and z == 1:
+        num_f1_r1 = num_f1_r1 + 1
+
+    r1.append(1 if r[0] > thresh_hold else 0)
+    r2.append(1 if r[1] > thresh_hold else 0)
+    r3.append(1 if r[2] > thresh_hold else 0)
+    r4.append(1 if r[3] > thresh_hold else 0)
+r1_actived = sum(r1)
+r2_actived = sum(r2)
+r3_actived = sum(r3)
+r4_actived = sum(r4)
+
+
+
+
+
+R1 = []
+R2 = []
+R3 = []
+R4 = []
+num_f0_R0 = 0
+num_f0_R1 = 0
+num_f1_R0 = 0
+num_f1_R1 = 0
+for r, l in zip(n_residuals2, labels):
+    f = 0 if l == 0 or l == 1 else 1 #normal, off
+    z = 1 if r[0] > thresh_hold or r[1] > thresh_hold or r[2] > thresh_hold or r[3] > thresh_hold else 0
+    if f == 0 and z == 0:
+        num_f0_R0 = num_f0_R0 + 1
+    elif f == 0 and z == 1:
+        num_f0_R1 = num_f0_R1 + 1
+    elif f == 1 and z == 0:
+        num_f1_R0 = num_f1_R0 + 1
+    elif f == 1 and z == 1:
+        num_f1_R1 = num_f1_R1 + 1
+    R1.append(1 if r[0] > thresh_hold else 0)
+    R2.append(1 if r[1] > thresh_hold else 0)
+    R3.append(1 if r[2] > thresh_hold else 0)
+    R4.append(1 if r[3] > thresh_hold else 0)
+
+R1_actived = sum(R1)
+R2_actived = sum(R2)
+R3_actived = sum(R3)
+R4_actived = sum(R4)
+
+
+print("num_f0_r0 = %d" % num_f0_r0)
+print("num_f0_r1 = %d" % num_f0_r1)
+print("num_f1_r0 = %d" % num_f1_r0)
+print("num_f1_r1 = %d" % num_f1_r1)
+
+
+print("num_f0_R0 = %d" % num_f0_R0)
+print("num_f0_R1 = %d" % num_f0_R1)
+print("num_f1_R0 = %d" % num_f1_R0)
+print("num_f1_R1 = %d" % num_f1_R1)
 
 plt.figure(1)
 x = np.arange(len(labels))
@@ -104,6 +211,38 @@ plt.title('residual 3')
 plt.figure(5)
 plt.scatter(x, residuals[:,3])
 plt.title('residual 4')
+
+plt.figure(6)
+plt.scatter(x, r1, marker=".")
+plt.title('Z-test for residual 1')
+
+plt.figure(7)
+plt.scatter(x, r2, marker=".")
+plt.title('Z-test for residual 2')
+
+plt.figure(8)
+plt.scatter(x, r3, marker=".")
+plt.title('Z-test for residual 3')
+
+plt.figure(9)
+plt.scatter(x, r4, marker=".")
+plt.title('Z-test for residual 4')
+
+plt.figure(10)
+plt.scatter(x, R1, marker=".")
+plt.title('Z-test for Residual 1')
+
+plt.figure(11)
+plt.scatter(x, R2, marker=".")
+plt.title('Z-test for Residual 2')
+
+plt.figure(12)
+plt.scatter(x, R3, marker=".")
+plt.title('Z-test for Residual 3')
+
+plt.figure(13)
+plt.scatter(x, R4, marker=".")
+plt.title('Z-test for Residual 4')
 plt.show()
 
 print("end")
