@@ -73,7 +73,7 @@ for f1 in range(len(FAULT)):
                     np.save(file_name, data)
     else:
         for k in range(int((para_end1-para_begin1)/para_step1)):
-            parameters1 = para_end1 + k * para_step1
+            parameters1 = para_begin1 + k * para_step1
             if isinstance(para_begin2, tuple):
                 for i in range(int((para_end2[0]-para_begin2[0])/para_step2[0])):
                     for j in range(int((para_end2[1]-para_begin2[1])/para_step2[1])):
