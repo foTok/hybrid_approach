@@ -28,13 +28,12 @@ for r, l in zip(n_residuals, labels):
         num_f0_r0 = num_f0_r0 + 1
     elif f == 0 and z == 1:
         num_f0_r1 = num_f0_r1 + 1
-        print("l={},f={},r={}".format(str(l), str(f), str(r)))
+        #print("l={},f={},r={}".format(str(l), str(f), str(r)))
     elif f == 1 and z == 0:
         num_f1_r0 = num_f1_r0 + 1
-        print("l={},f={},r={}".format(str(l), str(f), str(r)))
+        #print("l={},f={},r={}".format(str(l), str(f), str(r)))
     elif f == 1 and z == 1:
         num_f1_r1 = num_f1_r1 + 1
-        
 
 P_f0_r0 = num_f0_r0 / (num_f0_r0 + num_f0_r1)
 P_f0_r1 = num_f0_r1 / (num_f0_r0 + num_f0_r1)
