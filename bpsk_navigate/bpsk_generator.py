@@ -132,25 +132,48 @@ class Bpsk:
         sig0 = m_msg * carrier
         sig1 = amplify * sig0
 
-        return sig0, sig1
+        return carrier, sig0, sig1
 
     def generate_signal(self, end_time):
         """
         generate similation signal
         the unit of end_time is s(second)
+        Used to generate signal with random input
         """
         length = int(end_time*self.sample_rate)
         sample_step = fractions.Fraction(1, self.sample_rate)
-        data = np.zeros([length, 4])
+        data = np.zeros([length, 5])    #msg, pseudo, carrier, s0, s1
         #generate input signal randomly
         for i in range(length):
             time = i * sample_step
             msg = self.msg.sample(time)
             p_code = self.pseudo.sample(time)
-            sig0, sig1 = self.modulate(msg, p_code, time)
+            carrier, sig0, sig1 = self.modulate(msg, p_code, time)
             data[i, 0] = msg
             data[i, 1] = p_code
-            data[i, 2] = sig0
-            data[i, 3] = sig1
+            data[i, 2] = carrier
+            data[i, 3] = sig0
+            data[i, 4] = sig1
         return data
-        
+
+    def generate_signal_with_input(self, end_time, input):
+        """
+        generate similation signal
+        the unit of end_time is s(second) with residuals
+        Used to gnerate signal with specified input
+        """
+        length = int(end_time*self.sample_rate)
+        sample_step = fractions.Fraction(1, self.sample_rate)
+        data = np.zeros([length, 5])    #msg, pseudo, carrier, s0, s1
+        #generate input signal randomly
+        for i in range(length):
+            time = i * sample_step
+            msg = input[i]
+            p_code = self.pseudo.sample(time)
+            carrier, sig0, sig1 = self.modulate(msg, p_code, time)
+            data[i, 0] = msg
+            data[i, 1] = p_code
+            data[i, 2] = carrier
+            data[i, 3] = sig0
+            data[i, 4] = sig1
+        return data

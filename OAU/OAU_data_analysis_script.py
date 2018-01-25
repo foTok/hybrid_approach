@@ -149,6 +149,38 @@ print("num_f0_r1 = %d" % num_f0_r1)
 print("num_f1_r0 = %d" % num_f1_r0)
 print("num_f1_r1 = %d" % num_f1_r1)
 
+c1_r = []
+c2_r = []
+c3_r = []
+c4_r = []
+c5_r = []
+c6_r = []
+c7_r = []
+for r, l in zip(n_residuals, labels):
+    r0 = r > thresh_hold
+    if l == 0:
+        c1_r.append(r0)
+    elif l == 1:
+        c2_r.append(r0)
+    elif l == 2:
+        c3_r.append(r0)
+    elif l == 3:
+        c4_r.append(r0)
+    elif l == 4:
+        c5_r.append(r0)
+    elif l == 5:
+        c6_r.append(r0)
+    elif l == -1:
+        c7_r.append(r0)
+
+c1_r = sum(np.array(c1_r))/sum(labels == 0)
+c2_r = sum(np.array(c2_r))/sum(labels == 1)
+c3_r = sum(np.array(c3_r))/sum(labels == 2)
+c4_r = sum(np.array(c4_r))/sum(labels == 3)
+c5_r = sum(np.array(c5_r))/sum(labels == 4)
+c6_r = sum(np.array(c6_r))/sum(labels == 5)
+c7_r = sum(np.array(c7_r))/sum(labels == -1)
+
 plt.figure(1)
 x = np.arange(len(labels))
 plt.scatter(x, labels)
