@@ -13,72 +13,17 @@ import numpy as np
 
 
 #prepare data
-path = os.path.abspath(os.path.join(os.path.dirname(__file__), '.'))
-data_path = path + "\\bpsk_navigate\\data"
+PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '.'))
+DATA_PATH = PATH + "\\bpsk_navigate\\data\\"
 mana = DataTank()
-mana2 = DataTank()
 
 step_len=100
-mana.set_fault_type(["amplify", "tma", "tmb", "pseudo_rate", "carrier_rate", "carrier_leak"])
-#mana.read_data(data_path+"\\amplify_0.1.npy", fault_type="amplify", step_len=step_len)
-#mana.read_data(data_path+"\\carrier_leak_0.1.npy", fault_type="carrier_leak", step_len=step_len)
-#mana.read_data(data_path+"\\carrier_rate_0.001.npy", fault_type="carrier_rate", step_len=step_len)
-#mana.read_data(data_path+"\\pseudo_rate_0.01.npy", fault_type="pseudo_rate", step_len=step_len)
-#mana.read_data(data_path+"\\tma_0.11.npy", fault_type="tma", step_len=step_len)
-#mana.read_data(data_path+"\\tmb_(8800000.0, 10000000).npy", fault_type="tmb", step_len=step_len)
-mana.read_data(data_path+"\\amplify_tma.npy", fault_type=["amplify", "tma"], step_len=step_len)
-mana.read_data(data_path+"\\amplify_tmb.npy", fault_type=["amplify", "tmb"], step_len=step_len)
-mana.read_data(data_path+"\\amplify_carrier_leak.npy", fault_type=["amplify", "carrier_leak"], step_len=step_len)
-mana.read_data(data_path+"\\amplify_carrier_rate.npy", fault_type=["amplify", "carrier_rate"], step_len=step_len)
-mana.read_data(data_path+"\\amplify_pseudo_rate.npy", fault_type=["amplify", "pseudo_rate"], step_len=step_len)
-mana.read_data(data_path+"\\carrier_rate_carrier_leak.npy", fault_type=["carrier_rate", "carrier_leak"], step_len=step_len)
-mana.read_data(data_path+"\\pseudo_rate_carrier_leak.npy", fault_type=["pseudo_rate", "carrier_leak"], step_len=step_len)
-mana.read_data(data_path+"\\pseudo_rate_carrier_rate.npy", fault_type=["pseudo_rate", "carrier_rate"], step_len=step_len)
-mana.read_data(data_path+"\\tma_carrier_leak.npy", fault_type=["tma", "carrier_leak"], step_len=step_len)
-mana.read_data(data_path+"\\tma_carrier_rate.npy", fault_type=["tma", "carrier_rate"], step_len=step_len)
-mana.read_data(data_path+"\\tma_pseudo_rate.npy", fault_type=["tma", "pseudo_rate"], step_len=step_len)
-mana.read_data(data_path+"\\tma_tmb.npy", fault_type=["tma", "tmb"], step_len=step_len)
-mana.read_data(data_path+"\\tmb_carrier_leak.npy", fault_type=["amplify", "carrier_leak"], step_len=step_len)
-mana.read_data(data_path+"\\tmb_carrier_rate.npy", fault_type=["amplify", "carrier_rate"], step_len=step_len)
-mana.read_data(data_path+"\\tmb_pseudo_rate.npy", fault_type=["amplify", "pseudo_rate"], step_len=step_len)
-mana.read_data(data_path+"\\amplify_tma2.npy", fault_type=["amplify", "tma"], step_len=step_len)
-mana.read_data(data_path+"\\amplify_tmb2.npy", fault_type=["amplify", "tmb"], step_len=step_len)
-mana.read_data(data_path+"\\amplify_carrier_leak2.npy", fault_type=["amplify", "carrier_leak"], step_len=step_len)
-mana.read_data(data_path+"\\amplify_carrier_rate2.npy", fault_type=["amplify", "carrier_rate"], step_len=step_len)
-mana.read_data(data_path+"\\amplify_pseudo_rate2.npy", fault_type=["amplify", "pseudo_rate"], step_len=step_len)
-mana.read_data(data_path+"\\carrier_rate_carrier_leak2.npy", fault_type=["carrier_rate", "carrier_leak"], step_len=step_len)
-mana.read_data(data_path+"\\pseudo_rate_carrier_leak2.npy", fault_type=["pseudo_rate", "carrier_leak"], step_len=step_len)
-mana.read_data(data_path+"\\pseudo_rate_carrier_rate2.npy", fault_type=["pseudo_rate", "carrier_rate"], step_len=step_len)
-mana.read_data(data_path+"\\tma_carrier_leak2.npy", fault_type=["tma", "carrier_leak"], step_len=step_len)
-mana.read_data(data_path+"\\tma_carrier_rate2.npy", fault_type=["tma", "carrier_rate"], step_len=step_len)
-mana.read_data(data_path+"\\tma_pseudo_rate2.npy", fault_type=["tma", "pseudo_rate"], step_len=step_len)
-mana.read_data(data_path+"\\tma_tmb2.npy", fault_type=["tma", "tmb"], step_len=step_len)
-mana.read_data(data_path+"\\tmb_carrier_leak2.npy", fault_type=["tmb", "carrier_leak"], step_len=step_len)
-mana.read_data(data_path+"\\tmb_carrier_rate2.npy", fault_type=["tmb", "carrier_rate"], step_len=step_len)
-mana.read_data(data_path+"\\tmb_pseudo_rate2.npy", fault_type=["tmb", "pseudo_rate"], step_len=step_len)
-
-mana2.set_fault_type(["amplify", "tma", "tmb", "pseudo_rate", "carrier_rate", "carrier_leak"])
-mana2.read_data(data_path+"\\amplify_0.1.npy", fault_type="amplify", step_len=step_len)
-mana2.read_data(data_path+"\\carrier_leak_0.1.npy", fault_type="carrier_leak", step_len=step_len)
-mana2.read_data(data_path+"\\carrier_rate_0.001.npy", fault_type="carrier_rate", step_len=step_len)
-mana2.read_data(data_path+"\\pseudo_rate_0.01.npy", fault_type="pseudo_rate", step_len=step_len)
-mana2.read_data(data_path+"\\tma_0.11.npy", fault_type="tma", step_len=step_len)
-mana2.read_data(data_path+"\\tmb_(8800000.0, 10000000).npy", fault_type="tmb", step_len=step_len)
-#mana2.read_data(data_path+"\\amplify_tma3.npy", fault_type=["amplify", "tma"], step_len=step_len)
-#mana2.read_data(data_path+"\\amplify_tmb3.npy", fault_type=["amplify", "tmb"], step_len=step_len)
-#mana2.read_data(data_path+"\\amplify_carrier_leak3.npy", fault_type=["amplify", "carrier_leak"], step_len=step_len)
-#mana2.read_data(data_path+"\\amplify_carrier_rate3.npy", fault_type=["amplify", "carrier_rate"], step_len=step_len)
-#mana2.read_data(data_path+"\\amplify_pseudo_rate3.npy", fault_type=["amplify", "pseudo_rate"], step_len=step_len)
-#mana2.read_data(data_path+"\\carrier_rate_carrier_leak3.npy", fault_type=["carrier_rate", "carrier_leak"], step_len=step_len)
-#mana2.read_data(data_path+"\\pseudo_rate_carrier_leak3.npy", fault_type=["pseudo_rate", "carrier_leak"], step_len=step_len)
-#mana2.read_data(data_path+"\\pseudo_rate_carrier_rate3.npy", fault_type=["pseudo_rate", "carrier_rate"], step_len=step_len)
-#mana2.read_data(data_path+"\\tma_carrier_leak3.npy", fault_type=["tma", "carrier_leak"], step_len=step_len)
-#mana2.read_data(data_path+"\\tma_carrier_rate3.npy", fault_type=["tma", "carrier_rate"], step_len=step_len)
-#mana2.read_data(data_path+"\\tma_pseudo_rate3.npy", fault_type=["tma", "pseudo_rate"], step_len=step_len)
-#mana2.read_data(data_path+"\\tma_tmb3.npy", fault_type=["tma", "tmb"], step_len=step_len)
-#mana2.read_data(data_path+"\\tmb_carrier_leak3.npy", fault_type=["tmb", "carrier_leak"], step_len=step_len)
-#mana2.read_data(data_path+"\\tmb_carrier_rate3.npy", fault_type=["tmb", "carrier_rate"], step_len=step_len)
-#mana2.read_data(data_path+"\\tmb_pseudo_rate3.npy", fault_type=["tmb", "pseudo_rate"], step_len=step_len)
+mana.set_fault_type(["tma", "tmb", "pseudo_rate", "carrier_rate", "carrier_leak", "amplify"])
+mana.read_data(DATA_PATH+"amplify@0.1.npy", fault_type=["amplify"], step_len=step_len)
+######
+#TODO
+#load data
+######
 
 #set ann fullconnect diagnoser
     #ANN
@@ -136,7 +81,7 @@ diagnoser.eval()
 eval_loss = []
 test_len = 100
 for i in range(test_len):
-    inputs, labels = mana2.random_batch(1)
+    inputs, labels = mana.random_batch(1)
     inputs, labels = Variable(inputs), Variable(labels)
     outputs = diagnoser(inputs)
     loss = criterion(outputs, labels)

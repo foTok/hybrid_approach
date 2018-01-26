@@ -15,10 +15,10 @@ def read_data(file_name, step_len=None, split_point=None):
     #normal data
     normal = []
     for i in range(split_point - step_len):
-        normal.append(sig[i:i+step_len, 2:])
+        normal.append(sig[i:i+step_len, :])
     #fault data
     fault = []
     for i in range(split_point, len(sig)-step_len):
-        fault.append(sig[i:i+step_len, 2:])
+        fault.append(sig[i:i+step_len, :])
 
     return normal, fault
