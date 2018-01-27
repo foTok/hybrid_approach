@@ -23,6 +23,7 @@ mana.read_data(DATA_PATH+"amplify@0.1.npy", fault_type=["amplify"], step_len=ste
 ######
 #TODO
 #load data
+#add code
 ######
 
 #set ann fullconnect diagnoser
