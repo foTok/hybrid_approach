@@ -2,12 +2,29 @@
 data tank to manage data
 """
 
+import os
 from collections import defaultdict
+
 import torch
-import time
-from torch.autograd import Variable
 import numpy as np
 from utilities import read_data
+
+
+def parse_filename(filename):
+    """
+    obtain parameters from the filename
+    including fault types and the value of parameters
+    """
+    filename = os.path.split(filename)
+    str_s = filename[-1].split("@")
+    list_faults = str_s[0]
+    list_faults = list_faults.split(",")
+
+    list_parameters = str_s[1].rstrip(".npy")
+    list_parameters = list_parameters.split(",")
+
+    return list_faults, list_parameters
+
 
 
 class DataTank():
@@ -17,6 +34,7 @@ class DataTank():
     def __init__(self):
         self.fault_type = []
         self.data = defaultdict(list)
+        self.para = defaultdict(list)
 
     def set_fault_type(self, fault_type):
         """
@@ -28,24 +46,26 @@ class DataTank():
         """
         read data and store them in self.normal and self.fault
         """
-        fault_type = None if "fault_type" not in kwargs else kwargs["fault_type"]
         step_len = None if "step_len" not in kwargs else kwargs["step_len"]
         split_point = None if "split_point" not in kwargs else kwargs["split_point"]
         normal, fault = read_data(file_name, step_len, split_point)
+        list_fault, list_parameters = parse_filename(file_name)
 
         fault_vetor = [0]*len(self.fault_type)
+        para_vector = [0]*len(self.fault_type)
         #normal data
         for i in normal:
             self.data[tuple(fault_vetor)].append(i)
+            self.para[tuple(fault_vetor)].append(para_vector)
         #fault data
-        if fault_type is not None:
-            fault_type = fault_type if type(fault_type) == list else [fault_type]
-            for i in fault_type:
-                assert i in self.fault_type
-                index = self.fault_type.index(i)
-                fault_vetor[index] = 1
-            for i in fault:
-                self.data[tuple(fault_vetor)].append(i)
+        for i, j in zip(list_fault, list_parameters):
+            assert i in self.fault_type
+            index = self.fault_type.index(i)
+            fault_vetor[index] = 1
+            para_vector[index] = float(j)
+        for i in fault:
+            self.data[tuple(fault_vetor)].append(i)
+            self.para[tuple(fault_vetor)].append(para_vector)
 
     def choose_data_randomly(self, fault_type, num):
         """
@@ -67,7 +87,7 @@ class DataTank():
         """
         normal_state = tuple([0] * len(self.fault_type))
         normal_data = self.data[normal_state]
-        return len(normal_data[0])
+        return len(normal_data[0]) * len(normal_data[0][0])
 
     def random_batch(self, batch):
         """
@@ -84,8 +104,7 @@ class DataTank():
             for _ in range(batch):
                 rand = int(np.random.random() * len_data)
                 chosen_data = the_data[rand]
-                #flatten_data = [val for sublist in chosen_data for val in sublist]
-                flatten_data = [sublist[1] for sublist in chosen_data]
+                flatten_data = [i for sublist in chosen_data for i in sublist]
                 input_data.append(flatten_data)
                 target.append(list(mode))
         return torch.Tensor(input_data), torch.Tensor(target)

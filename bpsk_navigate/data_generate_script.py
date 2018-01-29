@@ -2,7 +2,6 @@
 this script is used to generate data
 """
 import os
-import sys
 import numpy as np
 from bpsk_generator import Bpsk
 

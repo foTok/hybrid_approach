@@ -2,7 +2,6 @@
 the main file to conduct the computation
 """
 import os
-import sys
 from ann_diagnoser.diagnoser_full_connect import DiagnoerFullConnect
 from data_manger.data_tank import DataTank
 from torch.autograd import Variable
@@ -10,6 +9,8 @@ import torch.nn as nn
 import torch.optim as optim
 import matplotlib.pyplot as pl
 import numpy as np
+
+from data_manger.utilities import get_file_list
 
 
 #prepare data
@@ -19,12 +20,9 @@ mana = DataTank()
 
 step_len=100
 mana.set_fault_type(["tma", "tmb", "pseudo_rate", "carrier_rate", "carrier_leak", "amplify"])
-mana.read_data(DATA_PATH+"amplify@0.1.npy", fault_type=["amplify"], step_len=step_len)
-######
-#TODO
-#load data
-#add code
-######
+list_files = get_file_list(DATA_PATH)
+for file in list_files:
+    mana.read_data(DATA_PATH+file, step_len=step_len)
 
 #set ann fullconnect diagnoser
     #ANN
@@ -80,14 +78,14 @@ pl.ylabel("MSE Loss")
 #test
 diagnoser.eval()
 eval_loss = []
-test_len = 100
+test_len = 1000
 for i in range(test_len):
     inputs, labels = mana.random_batch(1)
     inputs, labels = Variable(inputs), Variable(labels)
     outputs = diagnoser(inputs)
     loss = criterion(outputs, labels)
     eval_loss.append(loss.data[0])
-    if loss.data[0] > 0.15:
+    if loss.data[0] > 0.06:
         print('%d loss: %.5f' %(i + 1, loss.data[0]))
         print(labels)
         print(outputs)
