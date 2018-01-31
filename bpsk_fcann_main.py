@@ -3,7 +3,8 @@ the main file to conduct the computation
 """
 import os
 from ann_diagnoser.diagnoser_full_connect import DiagnoerFullConnect
-from data_manger.data_tank import DataTank
+from data_manger.bpsk_data_tank import BpskDataTank
+from data_manger.utilities import get_file_list
 from torch.autograd import Variable
 import torch
 import torch.nn as nn
@@ -11,16 +12,13 @@ import torch.optim as optim
 import matplotlib.pyplot as pl
 import numpy as np
 
-from data_manger.utilities import get_file_list
-
 
 #prepare data
 PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '.'))
 DATA_PATH = PATH + "\\bpsk_navigate\\data\\"
-mana = DataTank()
+mana = BpskDataTank()
 
 step_len=100
-mana.set_fault_type(["tma", "tmb", "pseudo_rate", "carrier_rate", "carrier_leak", "amplify"])
 list_files = get_file_list(DATA_PATH)
 for file in list_files:
     mana.read_data(DATA_PATH+file, step_len=step_len)
@@ -37,7 +35,7 @@ momentum=0.9
 optimzer = optim.SGD(diagnoser.parameters(), lr=lr, momentum=momentum)
 
     #train
-episode = 2000
+episode = 20000
 batch = 50
 
 train_loss = []

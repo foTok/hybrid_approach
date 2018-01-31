@@ -27,32 +27,26 @@ def parse_filename(filename):
 
 
 
-class DataTank():
+class BpskDataTank():
     """
     store and manage data
     """
     def __init__(self):
-        self.fault_type = []
+        self.fault_type = ["tma", "tmb", "pseudo_rate", "carrier_rate", "carrier_leak", "amplify"]
         self.data = defaultdict(list)
         self.para = defaultdict(list)
 
-    def set_fault_type(self, fault_type):
-        """
-        set the fault type, a string vector
-        """
-        self.fault_type = fault_type
-
     def read_data(self, file_name, **kwargs):
         """
-        read data and store them in self.normal and self.fault
+        read data and store them
         """
         step_len = None if "step_len" not in kwargs else kwargs["step_len"]
         split_point = None if "split_point" not in kwargs else kwargs["split_point"]
         normal, fault = read_data(file_name, step_len, split_point)
         list_fault, list_parameters = parse_filename(file_name)
 
-        fault_vetor = [0]*len(self.fault_type)
-        para_vector = [0]*len(self.fault_type)
+        fault_vetor = [0, 0, 0, 0, 0, 0]
+        para_vector = [0, [0, 0], 0, 0, 0, 0]
         #normal data
         for i in normal:
             self.data[tuple(fault_vetor)].append(i)
@@ -62,7 +56,14 @@ class DataTank():
             assert i in self.fault_type
             index = self.fault_type.index(i)
             fault_vetor[index] = 1
-            para_vector[index] = float(j)
+            if j.find("(") != -1:
+                j = j.lstrip("(")
+                para_vector[1][0] = float(j)
+            elif j.find(")") != -1:
+                j = j.rstrip(")")
+                para_vector[1][1] = float(j)
+            else:
+                para_vector[index] = float(j)
         for i in fault:
             self.data[tuple(fault_vetor)].append(i)
             self.para[tuple(fault_vetor)].append(para_vector)
