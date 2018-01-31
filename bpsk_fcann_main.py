@@ -5,6 +5,7 @@ import os
 from ann_diagnoser.diagnoser_full_connect import DiagnoerFullConnect
 from data_manger.data_tank import DataTank
 from torch.autograd import Variable
+import torch
 import torch.nn as nn
 import torch.optim as optim
 import matplotlib.pyplot as pl
@@ -63,6 +64,10 @@ for epoch in range(episode):
         running_loss = 0.0
 
 print('Finished Training')
+
+#save model
+torch.save(diagnoser, "ann_model\\bpsk_fc.pkl")
+torch.save(diagnoser.state_dict(), "ann_model\\bpsk_fc_params.pkl")
 
 #create two figures
 pl.figure(1)
