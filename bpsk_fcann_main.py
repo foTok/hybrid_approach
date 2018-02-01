@@ -29,19 +29,19 @@ diagnoser = DiagnoerFullConnect(step_len=mana.step_len())
 print(diagnoser)
     #loss function
 criterion = nn.MSELoss()
+#criterion = nn.CrossEntropyLoss()
     #optimizer
-lr = 0.1
-momentum=0.9
-optimzer = optim.SGD(diagnoser.parameters(), lr=lr, momentum=momentum)
+optimzer = optim.SGD(diagnoser.parameters(), lr=0.1, momentum=0.9, weight_decay=1e-5)
 
     #train
-episode = 20000
+episode = 2000
 batch = 50
 
 train_loss = []
 for epoch in range(episode):
     running_loss = 0.0
     inputs, labels = mana.random_batch(batch)
+    #labels = labels.type(torch.LongTensor)
     #print(inputs)
     inputs, labels = Variable(inputs), Variable(labels)
 
@@ -49,8 +49,6 @@ for epoch in range(episode):
 
     outputs = diagnoser(inputs)
     loss = criterion(outputs, labels)
-    #print(outputs)
-    #print(labels)
     loss.backward()
     optimzer.step()
 
