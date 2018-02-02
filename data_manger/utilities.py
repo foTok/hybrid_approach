@@ -19,7 +19,7 @@ def read_data(file_name, step_len=None, split_point=None):
         normal.append(sig[i:i+step_len, :])
     #fault data
     fault = []
-    for i in range(split_point, len(sig)-step_len):
+    for i in range(split_point-step_len+5, len(sig)-step_len):
         fault.append(sig[i:i+step_len, :])
 
     return normal, fault

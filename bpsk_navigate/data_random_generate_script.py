@@ -10,7 +10,7 @@ PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '.'))
 #fault types
 FAULT = ["tma", "tmb", "pseudo_rate", "carrier_rate", "carrier_leak", "amplify"]
 #fault parameters
-PARA_BEGIN = [0.1, (0.8 * 10**6, 7.3 * 10**6), -0.05, -0.05, 0.1, -0.1]
+PARA_BEGIN = [0.1, (0.8 * 10**6, 7.3 * 10**6), -0.05, -0.05, 0.1, 0.05]
 PARA_END = [0.9, (8.8 * 10**6, 13 * 10**6), 0.05, 0.05, 0.5, 0.1]
 
 TIME = 0.0001
@@ -23,7 +23,10 @@ for fault in FAULT:
             index = FAULT.index(fault)
             begin = PARA_BEGIN[index]
             end = PARA_END[index]
-            para = random.uniform(begin, end)
+            while True:
+                para = random.uniform(begin, end)
+                if abs(para) > 0.01:
+                    break
         else:#tmb
             begin1 = PARA_BEGIN[1][0]
             begin2 = PARA_BEGIN[1][1]
@@ -51,7 +54,10 @@ for f1 in range(len(FAULT)):
             if fault1 != "tmb":
                 begin = PARA_BEGIN[f1]
                 end = PARA_END[f1]
-                para1 = random.uniform(begin, end)
+                while True:
+                    para1 = random.uniform(begin, end)
+                    if abs(para1) > 0.01:
+                        break
             else:#tmb
                 begin1 = PARA_BEGIN[1][0]
                 begin2 = PARA_BEGIN[1][1]
@@ -65,6 +71,10 @@ for f1 in range(len(FAULT)):
                 begin = PARA_BEGIN[f2]
                 end = PARA_END[f2]
                 para2 = random.uniform(begin, end)
+                while True:
+                    para2 = random.uniform(begin, end)
+                    if abs(para2) > 0.01:
+                        break
             else:#tmb
                 begin1 = PARA_BEGIN[1][0]
                 begin2 = PARA_BEGIN[1][1]

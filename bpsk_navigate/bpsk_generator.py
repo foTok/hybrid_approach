@@ -156,7 +156,7 @@ class Bpsk:
             data[i, 4] = sig1
         return data
 
-    def generate_signal_with_input(self, end_time, input):
+    def generate_signal_with_input(self, end_time, input_msg):
         """
         generate similation signal
         the unit of end_time is s(second) with residuals
@@ -168,7 +168,7 @@ class Bpsk:
         #generate input signal randomly
         for i in range(length):
             time = i * sample_step
-            msg = input[i]
+            msg = input_msg[i]
             p_code = self.pseudo.sample(time)
             carrier, sig0, sig1 = self.modulate(msg, p_code, time)
             data[i, 0] = msg

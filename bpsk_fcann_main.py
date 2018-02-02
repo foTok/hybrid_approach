@@ -86,7 +86,7 @@ for i in range(test_len):
     outputs = diagnoser(inputs)
     loss = criterion(outputs, labels)
     eval_loss.append(loss.data[0])
-    if loss.data[0] > 0.06:
+    if loss.data[0] > 0.10:
         print('%d loss: %.5f' %(i + 1, loss.data[0]))
         print(labels)
         print(outputs)
