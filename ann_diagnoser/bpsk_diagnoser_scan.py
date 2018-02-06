@@ -8,7 +8,7 @@ from torch.autograd import Variable
 from torch.nn import Parameter
 
 
-class DiagnoerMinBlcokInitScan(nn.Module):
+class DiagnoerMinBlcokScan(nn.Module):
     """
     The basic diagnoser for Minimal Block Scan
     """
@@ -24,7 +24,7 @@ class DiagnoerMinBlcokInitScan(nn.Module):
         list kernel_size: the size of kernel
                           for example: [3, 3, 3, 3]
         """
-        super(DiagnoerMinBlcokInitScan, self).__init__()
+        super(DiagnoerMinBlcokScan, self).__init__()
         assert len(dim_relation) == len(kernel_size)
         self.data_size = data_size
         self.window_size = window_size
@@ -44,15 +44,66 @@ class DiagnoerMinBlcokInitScan(nn.Module):
         x = x.view(self.data_size[0], self.data_size(1))
         y = torch.Tensor(sum(self.kernel_size), self.data_size[1])
         padding1 = int((self.window_size - 1) / 2)
-        padding2 = self.window_size - 1 - padding1
-        for relation, size, i in zip(self.dim_relation, self.kernel_size, range(len(self.kernel_size))):
-            for j in range(size):
+        parameter_index = -1
+        for relation, size in zip(self.dim_relation, self.kernel_size):
+            for _ in range(size):
+                parameter_index = parameter_index + 1
                 for k in range(len(self.data_size[1])):
-                    if k < self.window_size - padding1:
-                        pass
-                    elif k > self.data_size[1] - padding2:
-                        pass
+                    if k < padding1:
+                        data = x[relation,:k+self.window_size-padding1]
+                        kernel = self.parameter_list[parameter_index][:,:k+self.window_size-padding1]
+                    elif k > self.data_size[1] - self.window_size + padding1:
+                        data = x[relation,k-padding1:]
+                        kernel = self.parameter_list[parameter_index][:,self.window_size+k-self.data_size[1]-padding1:]
                     else:
-                        pass
+                        data = x[relation,k-padding1:k+self.window_size-padding1]
+                        kernel = self.parameter_list[parameter_index]
+                    y[parameter_index, k] = torch.sum(data*kernel)
+        y = y.view(-1, 1)
+        return y
+
+
+class DiagnoerScan(nn.Module):
+    """
+    The basic diagnoser for Minimal Block Scan
+    """
+
+    def __init__(self, data_size, window_size, kernel_size):
+        """
+        tuple data_size: (int number, int length), the size of data
+                         data_size[0]: the number of data dimensionals
+                         data_size[1]: the length of data in each dimensionals
+        int window_size: the size of scan window
+        int kernel_size: the size of kernel
+        """
+        super(DiagnoerScan, self).__init__()
+        self.data_size = data_size
+        self.window_size = window_size
+        self.kernel_size = kernel_size
+        self.parameter_list = []
+        for _ in range(kernel_size):
+            tmp_para = Parameter(torch.rand(data_size[0], window_size))
+            self.parameter_list.append(tmp_para)
+
+    def forward(self, x):
+        """
+        x: input, size(x) = data_size[0]*data_size(1)
+        y: output, size(y) = data_size[1] * sum(kernel_size)
+        """
+        x = x.view(self.data_size[0], self.data_size(1))
+        y = torch.Tensor(sum(self.kernel_size), self.data_size[1])
+        padding1 = int((self.window_size - 1) / 2)
+        for i in range(self.kernel_size):
+            for k in range(len(self.data_size[1])):
+                if k < padding1:
+                    data = x[:,:k+self.window_size-padding1]
+                    kernel = self.parameter_list[i][:,:k+self.window_size-padding1]
+                elif k > self.data_size[1] - self.window_size + padding1:
+                    data = x[:,k-padding1:]
+                    kernel = self.parameter_list[i][:,self.window_size+k-self.data_size[1]-padding1:]
+                else:
+                    data = x[:,k-padding1:k+self.window_size-padding1]
+                    kernel = self.parameter_list[i]
+                y[i, k] = torch.sum(data*kernel)
         y = y.view(-1, 1)
         return y
