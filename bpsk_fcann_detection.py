@@ -2,7 +2,7 @@
 use full connection ANN to detect fault
 """
 import os
-from ann_diagnoser.diagnoser_full_connect import DiagnoerFullConnect
+from ann_diagnoser.bpsk_fc_detector import BpskFcDetector
 from data_manger.bpsk_data_tank import BpskDataTank
 from data_manger.utilities import get_file_list
 from torch.autograd import Variable
@@ -17,18 +17,12 @@ PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '.'))
 DATA_PATH = PATH + "\\bpsk_navigate\\data\\test\\"
 MODEL_PATH = PATH + "\\ann_model\\"
 
-def fault_probability(fault_vec):
-    p = 1.0
-    for i in fault_vec:
-        p = p*(1-i)
-    return 1 - p
-
 step_len=100
 #set ann fullconnect diagnoser
     #ANN
-diagnoser = DiagnoerFullConnect(step_len=step_len*5)
+diagnoser = BpskFcDetector(step_len=step_len*5)
 print(diagnoser)
-diagnoser.load_state_dict(torch.load(MODEL_PATH+"bpsk_fc_params_mse_reg_2000.pkl"))
+diagnoser.load_state_dict(torch.load(MODEL_PATH+"bpsk_fc_params_dec_mse_reg_2000ep.pkl"))
 diagnoser.eval()
 
 fault_time = []
@@ -42,9 +36,7 @@ for the_file in list_files:
         x = [i for sublist in x for i in sublist]
         x = Variable(torch.Tensor(x))
         y = diagnoser(x)
-        #print(y)
-        p = fault_probability(y.data)
-        if p>0.55:
+        if y.data[0] > 0.50:
             count = count + 1
             if i+step_len>500:
                 print("false alarm = %d" %count)

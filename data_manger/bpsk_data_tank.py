@@ -109,3 +109,30 @@ class BpskDataTank():
                 input_data.append(flatten_data)
                 target.append(list(mode))
         return torch.Tensor(input_data), torch.Tensor(target)
+
+    def random_normal_fault_batch(self, batch):
+        """
+        choose some data and return in torch Tensor
+        warning: batch here is the number of each fault/normal data
+        Not the whole chosen data
+        """
+        #np.random.seed(int(time.time()))
+        input_data = []
+        target = []
+        for mode in self.data:
+            the_data = self.data[mode]
+            len_data = len(the_data)
+            if sum(mode) == 0:
+                num = batch
+            else:
+                num = int(batch/(len(self.data)-1))
+            for _ in range(num):
+                rand = int(np.random.random() * len_data)
+                chosen_data = the_data[rand]
+                flatten_data = [i for sublist in chosen_data for i in sublist]
+                input_data.append(flatten_data)
+                if sum(mode) == 0:
+                    target.append(0)
+                else:
+                    target.append(1)
+        return torch.Tensor(input_data), torch.Tensor(target)

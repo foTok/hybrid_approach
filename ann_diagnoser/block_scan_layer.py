@@ -8,7 +8,7 @@ from torch.autograd import Variable
 from torch.nn import Parameter
 
 
-class DiagnoerMinBlcokScan(nn.Module):
+class MinBlcokScan(nn.Module):
     """
     The basic diagnoser for Minimal Block Scan
     """
@@ -24,7 +24,7 @@ class DiagnoerMinBlcokScan(nn.Module):
         list kernel_size: the size of kernel
                           for example: [3, 3, 3, 3]
         """
-        super(DiagnoerMinBlcokScan, self).__init__()
+        super(MinBlcokScan, self).__init__()
         assert len(dim_relation) == len(kernel_size)
         self.data_size = data_size
         self.window_size = window_size
@@ -63,7 +63,7 @@ class DiagnoerMinBlcokScan(nn.Module):
         return y
 
 
-class DiagnoerScan(nn.Module):
+class FullScan(nn.Module):
     """
     The basic diagnoser for Minimal Block Scan
     """
@@ -76,7 +76,7 @@ class DiagnoerScan(nn.Module):
         int window_size: the size of scan window
         int kernel_size: the size of kernel
         """
-        super(DiagnoerScan, self).__init__()
+        super(FullScan, self).__init__()
         self.data_size = data_size
         self.window_size = window_size
         self.kernel_size = kernel_size

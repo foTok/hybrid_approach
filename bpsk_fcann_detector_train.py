@@ -1,8 +1,8 @@
 """
-the main file to conduct the computation
+train BPSK fault detector
 """
 import os
-from ann_diagnoser.diagnoser_full_connect import DiagnoerFullConnect
+from ann_diagnoser.bpsk_fc_detector import BpskFcDetector
 from data_manger.bpsk_data_tank import BpskDataTank
 from data_manger.utilities import get_file_list
 from torch.autograd import Variable
@@ -25,7 +25,7 @@ for file in list_files:
 
 #set ann fullconnect diagnoser
     #ANN
-diagnoser = DiagnoerFullConnect(step_len=mana.step_len())
+diagnoser = BpskFcDetector(step_len=mana.step_len())
 print(diagnoser)
     #loss function
 criterion = nn.MSELoss()
@@ -34,13 +34,13 @@ criterion = nn.MSELoss()
 optimzer = optim.SGD(diagnoser.parameters(), lr=0.1, momentum=0.9, weight_decay=1e-5)
 
     #train
-episode = 2000
+episode = 20000
 batch = 50
 
 train_loss = []
 for epoch in range(episode):
     running_loss = 0.0
-    inputs, labels = mana.random_batch(batch)
+    inputs, labels = mana.random_normal_fault_batch(batch)
     #labels = labels.type(torch.LongTensor)
     #print(inputs)
     inputs, labels = Variable(inputs), Variable(labels)
@@ -62,8 +62,8 @@ for epoch in range(episode):
 print('Finished Training')
 
 #save model
-torch.save(diagnoser, "ann_model\\bpsk_fc.pkl")
-torch.save(diagnoser.state_dict(), "ann_model\\bpsk_fc_params.pkl")
+torch.save(diagnoser, "ann_model\\bpsk_fc_model_dec_mse_reg_20000ep.pkl")
+torch.save(diagnoser.state_dict(), "ann_model\\bpsk_fc_params_dec_mse_reg_20000ep.pkl")
 
 #create two figures
 pl.figure(1)
@@ -81,7 +81,7 @@ diagnoser.eval()
 eval_loss = []
 test_len = 1000
 for i in range(test_len):
-    inputs, labels = mana.random_batch(1)
+    inputs, labels = mana.random_normal_fault_batch(1)
     inputs, labels = Variable(inputs), Variable(labels)
     outputs = diagnoser(inputs)
     loss = criterion(outputs, labels)
