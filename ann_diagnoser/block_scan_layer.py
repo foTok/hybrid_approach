@@ -36,31 +36,41 @@ class MinBlcokScan(nn.Module):
                 tmp_para = Parameter(torch.rand(len(relation), window_size))
                 self.parameter_list.append(tmp_para)
 
-    def forward(self, x):
+    def forward(self, batch_x):
         """
-        x: input, size(x) = data_size[0]*data_size(1)
-        y: output, size(y) = data_size[1] * sum(kernel_size)
+        batch_x: input, [batch, data_size[0]*data_size(1)]
+        batch_y: output, [batch, data_size[1] * sum(kernel_size)]
         """
-        x = x.view(self.data_size[0], self.data_size(1))
-        y = torch.Tensor(sum(self.kernel_size), self.data_size[1])
-        padding1 = int((self.window_size - 1) / 2)
-        parameter_index = -1
-        for relation, size in zip(self.dim_relation, self.kernel_size):
-            for _ in range(size):
-                parameter_index = parameter_index + 1
-                for k in range(len(self.data_size[1])):
-                    if k < padding1:
-                        data = x[relation,:k+self.window_size-padding1]
-                        kernel = self.parameter_list[parameter_index][:,:k+self.window_size-padding1]
-                    elif k > self.data_size[1] - self.window_size + padding1:
-                        data = x[relation,k-padding1:]
-                        kernel = self.parameter_list[parameter_index][:,self.window_size+k-self.data_size[1]-padding1:]
-                    else:
-                        data = x[relation,k-padding1:k+self.window_size-padding1]
-                        kernel = self.parameter_list[parameter_index]
-                    y[parameter_index, k] = torch.sum(data*kernel)
-        y = y.view(-1, 1)
-        return y
+        batch_y = Variable(torch.Tensor(len(batch_x), sum(self.kernel_size)*self.data_size[1]))
+        #x: input, size(x) = data_size[0]*data_size(1)
+        #y: output, size(y) = data_size[1] * sum(kernel_size)
+        for x, batch in zip(batch_x, range(len(batch_x))):
+            x = x.view(self.data_size[0], self.data_size[1])
+            y = Variable(torch.Tensor(sum(self.kernel_size), self.data_size[1]))
+            padding1 = int((self.window_size - 1) / 2)
+            parameter_index = -1
+            for relation, size in zip(self.dim_relation, self.kernel_size):
+                indices = Variable(torch.LongTensor(relation))
+                data= torch.index_select(x, 0, indices)
+                for _ in range(size):
+                    parameter_index = parameter_index + 1
+                    kernel = self.parameter_list[parameter_index]
+                    for k in range(self.data_size[1]):
+                        start = k-padding1
+                        end = k+self.window_size-padding1
+                        if start >=0 and end <= self.data_size[1]:
+                            select_data = data[:, start:end]
+                            select_kernel = kernel
+                        elif start < 0:
+                            select_data = data[:, :end]
+                            select_kernel = kernel[:, -start:]
+                        elif end > self.data_size[1]:
+                            select_data = data[:, start:]
+                            select_kernel = kernel[:, :self.data_size[1]-start]
+                        y[parameter_index, k] = torch.sum(select_data*select_kernel)
+            y = y.view(-1, 1)
+            batch_y[batch] = y
+        return batch_y
 
 
 class FullScan(nn.Module):

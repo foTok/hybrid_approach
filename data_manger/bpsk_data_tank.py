@@ -88,7 +88,7 @@ class BpskDataTank():
         """
         normal_state = tuple([0] * len(self.fault_type))
         normal_data = self.data[normal_state]
-        return len(normal_data[0]) * len(normal_data[0][0])
+        return len(normal_data[0])
 
     def random_batch(self, batch):
         """
