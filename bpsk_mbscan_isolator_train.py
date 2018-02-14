@@ -35,16 +35,13 @@ optimzer = optim.SGD(diagnoser.parameters(), lr=0.1, momentum=0.9, weight_decay=
 
     #train
 episode = 2000
-batch = 50
+batch = 100
 
 train_loss = []
 for epoch in range(episode):
     running_loss = 0.0
-    inputs, labels = mana.random_batch(batch)
-    #labels = labels.type(torch.LongTensor)
-    #print(inputs)
-    inputs, labels = Variable(inputs), Variable(labels)
-
+    inputs, labels, _ = mana.random_batch(batch)
+    print(labels)
     optimzer.zero_grad()
 
     outputs = diagnoser(inputs)
@@ -81,8 +78,7 @@ diagnoser.eval()
 eval_loss = []
 test_len = 1000
 for i in range(test_len):
-    inputs, labels = mana.random_batch(1)
-    inputs, labels = Variable(inputs), Variable(labels)
+    inputs, labels, _ = mana.random_batch(100)
     outputs = diagnoser(inputs)
     loss = criterion(outputs, labels)
     eval_loss.append(loss.data[0])

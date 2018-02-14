@@ -7,6 +7,7 @@ from collections import defaultdict
 
 import torch
 import numpy as np
+from torch.autograd import Variable
 from utilities import read_data
 
 
@@ -32,9 +33,14 @@ class BpskDataTank():
     store and manage data
     """
     def __init__(self):
-        self.fault_type = ["tma", "tmb", "pseudo_rate", "carrier_rate", "carrier_leak", "amplify"]
-        self.data = defaultdict(list)
-        self.para = defaultdict(list)
+        self.fault_type = ["tma", "pseudo_rate", "carrier_rate", "carrier_leak", "amplify", "tmb"]
+        #input:[batch × feature × step_len]
+        #list of numpy ndarray
+        self.input = []
+        #list of list
+        self.mode = []
+        #list of list
+        self.para = []
 
     def read_data(self, file_name, **kwargs):
         """
@@ -45,94 +51,89 @@ class BpskDataTank():
         normal, fault = read_data(file_name, step_len, split_point)
         list_fault, list_parameters = parse_filename(file_name)
 
-        fault_vetor = [0, 0, 0, 0, 0, 0]
-        para_vector = [0, [0, 0], 0, 0, 0, 0]
+        mode = [0, 0, 0, 0, 0, 0]
+        #para = [0, 0, 0, 0, 0, [0, 0]]
+        para = [0, 0, 0, 0, 0, 0, 0]
         #normal data
         for i in normal:
-            self.data[tuple(fault_vetor)].append(i)
-            self.para[tuple(fault_vetor)].append(para_vector)
+            self.input.append(i)
+            self.mode.append(mode)
+            self.para.append(para)
         #fault data
+        #find faults and parameters
         for i, j in zip(list_fault, list_parameters):
             assert i in self.fault_type
             index = self.fault_type.index(i)
-            fault_vetor[index] = 1
+            mode[index] = 1
             if j.find("(") != -1:
                 j = j.lstrip("(")
-                para_vector[1][0] = float(j)
+                para[5] = float(j)
             elif j.find(")") != -1:
                 j = j.rstrip(")")
-                para_vector[1][1] = float(j)
+                para[6] = float(j)
             else:
-                para_vector[index] = float(j)
+                para[index] = float(j)
         for i in fault:
-            self.data[tuple(fault_vetor)].append(i)
-            self.para[tuple(fault_vetor)].append(para_vector)
-
-    def choose_data_randomly(self, fault_type, num):
-        """
-        choose num data in the specific (fault_type) fault randomly
-        """
-        fault_type = tuple(fault_type) if type(fault_type) == list else fault_type
-        chosen_data = []
-        if fault_type in self.data:
-            the_data = self.data[fault_type]
-            len_data = len(the_data)
-            for _ in range(num):
-                rand = int(np.random.random() * len_data)
-                chosen_data.append(the_data[rand])
-        return chosen_data
+            self.input.append(i)
+            self.mode.append(mode)
+            self.para.append(para)
 
     def step_len(self):
         """
         return the step_len
         """
-        normal_state = tuple([0] * len(self.fault_type))
-        normal_data = self.data[normal_state]
-        return len(normal_data[0])
+        return len(self.input[0][0])
+
+    def feature_num(self):
+        """
+        return the feature number
+        """
+        return len(self.input[0])
+
+    def info(self):
+        """
+        print basic infomation
+        """
+        print("There are {} data".format(len(self.input)))
 
     def random_batch(self, batch):
         """
         choose some data and return in torch Tensor
-        warning: batch here is the number of each fault/normal data
+        batch here is the number of each fault/normal data
         Not the whole chosen data
         """
-        #np.random.seed(int(time.time()))
-        input_data = []
-        target = []
-        for mode in self.data:
-            the_data = self.data[mode]
-            len_data = len(the_data)
-            for _ in range(batch):
-                rand = int(np.random.random() * len_data)
-                chosen_data = the_data[rand]
-                flatten_data = [i for sublist in chosen_data for i in sublist]
-                input_data.append(flatten_data)
-                target.append(list(mode))
-        return torch.Tensor(input_data), torch.Tensor(target)
+        #input – input tensor (minibatch x in_channels x iH x iW)
+        #random init
+        input_data = Variable(torch.randn(batch, self.feature_num(), self.step_len()))
+        mode = Variable(torch.randn(batch, 6))
+        para = Variable(torch.randn(batch, 7))
+        #refuse sample
+        #counter
+        i = 0
+        #fault number
+        fault_num = {}
+        for k in range(6):
+            mode_vector = [0, 0, 0, 0, 0, 0]
+            mode_vector[k] = 1
+            mode_vector = tuple(mode_vector)
+            fault_num[mode_vector] = 10
+        for k in range(6):
+            for j in range(k+1, 6):
+                mode_vector = [0, 0, 0, 0, 0, 0]
+                mode_vector[k] = 1
+                mode_vector[j] = 1
+                mode_vector = tuple(mode_vector)
+                fault_num[mode_vector] = 1
+        normalization = 0
+        for m in fault_num:
+            normalization = normalization + fault_num[m]
+        #TODO
+        while i < batch:
+            len_data = len(self.input)
+            index = int(np.random.random() * len_data)
+            current_mode = self.mode[index]
 
-    def random_normal_fault_batch(self, batch):
-        """
-        choose some data and return in torch Tensor
-        warning: batch here is the number of each fault/normal data
-        Not the whole chosen data
-        """
-        #np.random.seed(int(time.time()))
-        input_data = []
-        target = []
-        for mode in self.data:
-            the_data = self.data[mode]
-            len_data = len(the_data)
-            if sum(mode) == 0:
-                num = batch
-            else:
-                num = int(batch/(len(self.data)-1))
-            for _ in range(num):
-                rand = int(np.random.random() * len_data)
-                chosen_data = the_data[rand]
-                flatten_data = [i for sublist in chosen_data for i in sublist]
-                input_data.append(flatten_data)
-                if sum(mode) == 0:
-                    target.append(0)
-                else:
-                    target.append(1)
-        return torch.Tensor(input_data), torch.Tensor(target)
+            input_data[i] = torch.from_numpy(self.input[index])
+            mode[i] = torch.Tensor(self.mode[index])
+            para[i] = torch.Tensor(self.para[index])
+        return input_data, mode, para

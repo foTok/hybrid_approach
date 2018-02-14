@@ -16,11 +16,11 @@ def read_data(file_name, step_len=None, split_point=None):
     #normal data
     normal = []
     for i in range(split_point - step_len):
-        normal.append(sig[i:i+step_len, :])
+        normal.append(sig[i:i+step_len, :].T)
     #fault data
     fault = []
-    for i in range(split_point-step_len+5, len(sig)-step_len):
-        fault.append(sig[i:i+step_len, :])
+    for i in range(split_point, len(sig)-step_len):
+        fault.append(sig[i:i+step_len, :].T)
 
     return normal, fault
 
@@ -37,3 +37,7 @@ def get_file_list(path):
     list_items = os.listdir(path)
     list_files = [x  for x in list_items if os.path.isfile(path+x)]
     return list_files
+
+def para2name(usage, opt,lr, momentum, weight_decay, epoch):
+    the_name = "usage={},opt={},lr={},momentum={},weight_decay={},epoch={}.pkl".format(usage, opt,lr, momentum, weight_decay, epoch)
+    return the_name
