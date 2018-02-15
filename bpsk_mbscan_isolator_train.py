@@ -35,7 +35,7 @@ optimzer = optim.SGD(diagnoser.parameters(), lr=0.1, momentum=0.9, weight_decay=
 
     #train
 episode = 2000
-batch = 100
+batch = 1000
 
 train_loss = []
 for epoch in range(episode):

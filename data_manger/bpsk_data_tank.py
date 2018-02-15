@@ -108,8 +108,6 @@ class BpskDataTank():
         mode = Variable(torch.randn(batch, 6))
         para = Variable(torch.randn(batch, 7))
         #refuse sample
-        #counter
-        i = 0
         #fault number
         fault_num = {}
         for k in range(6):
@@ -127,13 +125,25 @@ class BpskDataTank():
         normalization = 0
         for m in fault_num:
             normalization = normalization + fault_num[m]
-        #TODO
+        for m in fault_num:
+            fault_num[m] = fault_num[m] * (batch // 2) // normalization
+        all_fault_number = 0
+        for m in fault_num:
+            all_fault_number = all_fault_number + fault_num[m]
+        normal_number = batch - all_fault_number
+        fault_num[tuple([0, 0, 0, 0, 0, 0])] = normal_number
+        #counter
+        i = 0
         while i < batch:
             len_data = len(self.input)
             index = int(np.random.random() * len_data)
-            current_mode = self.mode[index]
-
-            input_data[i] = torch.from_numpy(self.input[index])
-            mode[i] = torch.Tensor(self.mode[index])
-            para[i] = torch.Tensor(self.para[index])
+            current_mode = tuple(self.mode[index])
+            if fault_num[current_mode] > 0:
+                i = i + 1
+                fault_num[current_mode] = fault_num[current_mode] - 1
+                input_data[i] = torch.from_numpy(self.input[index])
+                mode[i] = torch.Tensor(self.mode[index])
+                para[i] = torch.Tensor(self.para[index])
+            else:#refuse
+                pass
         return input_data, mode, para
