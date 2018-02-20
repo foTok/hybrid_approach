@@ -41,6 +41,8 @@ class BpskDataTank():
         self.mode = []
         #list of list
         self.para = []
+        #map from mode to data
+        self.map = defaultdict(list)
 
     def read_data(self, file_name, **kwargs):
         """
@@ -56,9 +58,11 @@ class BpskDataTank():
         para = [0, 0, 0, 0, 0, 0, 0]
         #normal data
         for i in normal:
+            self.map[tuple(mode)].append(len(self.input))
             self.input.append(i)
             self.mode.append(mode)
             self.para.append(para)
+
         #fault data
         #find faults and parameters
         for i, j in zip(list_fault, list_parameters):
@@ -74,6 +78,7 @@ class BpskDataTank():
             else:
                 para[index] = float(j)
         for i in fault:
+            self.map[tuple(mode)].append(len(self.input))
             self.input.append(i)
             self.mode.append(mode)
             self.para.append(para)
@@ -96,18 +101,12 @@ class BpskDataTank():
         """
         print("There are {} data".format(len(self.input)))
 
-    def random_batch(self, batch):
+    def random_batch_isolation(self, batch):
         """
         choose some data and return in torch Tensor
         batch here is the number of each fault/normal data
         Not the whole chosen data
         """
-        #input – input tensor (minibatch x in_channels x iH x iW)
-        #random init
-        input_data = Variable(torch.randn(batch, self.feature_num(), self.step_len()))
-        mode = Variable(torch.randn(batch, 6))
-        para = Variable(torch.randn(batch, 7))
-        #refuse sample
         #fault number
         fault_num = {}
         for k in range(6):
@@ -121,29 +120,29 @@ class BpskDataTank():
                 mode_vector[k] = 1
                 mode_vector[j] = 1
                 mode_vector = tuple(mode_vector)
-                fault_num[mode_vector] = 1
+                fault_num[mode_vector] = 10
         normalization = 0
         for m in fault_num:
             normalization = normalization + fault_num[m]
         for m in fault_num:
-            fault_num[m] = fault_num[m] * (batch // 2) // normalization
-        all_fault_number = 0
+            fault_num[m] = fault_num[m] * batch // normalization
+        batch = 0
         for m in fault_num:
-            all_fault_number = all_fault_number + fault_num[m]
-        normal_number = batch - all_fault_number
-        fault_num[tuple([0, 0, 0, 0, 0, 0])] = normal_number
+            batch = batch + fault_num[m]
+        #input – input tensor (minibatch x in_channels x iH x iW)
+        #random init
+        input_data = Variable(torch.randn(batch, self.feature_num(), self.step_len()))
+        mode = Variable(torch.randn(batch, 6))
+        para = Variable(torch.randn(batch, 7))
         #counter
-        i = 0
-        while i < batch:
-            len_data = len(self.input)
-            index = int(np.random.random() * len_data)
-            current_mode = tuple(self.mode[index])
-            if fault_num[current_mode] > 0:
+        i = -1
+        for m in fault_num:
+            len_data = len(self.map[m])
+            for _ in range(fault_num[m]):
                 i = i + 1
-                fault_num[current_mode] = fault_num[current_mode] - 1
+                index = int(np.random.random() * len_data)
+                index = self.map[m][index]
                 input_data[i] = torch.from_numpy(self.input[index])
                 mode[i] = torch.Tensor(self.mode[index])
                 para[i] = torch.Tensor(self.para[index])
-            else:#refuse
-                pass
         return input_data, mode, para

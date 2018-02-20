@@ -5,6 +5,8 @@ import os
 from ann_diagnoser.bpsk_block_scan_diagnoser import DiagnoerBlockScan
 from data_manger.bpsk_data_tank import BpskDataTank
 from data_manger.utilities import get_file_list
+from ann_diagnoser.loss_function import CrossEntropy
+from ann_diagnoser.loss_function import MSE
 from torch.autograd import Variable
 import torch
 import torch.nn as nn
@@ -28,26 +30,27 @@ for file in list_files:
 diagnoser = DiagnoerBlockScan(step_len=mana.step_len())
 print(diagnoser)
     #loss function
-criterion = nn.MSELoss()
-#criterion = nn.CrossEntropyLoss()
+criterion = MSE
+#criterion = CrossEntropy
     #optimizer
-optimzer = optim.SGD(diagnoser.parameters(), lr=0.1, momentum=0.9, weight_decay=1e-5)
+#optimizer = optim.Adam(diagnoser.parameters(), lr=0.05, weight_decay=1e-5)
+optimizer = optim.SGD(diagnoser.parameters(), lr=0.1, momentum=0.9, weight_decay=1e-5)
 
     #train
 episode = 2000
-batch = 1000
+batch = 2000
 
 train_loss = []
+running_loss = 0.0
 for epoch in range(episode):
-    running_loss = 0.0
-    inputs, labels, _ = mana.random_batch(batch)
-    print(labels)
-    optimzer.zero_grad()
+    inputs, labels, _ = mana.random_batch_isolation(batch)
+    optimizer.zero_grad()
 
     outputs = diagnoser(inputs)
+
     loss = criterion(outputs, labels)
     loss.backward()
-    optimzer.step()
+    optimizer.step()
 
     train_loss.append(loss.data[0])
 
@@ -59,8 +62,8 @@ for epoch in range(episode):
 print('Finished Training')
 
 #save model
-torch.save(diagnoser, "ann_model\\bpsk_fc_mse_reg_20000ep.pkl")
-torch.save(diagnoser.state_dict(), "ann_model\\bpsk_fc_params_mse_reg_20000ep.pkl")
+torch.save(diagnoser, "ann_model\\bpsk_mbs_model4.pkl")
+torch.save(diagnoser.state_dict(), "ann_model\\bpsk_mbs_params4.pkl")
 
 #create two figures
 pl.figure(1)
@@ -78,14 +81,10 @@ diagnoser.eval()
 eval_loss = []
 test_len = 1000
 for i in range(test_len):
-    inputs, labels, _ = mana.random_batch(100)
+    inputs, labels, _ = mana.random_batch_isolation(1000)
     outputs = diagnoser(inputs)
     loss = criterion(outputs, labels)
     eval_loss.append(loss.data[0])
-    if loss.data[0] > 0.10:
-        print('%d loss: %.5f' %(i + 1, loss.data[0]))
-        print(labels)
-        print(outputs)
 
 #choose figure 2
 pl.figure(2)

@@ -42,7 +42,7 @@ batch = 1000
 train_loss = []
 for epoch in range(episode):
     running_loss = 0.0
-    inputs, labels, _ = mana.random_batch(batch)
+    inputs, labels, _ = mana.random_batch_isolation(batch)
 
     optimzer.zero_grad()
 
@@ -61,7 +61,7 @@ for epoch in range(episode):
 print('Finished Training')
 
 #save model
-torch.save(diagnoser, "ann_model\\bpsk_fc.pkl")
+torch.save(diagnoser, "ann_model\\bpsk_fc_model.pkl")
 torch.save(diagnoser.state_dict(), "ann_model\\bpsk_fc_params.pkl")
 
 #create two figures
@@ -78,13 +78,13 @@ pl.ylabel("MSE Loss")
 #test
 diagnoser.eval()
 eval_loss = []
-test_len = 1000
+test_len = 100
 for i in range(test_len):
-    inputs, labels, _ = mana.random_batch(100)
+    inputs, labels, _ = mana.random_batch_isolation(1000)
     outputs = diagnoser(inputs)
     loss = criterion(outputs, labels)
     eval_loss.append(loss.data[0])
-    if loss.data[0] > 0.10:
+    if loss.data[0] > 0.08:
         print('%d loss: %.5f' %(i + 1, loss.data[0]))
         print(labels)
         print(outputs)
