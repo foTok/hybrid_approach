@@ -14,7 +14,7 @@ from data_manger.utilities import get_file_list
 
 #prepare data
 PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '.'))
-DATA_PATH = PATH + "\\bpsk_navigate\\data\\"
+DATA_PATH = PATH + "\\bpsk_navigate\\data\\test\\"
 SNR = 20
 NOISE_POWER_RATIO = 1/(10**(SNR/10))
 TIME = 0.0001

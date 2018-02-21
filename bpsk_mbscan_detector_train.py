@@ -2,7 +2,7 @@
 the main file to conduct the computation
 """
 import os
-from ann_diagnoser.bpsk_block_scan_diagnoser import DiagnoerBlockScan
+from ann_diagnoser.bpsk_block_scan_diagnoser import DetectorBlockScan
 from data_manger.bpsk_data_tank import BpskDataTank
 from data_manger.utilities import get_file_list
 from ann_diagnoser.loss_function import CrossEntropy
@@ -27,31 +27,32 @@ for file in list_files:
 
 #set ann fullconnect diagnoser
     #ANN
-diagnoser = DiagnoerBlockScan(step_len=mana.step_len())
+diagnoser = DetectorBlockScan(step_len=mana.step_len())
 print(diagnoser)
     #loss function
 #criterion = MSE
 criterion = CrossEntropy
     #optimizer
 #optimizer = optim.Adam(diagnoser.parameters(), lr=0.05, weight_decay=1e-5)
-optimizer = optim.SGD(diagnoser.parameters(), lr=0.05, momentum=0.9, weight_decay=1e-5)
+optimizer = optim.SGD(diagnoser.parameters(), lr=0.1, momentum=0.9, weight_decay=1e-5)
 
     #train
-episode = 3000
+episode = 2000
 batch = 2000
 
 train_loss = []
 running_loss = 0.0
 for epoch in range(episode):
-    inputs, labels, _ = mana.random_batch(batch)
+    inputs, labels, _ = mana.random_batch(batch, normal=0.5)
+    labels = (torch.sum(labels, 1) > 0).float().view(batch, 1)
     optimizer.zero_grad()
     outputs = diagnoser(inputs)
     loss = criterion(outputs, labels)
     loss.backward()
     optimizer.step()
 
-    running_loss += loss.data[0]
     train_loss.append(loss.data[0])
+    running_loss += loss.data[0]
     if epoch % 10 == 9:
         print('%d loss: %.5f' %(epoch + 1, running_loss / 10))
         running_loss = 0.0
@@ -59,8 +60,8 @@ for epoch in range(episode):
 print('Finished Training')
 
 #save model
-torch.save(diagnoser, "ann_model\\bpsk_mbs_isolator2.pkl")
-torch.save(diagnoser.state_dict(), "ann_model\\bpsk_mbs_isolator_para2.pkl")
+torch.save(diagnoser, "ann_model\\bpsk_mbs_detector.pkl")
+torch.save(diagnoser.state_dict(), "ann_model\\bpsk_mbs_detector.pkl")
 
 #create two figures
 pl.figure(1)
@@ -80,6 +81,7 @@ batch2 = 1000
 test_len = 1000
 for i in range(test_len):
     inputs, labels, _ = mana.random_batch(batch2)
+    labels = (torch.sum(labels, 1) > 0).float().view(batch2, 1)
     outputs = diagnoser(inputs)
     loss = criterion(outputs, labels)
     eval_loss.append(loss.data[0])

@@ -37,22 +37,18 @@ optimzer = optim.SGD(diagnoser.parameters(), lr=0.1, momentum=0.9, weight_decay=
 
     #train
 episode = 2000
-batch = 1000
-
+batch = 2000
 train_loss = []
+running_loss = 0.0
 for epoch in range(episode):
-    running_loss = 0.0
-    inputs, labels, _ = mana.random_batch_isolation(batch)
-
+    inputs, labels, _ = mana.random_batch(batch)
     optimzer.zero_grad()
-
     outputs = diagnoser(inputs)
     loss = criterion(outputs, labels)
     loss.backward()
     optimzer.step()
 
     train_loss.append(loss.data[0])
-
     running_loss += loss.data[0]
     if epoch % 10 == 9:
         print('%d loss: %.5f' %(epoch + 1, running_loss / 10))
@@ -73,26 +69,23 @@ pl.figure(1)
 pl.plot(np.array(train_loss))
 pl.title("Training Loss")
 pl.xlabel("Epoch")
-pl.ylabel("MSE Loss")
+pl.ylabel("Loss")
 
 #test
 diagnoser.eval()
 eval_loss = []
+batch2 = 1000
 test_len = 100
 for i in range(test_len):
-    inputs, labels, _ = mana.random_batch_isolation(1000)
+    inputs, labels, _ = mana.random_batch(batch2)
     outputs = diagnoser(inputs)
     loss = criterion(outputs, labels)
     eval_loss.append(loss.data[0])
-    if loss.data[0] > 0.08:
-        print('%d loss: %.5f' %(i + 1, loss.data[0]))
-        print(labels)
-        print(outputs)
 
 #choose figure 2
 pl.figure(2)
 pl.plot(np.array(eval_loss))
 pl.title("Evaluation Loss")
 pl.xlabel("Sample")
-pl.ylabel("MSE Loss")
+pl.ylabel("Loss")
 pl.show()

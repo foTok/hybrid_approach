@@ -6,11 +6,21 @@ and transfers them so that could be used by diagnoser
 import os
 import numpy as np
 
-def read_data(file_name, step_len=None, split_point=None):
+def read_data(file_name, step_len=None, split_point=None, snr=None):
     """
     read data, and re-organise them
     """
+    #sig: time_step × feature
     sig = np.load(file_name)
+    #add noise
+    if snr is not None:
+        NOISE_POWER_RATIO = 1/(10**(snr/10)) if snr is not None else 0
+        signal_power = np.var(sig, 0)
+        noise_power = NOISE_POWER_RATIO * signal_power
+        noise_weight = noise_power**0.5
+        #noise with Gaussian distribution
+        noise = np.random.normal(0, 1, [len(sig), len(sig[0])]) * noise_weight
+        sig = sig + noise
     split_point = int(len(sig) / 2) if split_point is None else split_point
     step_len = 100 if step_len is None else step_len
     #normal data

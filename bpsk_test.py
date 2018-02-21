@@ -25,14 +25,13 @@ mana = BpskDataTank()
 step_len=100
 list_files = get_file_list(DATA_PATH)
 for file in list_files:
-    mana.read_data(DATA_PATH+file, step_len=step_len)
-
+    mana.read_data(DATA_PATH+file, step_len=step_len, snr=20)
 #set ann fullconnect diagnoser
     #ANN
 # diagnoser = DiagnoerFullConnect(mana.feature_num() * mana.step_len())
 diagnoser = DiagnoerBlockScan(step_len=mana.step_len())
 print(diagnoser)
-diagnoser.load_state_dict(torch.load(MODEL_PATH+"bpsk_mbs_params4.pkl"))
+diagnoser.load_state_dict(torch.load(MODEL_PATH+"bpsk_mbs_params5.pkl"))
 
 criterion = MSE
 
@@ -41,7 +40,7 @@ diagnoser.eval()
 eval_loss = []
 test_len = 1000
 for i in range(test_len):
-    inputs, labels, _ = mana.random_batch_isolation(1000)
+    inputs, labels, _ = mana.random_batch(1000)
     outputs = diagnoser(inputs)
     loss = criterion(outputs, labels)
     eval_loss.append(loss.data[0])
@@ -51,5 +50,5 @@ pl.figure(1)
 pl.plot(np.array(eval_loss))
 pl.title("Evaluation Loss")
 pl.xlabel("Sample")
-pl.ylabel("MSE Loss")
+pl.ylabel("Loss")
 pl.show()
