@@ -18,6 +18,7 @@ import numpy as np
 #prepare data
 PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '.'))
 DATA_PATH = PATH + "\\bpsk_navigate\\data\\"
+TEST_DATA_PATH = PATH + "\\bpsk_navigate\\data\\test\\"
 mana = BpskDataTank()
 
 step_len=100
@@ -34,16 +35,16 @@ print(diagnoser)
 criterion = CrossEntropy
     #optimizer
 #optimizer = optim.Adam(diagnoser.parameters(), lr=0.05, weight_decay=1e-5)
-optimizer = optim.SGD(diagnoser.parameters(), lr=0.05, momentum=0.9, weight_decay=1e-5)
+optimizer = optim.SGD(diagnoser.parameters(), lr=0.06, momentum=0.9, weight_decay=1e-3)
 
     #train
-episode = 3000
+epoch = 2000
 batch = 2000
 
 train_loss = []
 running_loss = 0.0
-for epoch in range(episode):
-    inputs, labels, _ = mana.random_batch(batch)
+for epoch in range(epoch):
+    inputs, labels, _ = mana.random_batch(batch, normal=0, single_fault=10, two_fault=4)
     optimizer.zero_grad()
     outputs = diagnoser(inputs)
     loss = criterion(outputs, labels)
@@ -59,12 +60,8 @@ for epoch in range(episode):
 print('Finished Training')
 
 #save model
-torch.save(diagnoser, "ann_model\\bpsk_mbs_isolator2.pkl")
-torch.save(diagnoser.state_dict(), "ann_model\\bpsk_mbs_isolator_para2.pkl")
-
-#create two figures
-pl.figure(1)
-pl.figure(2)
+torch.save(diagnoser, "ann_model\\bpsk_mbs_isolator3.pkl")
+torch.save(diagnoser.state_dict(), "ann_model\\bpsk_mbs_isolator_para3.pkl")
 
 #choose figure 1
 pl.figure(1)
@@ -74,12 +71,17 @@ pl.xlabel("Epoch")
 pl.ylabel("Loss")
 
 #test
+TEST_DATA_PATH = PATH + "\\bpsk_navigate\\data\\test\\"
+mana2 = BpskDataTank()
+list_files2 = get_file_list(TEST_DATA_PATH)
+for file in list_files2:
+    mana2.read_data(TEST_DATA_PATH+file, step_len=step_len, snr=20)
 diagnoser.eval()
 eval_loss = []
 batch2 = 1000
-test_len = 1000
-for i in range(test_len):
-    inputs, labels, _ = mana.random_batch(batch2)
+epoch2 = 1000
+for i in range(epoch2):
+    inputs, labels, _ = mana2.random_batch(batch2, normal=0, single_fault=10, two_fault=4)
     outputs = diagnoser(inputs)
     loss = criterion(outputs, labels)
     eval_loss.append(loss.data[0])

@@ -19,6 +19,7 @@ import numpy as np
 #prepare data
 PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '.'))
 DATA_PATH = PATH + "\\bpsk_navigate\\data\\test\\"
+#DATA_PATH = PATH + "\\bpsk_navigate\\data\\"
 MODEL_PATH = PATH + "\\ann_model\\"
 mana = BpskDataTank()
 
@@ -31,18 +32,21 @@ for file in list_files:
 # diagnoser = DiagnoerFullConnect(mana.feature_num() * mana.step_len())
 diagnoser = DiagnoerBlockScan(step_len=mana.step_len())
 print(diagnoser)
-diagnoser.load_state_dict(torch.load(MODEL_PATH+"bpsk_mbs_params5.pkl"))
+diagnoser.load_state_dict(torch.load(MODEL_PATH+"bpsk_mbs_isolator_para3.pkl"))
 
-criterion = MSE
+# criterion = MSE
+criterion = CrossEntropy
 
 #test
 diagnoser.eval()
 eval_loss = []
 test_len = 1000
+batch = 1000
 for i in range(test_len):
-    inputs, labels, _ = mana.random_batch(1000)
+    inputs, labels, _ = mana.random_batch(batch, normal=0, single_fault=10, two_fault=4)
     outputs = diagnoser(inputs)
     loss = criterion(outputs, labels)
+    print("loss {} = {}".format(i, loss.data[0]))
     eval_loss.append(loss.data[0])
 
 #create a figure

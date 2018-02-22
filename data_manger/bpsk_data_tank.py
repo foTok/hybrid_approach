@@ -102,51 +102,6 @@ class BpskDataTank():
         """
         print("There are {} data".format(len(self.input)))
 
-    def random_batch_fault(self, batch, single_fault=10, two_fault=10):
-        """
-        choose some data and return in torch Tensor
-        """
-        #fault number
-        fault_num = {}
-        for k in range(6):
-            mode_vector = [0, 0, 0, 0, 0, 0]
-            mode_vector[k] = 1
-            mode_vector = tuple(mode_vector)
-            fault_num[mode_vector] = single_fault
-        for k in range(6):
-            for j in range(k+1, 6):
-                mode_vector = [0, 0, 0, 0, 0, 0]
-                mode_vector[k] = 1
-                mode_vector[j] = 1
-                mode_vector = tuple(mode_vector)
-                fault_num[mode_vector] = two_fault
-        normalization = 0
-        for m in fault_num:
-            normalization = normalization + fault_num[m]
-        for m in fault_num:
-            fault_num[m] = fault_num[m] * batch // normalization
-        batch = 0
-        for m in fault_num:
-            batch = batch + fault_num[m]
-        #input – input tensor (minibatch x in_channels x iLen)
-        #random init
-        input_data = Variable(torch.randn(batch, self.feature_num(), self.step_len()))
-        mode = Variable(torch.randn(batch, 6))
-        para = Variable(torch.randn(batch, 7))
-        #counter
-        i = -1
-        for m in fault_num:
-            len_data = len(self.map[m])
-            for _ in range(fault_num[m]):
-                i = i + 1
-                index = int(np.random.random() * len_data)
-                index = self.map[m][index]
-                signal = self.input[index]
-                input_data[i] = torch.from_numpy(signal)
-                mode[i] = torch.Tensor(self.mode[index])
-                para[i] = torch.Tensor(self.para[index])
-        return input_data, mode, para
-
     def random_batch(self, batch, normal=0, single_fault=10, two_fault=10):
             """
             choose some data and return in torch Tensor
@@ -160,14 +115,14 @@ class BpskDataTank():
                 mode_vector = [0, 0, 0, 0, 0, 0]
                 mode_vector[k] = 1
                 mode_vector = tuple(mode_vector)
-                fault_num[mode_vector] = 10
+                fault_num[mode_vector] = single_fault
             for k in range(6):
                 for j in range(k+1, 6):
                     mode_vector = [0, 0, 0, 0, 0, 0]
                     mode_vector[k] = 1
                     mode_vector[j] = 1
                     mode_vector = tuple(mode_vector)
-                    fault_num[mode_vector] = 10
+                    fault_num[mode_vector] = two_fault
             normalization = 0
             for m in fault_num:
                 normalization = normalization + fault_num[m]
