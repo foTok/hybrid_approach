@@ -24,7 +24,17 @@ def parse_filename(filename):
     list_parameters = str_s[1].rstrip(".npy")
     list_parameters = list_parameters.split(",")
 
-    return list_faults, list_parameters
+    list_parameters2 = []
+    for i in list_parameters:
+        if i.find("(") != -1:
+            i = i.lstrip("(")
+            list_parameters2.append(float(i))
+        elif i.find(")") != -1:
+            i = i.rstrip(")")
+            list_parameters2[-1] = [list_parameters2[-1], float(i)]
+        else:
+            list_parameters2.append(float(i))
+    return list_faults, list_parameters2
 
 
 
@@ -70,14 +80,11 @@ class BpskDataTank():
             assert i in self.fault_type
             index = self.fault_type.index(i)
             mode[index] = 1
-            if j.find("(") != -1:
-                j = j.lstrip("(")
-                para[5] = float(j)
-            elif j.find(")") != -1:
-                j = j.rstrip(")")
-                para[6] = float(j)
+            if isinstance(j, list):
+                para[5] = j[0]
+                para[6] = j[1]
             else:
-                para[index] = float(j)
+                para[index] = j
         for i in fault:
             self.map[tuple(mode)].append(len(self.input))
             self.input.append(i)
@@ -115,14 +122,16 @@ class BpskDataTank():
                 mode_vector = [0, 0, 0, 0, 0, 0]
                 mode_vector[k] = 1
                 mode_vector = tuple(mode_vector)
-                fault_num[mode_vector] = single_fault
+                len_data = len(self.map[mode_vector])
+                fault_num[mode_vector] = single_fault if len_data != 0 else 0
             for k in range(6):
                 for j in range(k+1, 6):
                     mode_vector = [0, 0, 0, 0, 0, 0]
                     mode_vector[k] = 1
                     mode_vector[j] = 1
                     mode_vector = tuple(mode_vector)
-                    fault_num[mode_vector] = two_fault
+                    len_data = len(self.map[mode_vector])
+                    fault_num[mode_vector] = two_fault if len_data != 0 else 0
             normalization = 0
             for m in fault_num:
                 normalization = normalization + fault_num[m]
@@ -135,6 +144,10 @@ class BpskDataTank():
             mode_vector = [0, 0, 0, 0, 0, 0]
             mode_vector = tuple(mode_vector)
             fault_num[mode_vector] = int(batch * normal)
+
+            batch = 0
+            for m in fault_num:
+                batch = batch + fault_num[m]
             #input – input tensor (minibatch x in_channels x iLen)
             #random init
             input_data = Variable(torch.randn(batch, self.feature_num(), self.step_len()))

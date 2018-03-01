@@ -34,7 +34,7 @@ print(diagnoser)
 criterion = CrossEntropy
     #optimizer
 #optimizer = optim.Adam(diagnoser.parameters(), lr=0.05, weight_decay=1e-5)
-optimizer = optim.SGD(diagnoser.parameters(), lr=0.1, momentum=0.9, weight_decay=1e-5)
+optimizer = optim.SGD(diagnoser.parameters(), lr=0.06, momentum=0.9, weight_decay=1e-3)
 
     #train
 episode = 2000
@@ -43,7 +43,7 @@ batch = 2000
 train_loss = []
 running_loss = 0.0
 for epoch in range(episode):
-    inputs, labels, _ = mana.random_batch(batch, normal=0.5)
+    inputs, labels, _ = mana.random_batch(batch, normal=0.5,single_fault=10, two_fault=4)
     labels = (torch.sum(labels, 1) > 0).float().view(batch, 1)
     optimizer.zero_grad()
     outputs = diagnoser(inputs)

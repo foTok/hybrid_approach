@@ -10,8 +10,8 @@ PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '.'))
 #fault types
 FAULT = ["tma", "tmb", "pseudo_rate", "carrier_rate", "carrier_leak", "amplify"]
 #fault parameters
-PARA_BEGIN = [0.1, (0.8 * 10**6, 7.3 * 10**6), -0.05, -0.05, 0.1, 0.05]
-PARA_END = [0.9, (8.8 * 10**6, 13 * 10**6), 0.05, 0.05, 0.5, 0.1]
+PARA_BEGIN = [0.2, (0.8 * 10**6, 7.3 * 10**6), -0.05, -0.05, 0.1, 0.1]
+PARA_END = [0.9, (8.8 * 10**6, 13 * 10**6), 0.05, 0.05, 0.5, 1.0]
 
 TIME = 0.0001
 FAULT_TIME = TIME / 2

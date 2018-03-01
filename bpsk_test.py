@@ -4,6 +4,7 @@ this file is used to test the performance of diagnoser
 
 import os
 from ann_diagnoser.bpsk_block_scan_diagnoser import DiagnoerBlockScan
+from ann_diagnoser.bpsk_block_scan_diagnoser import DetectorBlockScan
 from ann_diagnoser.diagnoser_full_connect import DiagnoerFullConnect
 from data_manger.bpsk_data_tank import BpskDataTank
 from data_manger.utilities import get_file_list
@@ -30,9 +31,10 @@ for file in list_files:
 #set ann fullconnect diagnoser
     #ANN
 # diagnoser = DiagnoerFullConnect(mana.feature_num() * mana.step_len())
-diagnoser = DiagnoerBlockScan(step_len=mana.step_len())
+# diagnoser = DiagnoerBlockScan(step_len=mana.step_len())
+diagnoser = DetectorBlockScan(step_len=mana.step_len())
 print(diagnoser)
-diagnoser.load_state_dict(torch.load(MODEL_PATH+"bpsk_mbs_isolator_para3.pkl"))
+diagnoser.load_state_dict(torch.load(MODEL_PATH+"bpsk_mbs_detector.pkl"))
 
 # criterion = MSE
 criterion = CrossEntropy
@@ -43,7 +45,8 @@ eval_loss = []
 test_len = 1000
 batch = 1000
 for i in range(test_len):
-    inputs, labels, _ = mana.random_batch(batch, normal=0, single_fault=10, two_fault=4)
+    inputs, labels, _ = mana.random_batch(batch, normal=0.5, single_fault=10, two_fault=4)
+    labels = (torch.sum(labels, 1) > 0).float().view(batch, 1)
     outputs = diagnoser(inputs)
     loss = criterion(outputs, labels)
     print("loss {} = {}".format(i, loss.data[0]))

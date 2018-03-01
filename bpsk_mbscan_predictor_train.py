@@ -2,7 +2,7 @@
 the main file to conduct the computation
 """
 import os
-from ann_diagnoser.bpsk_block_scan_diagnoser import DiagnoerBlockScan
+from ann_diagnoser.bpsk_block_scan_diagnoser import PredictorBlockScan
 from data_manger.bpsk_data_tank import BpskDataTank
 from data_manger.utilities import get_file_list
 from ann_diagnoser.loss_function import CrossEntropy
@@ -28,23 +28,26 @@ for file in list_files:
 
 #set ann fullconnect diagnoser
     #ANN
-diagnoser = DiagnoerBlockScan(step_len=mana.step_len())
+diagnoser = PredictorBlockScan(step_len=mana.step_len())
 print(diagnoser)
     #loss function
-#criterion = MSE
-criterion = CrossEntropy
+criterion = MSE
+#criterion = CrossEntropy
     #optimizer
-#optimizer = optim.Adam(diagnoser.parameters(), lr=0.05, weight_decay=1e-5)
-optimizer = optim.SGD(diagnoser.parameters(), lr=0.06, momentum=0.9, weight_decay=1e-3)
+optimizer = optim.Adam(diagnoser.parameters(), lr=0.01, weight_decay=1.2e-3)
+#optimizer = optim.SGD(diagnoser.parameters(), lr=0.01, momentum=0.9, weight_decay=1e-3)
 
     #train
-epoch = 2000
+epoch = 3000
 batch = 2000
 
 train_loss = []
 running_loss = 0.0
+normalization = Variable(torch.Tensor([10, 100, 100, 10, 10, 10**-6, 10**-6]))
 for epoch in range(epoch):
-    inputs, labels, _ = mana.random_batch(batch, normal=0, single_fault=10, two_fault=4)
+    #label need normalization
+    inputs, _, labels = mana.random_batch(batch, normal=0, single_fault=10, two_fault=4)
+    labels = labels * normalization
     optimizer.zero_grad()
     outputs = diagnoser(inputs)
     loss = criterion(outputs, labels)
@@ -60,8 +63,8 @@ for epoch in range(epoch):
 print('Finished Training')
 
 #save model
-torch.save(diagnoser, "ann_model\\bpsk_mbs_isolator4.pkl")
-torch.save(diagnoser.state_dict(), "ann_model\\bpsk_mbs_isolator_para4.pkl")
+torch.save(diagnoser, "ann_model\\bpsk_mbs_predictor2.pkl")
+torch.save(diagnoser.state_dict(), "ann_model\\bpsk_mbs_predictor_para2.pkl")
 
 #choose figure 1
 pl.figure(1)
@@ -81,7 +84,8 @@ eval_loss = []
 batch2 = 1000
 epoch2 = 1000
 for i in range(epoch2):
-    inputs, labels, _ = mana2.random_batch(batch2, normal=0, single_fault=10, two_fault=4)
+    inputs, _, labels = mana2.random_batch(batch2, normal=0, single_fault=10, two_fault=4)
+    labels = labels * normalization
     outputs = diagnoser(inputs)
     loss = criterion(outputs, labels)
     eval_loss.append(loss.data[0])
