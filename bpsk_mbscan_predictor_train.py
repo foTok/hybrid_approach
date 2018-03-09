@@ -34,17 +34,17 @@ print(diagnoser)
 criterion = MSE
 #criterion = CrossEntropy
     #optimizer
-optimizer = optim.Adam(diagnoser.parameters(), lr=0.01, weight_decay=1.2e-3)
+optimizer = optim.Adam(diagnoser.parameters(), lr=0.005, weight_decay=1.8e-3)
 #optimizer = optim.SGD(diagnoser.parameters(), lr=0.01, momentum=0.9, weight_decay=1e-3)
 
     #train
-epoch = 3000
+epoch = 2000
 batch = 2000
 
 train_loss = []
 running_loss = 0.0
 normalization = Variable(torch.Tensor([10, 100, 100, 10, 10, 10**-6, 10**-6]))
-for epoch in range(epoch):
+for i in range(epoch):
     #label need normalization
     inputs, _, labels = mana.random_batch(batch, normal=0, single_fault=10, two_fault=4)
     labels = labels * normalization
@@ -56,8 +56,8 @@ for epoch in range(epoch):
 
     running_loss += loss.data[0]
     train_loss.append(loss.data[0])
-    if epoch % 10 == 9:
-        print('%d loss: %.5f' %(epoch + 1, running_loss / 10))
+    if i % 10 == 9:
+        print('%d loss: %.5f' %(i + 1, running_loss / 10))
         running_loss = 0.0
 
 print('Finished Training')

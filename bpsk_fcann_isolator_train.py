@@ -36,11 +36,11 @@ criterion = nn.MSELoss()
 optimzer = optim.SGD(diagnoser.parameters(), lr=0.1, momentum=0.9, weight_decay=1e-5)
 
     #train
-episode = 2000
+epoch = 2000
 batch = 2000
 train_loss = []
 running_loss = 0.0
-for epoch in range(episode):
+for i in range(epoch):
     inputs, labels, _ = mana.random_batch(batch)
     optimzer.zero_grad()
     outputs = diagnoser(inputs)
@@ -50,8 +50,8 @@ for epoch in range(episode):
 
     train_loss.append(loss.data[0])
     running_loss += loss.data[0]
-    if epoch % 10 == 9:
-        print('%d loss: %.5f' %(epoch + 1, running_loss / 10))
+    if i % 10 == 9:
+        print('%d loss: %.5f' %(i + 1, running_loss / 10))
         running_loss = 0.0
 
 print('Finished Training')

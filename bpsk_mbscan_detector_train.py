@@ -37,13 +37,13 @@ criterion = CrossEntropy
 optimizer = optim.SGD(diagnoser.parameters(), lr=0.06, momentum=0.9, weight_decay=1e-3)
 
     #train
-episode = 2000
+epoch = 2000
 batch = 2000
 
 train_loss = []
 running_loss = 0.0
-for epoch in range(episode):
-    inputs, labels, _ = mana.random_batch(batch, normal=0.5,single_fault=10, two_fault=4)
+for i in range(epoch):
+    inputs, labels, _, _ = mana.random_batch(batch, normal=0.5,single_fault=10, two_fault=4)
     labels = (torch.sum(labels, 1) > 0).float().view(batch, 1)
     optimizer.zero_grad()
     outputs = diagnoser(inputs)
@@ -53,8 +53,8 @@ for epoch in range(episode):
 
     train_loss.append(loss.data[0])
     running_loss += loss.data[0]
-    if epoch % 10 == 9:
-        print('%d loss: %.5f' %(epoch + 1, running_loss / 10))
+    if i % 10 == 9:
+        print('%d loss: %.5f' %(i + 1, running_loss / 10))
         running_loss = 0.0
 
 print('Finished Training')
@@ -80,7 +80,7 @@ eval_loss = []
 batch2 = 1000
 test_len = 1000
 for i in range(test_len):
-    inputs, labels, _ = mana.random_batch(batch2)
+    inputs, labels, _, _ = mana.random_batch(batch2)
     labels = (torch.sum(labels, 1) > 0).float().view(batch2, 1)
     outputs = diagnoser(inputs)
     loss = criterion(outputs, labels)

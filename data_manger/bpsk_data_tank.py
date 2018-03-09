@@ -4,7 +4,6 @@ data tank to manage data
 
 import os
 from collections import defaultdict
-
 import torch
 import numpy as np
 from torch.autograd import Variable
@@ -51,6 +50,8 @@ class BpskDataTank():
         self.mode = []
         #list of list
         self.para = []
+        #list of residuals
+        self.res = []
         #map from mode to data
         self.map = defaultdict(list)
 
@@ -61,16 +62,18 @@ class BpskDataTank():
         step_len = None if "step_len" not in kwargs else kwargs["step_len"]
         split_point = None if "split_point" not in kwargs else kwargs["split_point"]
         snr = None if "snr" not in kwargs else kwargs["snr"]
-        normal, fault = read_data(file_name, step_len, split_point, snr)
+        norm = False if "norm" not in kwargs else kwargs["norm"]
+        normal, fault, n_res, f_res = read_data(file_name, step_len, split_point, snr, norm)
         list_fault, list_parameters = parse_filename(file_name)
 
         mode = [0, 0, 0, 0, 0, 0]
         #para = [0, 0, 0, 0, 0, [0, 0]]
         para = [0, 0, 0, 0, 0, 0, 0]
         #normal data
-        for i in normal:
+        for i, r in zip(normal, n_res):
             self.map[tuple(mode)].append(len(self.input))
             self.input.append(i)
+            self.res.append(r)
             self.mode.append(tuple(mode))
             self.para.append(tuple(para))
 
@@ -85,9 +88,10 @@ class BpskDataTank():
                 para[6] = j[1]
             else:
                 para[index] = j
-        for i in fault:
+        for i, r in zip(fault, f_res):
             self.map[tuple(mode)].append(len(self.input))
             self.input.append(i)
+            self.res.append(r)
             self.mode.append(tuple(mode))
             self.para.append(tuple(para))
 
@@ -153,6 +157,7 @@ class BpskDataTank():
             input_data = Variable(torch.randn(batch, self.feature_num(), self.step_len()))
             mode = Variable(torch.randn(batch, 6))
             para = Variable(torch.randn(batch, 7))
+            res = []
             #counter
             i = -1
             for m in fault_num:
@@ -165,4 +170,5 @@ class BpskDataTank():
                     input_data[i] = torch.from_numpy(signal)
                     mode[i] = torch.Tensor(self.mode[index])
                     para[i] = torch.Tensor(self.para[index])
-            return input_data, mode, para
+                    res.append(self.res[index])
+            return input_data, mode, para, res

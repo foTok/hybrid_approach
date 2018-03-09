@@ -43,8 +43,8 @@ batch = 2000
 
 train_loss = []
 running_loss = 0.0
-for epoch in range(epoch):
-    inputs, labels, _ = mana.random_batch(batch, normal=0, single_fault=10, two_fault=4)
+for i in range(epoch):
+    inputs, labels, _, _ = mana.random_batch(batch, normal=0, single_fault=10, two_fault=4)
     optimizer.zero_grad()
     outputs = diagnoser(inputs)
     loss = criterion(outputs, labels)
@@ -53,8 +53,8 @@ for epoch in range(epoch):
 
     running_loss += loss.data[0]
     train_loss.append(loss.data[0])
-    if epoch % 10 == 9:
-        print('%d loss: %.5f' %(epoch + 1, running_loss / 10))
+    if i % 10 == 9:
+        print('%d loss: %.5f' %(i + 1, running_loss / 10))
         running_loss = 0.0
 
 print('Finished Training')
@@ -81,7 +81,7 @@ eval_loss = []
 batch2 = 1000
 epoch2 = 1000
 for i in range(epoch2):
-    inputs, labels, _ = mana2.random_batch(batch2, normal=0, single_fault=10, two_fault=4)
+    inputs, labels, _, _ = mana2.random_batch(batch2, normal=0, single_fault=10, two_fault=4)
     outputs = diagnoser(inputs)
     loss = criterion(outputs, labels)
     eval_loss.append(loss.data[0])

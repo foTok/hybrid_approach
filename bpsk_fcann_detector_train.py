@@ -34,11 +34,11 @@ criterion = nn.MSELoss()
 optimzer = optim.SGD(diagnoser.parameters(), lr=0.1, momentum=0.9, weight_decay=1e-5)
 
     #train
-episode = 20000
+epoch = 2000
 batch = 50
 
 train_loss = []
-for epoch in range(episode):
+for i in range(epoch):
     running_loss = 0.0
     inputs, labels = mana.random_normal_fault_batch(batch)
     #labels = labels.type(torch.LongTensor)
@@ -55,8 +55,8 @@ for epoch in range(episode):
     train_loss.append(loss.data[0])
 
     running_loss += loss.data[0]
-    if epoch % 10 == 9:
-        print('%d loss: %.5f' %(epoch + 1, running_loss / 10))
+    if i % 10 == 9:
+        print('%d loss: %.5f' %(i + 1, running_loss / 10))
         running_loss = 0.0
 
 print('Finished Training')

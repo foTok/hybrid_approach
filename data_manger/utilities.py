@@ -5,13 +5,20 @@ and transfers them so that could be used by diagnoser
 
 import os
 import numpy as np
+import matplotlib.pyplot as pl
 
-def read_data(file_name, step_len=None, split_point=None, snr=None):
+def read_data(file_name, step_len=None, split_point=None, snr=None, norm=False):
     """
     read data, and re-organise them
     """
     #sig: time_step × feature
     sig = np.load(file_name)
+    #normal sig: time_step × feature
+    if norm:
+        path = os.path.dirname(file_name)
+        base = os.path.basename(file_name)
+        normal_data = os.path.join(path, "normal", base)
+        n_sig = np.load(normal_data)
     #add noise
     if snr is not None:
         NOISE_POWER_RATIO = 1/(10**(snr/10)) if snr is not None else 0
@@ -23,16 +30,31 @@ def read_data(file_name, step_len=None, split_point=None, snr=None):
         sig = sig + noise
     split_point = int(len(sig) / 2) if split_point is None else split_point
     step_len = 100 if step_len is None else step_len
+
+    #residuals
+    n_res = []
+    f_res = []
+    if norm:
+        residuals = sig - n_sig
+        residuals = residuals[:, 1:]
+        # #figure
+        # pl.figure(1)
+        # pl.plot(residuals)
+        # pl.show()
     #normal data
     normal = []
     for i in range(split_point - step_len):
         normal.append(sig[i:i+step_len, :].T)
+        if norm:
+            n_res.append(residuals[i:i+step_len, :].T)
     #fault data
     fault = []
     for i in range(split_point, len(sig)-step_len):
         fault.append(sig[i:i+step_len, :].T)
+        if norm:
+            f_res.append(residuals[i:i+step_len, :].T)
 
-    return normal, fault
+    return normal, fault, n_res, f_res
 
 def get_file_list(path):
     """
@@ -51,3 +73,27 @@ def get_file_list(path):
 def para2name(usage, opt,lr, momentum, weight_decay, epoch):
     the_name = "usage={},opt={},lr={},momentum={},weight_decay={},epoch={}.pkl".format(usage, opt,lr, momentum, weight_decay, epoch)
     return the_name
+
+def statistic(labels, Z):
+    n11 = 0
+    n10 = 0
+    n01 = 0
+    n00 = 0
+    for i, j in zip(labels, Z):
+        if i == 1:
+            if j == 1:
+                n11 = n11 + 1
+            else:
+                n10 = n10 + 1
+        else:
+            if j == 1:
+                n01 = n01 + 1
+            else:
+                n00 = n00 + 1
+    n1 = n11 + n10
+    n0 = n01 + n00
+    p11 = n11 / n1
+    p10 = n10 / n1
+    p01 = n01 / n0
+    p00 = n00 / n0
+    return [p11, p10, p01, p00]
