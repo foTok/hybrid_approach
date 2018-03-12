@@ -70,12 +70,19 @@ class BpskDataTank():
         #para = [0, 0, 0, 0, 0, [0, 0]]
         para = [0, 0, 0, 0, 0, 0, 0]
         #normal data
-        for i, r in zip(normal, n_res):
-            self.map[tuple(mode)].append(len(self.input))
-            self.input.append(i)
-            self.res.append(r)
-            self.mode.append(tuple(mode))
-            self.para.append(tuple(para))
+        if norm:
+            for i, r in zip(normal, n_res):
+                self.map[tuple(mode)].append(len(self.input))
+                self.input.append(i)
+                self.res.append(r)
+                self.mode.append(tuple(mode))
+                self.para.append(tuple(para))
+        else:
+            for i in normal:
+                self.map[tuple(mode)].append(len(self.input))
+                self.input.append(i)
+                self.mode.append(tuple(mode))
+                self.para.append(tuple(para))
 
         #fault data
         #find faults and parameters
@@ -88,12 +95,19 @@ class BpskDataTank():
                 para[6] = j[1]
             else:
                 para[index] = j
-        for i, r in zip(fault, f_res):
-            self.map[tuple(mode)].append(len(self.input))
-            self.input.append(i)
-            self.res.append(r)
-            self.mode.append(tuple(mode))
-            self.para.append(tuple(para))
+        if norm:
+            for i, r in zip(fault, f_res):
+                self.map[tuple(mode)].append(len(self.input))
+                self.input.append(i)
+                self.res.append(r)
+                self.mode.append(tuple(mode))
+                self.para.append(tuple(para))
+        else:
+            for i in fault:
+                self.map[tuple(mode)].append(len(self.input))
+                self.input.append(i)
+                self.mode.append(tuple(mode))
+                self.para.append(tuple(para))
 
     def step_len(self):
         """
@@ -170,5 +184,6 @@ class BpskDataTank():
                     input_data[i] = torch.from_numpy(signal)
                     mode[i] = torch.Tensor(self.mode[index])
                     para[i] = torch.Tensor(self.para[index])
-                    res.append(self.res[index])
+                    if self.res:
+                        res.append(self.res[index])
             return input_data, mode, para, res

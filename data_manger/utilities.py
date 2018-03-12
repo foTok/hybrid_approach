@@ -92,8 +92,8 @@ def statistic(labels, Z):
                 n00 = n00 + 1
     n1 = n11 + n10
     n0 = n01 + n00
-    p11 = n11 / n1
-    p10 = n10 / n1
-    p01 = n01 / n0
-    p00 = n00 / n0
+    p11 = n11 / n1  #P(r=1|f=1)
+    p10 = n10 / n1  #P(r=0|f=1)
+    p01 = n01 / n0  #P(r=1|f=0)
+    p00 = n00 / n0  #P(r=0|f=0)
     return [p11, p10, p01, p00]
