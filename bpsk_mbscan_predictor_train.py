@@ -18,7 +18,6 @@ import numpy as np
 #prepare data
 PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '.'))
 DATA_PATH = PATH + "\\bpsk_navigate\\data\\"
-TEST_DATA_PATH = PATH + "\\bpsk_navigate\\data\\test\\"
 mana = BpskDataTank()
 
 step_len=100
@@ -26,27 +25,20 @@ list_files = get_file_list(DATA_PATH)
 for file in list_files:
     mana.read_data(DATA_PATH+file, step_len=step_len, snr=20)
 
-#set ann fullconnect diagnoser
-    #ANN
 diagnoser = PredictorBlockScan(step_len=mana.step_len())
 print(diagnoser)
-    #loss function
 criterion = MSE
-#criterion = CrossEntropy
-    #optimizer
 optimizer = optim.Adam(diagnoser.parameters(), lr=0.005, weight_decay=1.8e-3)
-#optimizer = optim.SGD(diagnoser.parameters(), lr=0.01, momentum=0.9, weight_decay=1e-3)
 
-    #train
+#train
 epoch = 2000
 batch = 2000
-
 train_loss = []
 running_loss = 0.0
 normalization = Variable(torch.Tensor([10, 100, 100, 10, 10, 10**-6, 10**-6]))
 for i in range(epoch):
     #label need normalization
-    inputs, _, labels = mana.random_batch(batch, normal=0, single_fault=10, two_fault=4)
+    inputs, _, labels, _ = mana.random_batch(batch, normal=0, single_fault=10, two_fault=4)
     labels = labels * normalization
     optimizer.zero_grad()
     outputs = diagnoser(inputs)
@@ -63,10 +55,10 @@ for i in range(epoch):
 print('Finished Training')
 
 #save model
-torch.save(diagnoser, "ann_model\\bpsk_mbs_predictor2.pkl")
-torch.save(diagnoser.state_dict(), "ann_model\\bpsk_mbs_predictor_para2.pkl")
+torch.save(diagnoser, "ann_model\\bpsk_mbs_predictor.pkl")
+torch.save(diagnoser.state_dict(), "ann_model\\bpsk_mbs_predictor_para.pkl")
 
-#choose figure 1
+#figure 1
 pl.figure(1)
 pl.plot(np.array(train_loss))
 pl.title("Training Loss")
@@ -84,13 +76,13 @@ eval_loss = []
 batch2 = 1000
 epoch2 = 1000
 for i in range(epoch2):
-    inputs, _, labels = mana2.random_batch(batch2, normal=0, single_fault=10, two_fault=4)
+    inputs, _, labels, _ = mana2.random_batch(batch2, normal=0, single_fault=10, two_fault=4)
     labels = labels * normalization
     outputs = diagnoser(inputs)
     loss = criterion(outputs, labels)
     eval_loss.append(loss.data[0])
 
-#choose figure 2
+#figure 2
 pl.figure(2)
 pl.plot(np.array(eval_loss))
 pl.title("Evaluation Loss")
