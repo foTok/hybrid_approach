@@ -5,8 +5,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
-from block_scan_pooling import BlockMaxPooling
-from math import ceil
 
 class DiagnoerBlockScan(nn.Module):
     """
