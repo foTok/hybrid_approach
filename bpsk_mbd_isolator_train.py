@@ -110,7 +110,7 @@ TEST_DATA_PATH = PATH + "\\bpsk_navigate\\data\\test\\"
 mana2 = BpskDataTank()
 list_files2 = get_file_list(TEST_DATA_PATH)
 for file in list_files2:
-    mana2.read_data(TEST_DATA_PATH+file, step_len=step_len, snr=20)
+    mana2.read_data(TEST_DATA_PATH+file, step_len=step_len, snr=20, norm=True)
 r1 = torch.load("ann_model\\r1.pkl")
 r2 = torch.load("ann_model\\r2.pkl")
 r3 = torch.load("ann_model\\r3.pkl")
