@@ -10,10 +10,10 @@ def hybrid_detector(model, data, alpha=0.01):
     alpha: adjustment factor
 
     judge = (P(f=1|d) * P(r|f=1)) / (P(f=0|d) * P(r|f=0))
-    cpt for mbd:#[  9.33880161e-01   6.61198389e-02   5.00000000e-04   9.99500000e-01]
+    cpt for mbd:#[ 0.99819285  0.00180715  0.1041675   0.8958325 ]
     """
     #      P(r=1|f=1)      P(r=0|f=1)      P(r=1|f=0)      P(r=0|f=0)
-    cpt = [9.33880161e-01, 6.61198389e-02, 5.00000000e-04, 9.99500000e-01]
+    cpt = [0.99819285,  0.00180715,  0.1041675,   0.8958325]
     f = []
     for r, p in zip(model, data):
         pf1d = shrink(p, alpha)

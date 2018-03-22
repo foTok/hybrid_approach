@@ -42,5 +42,5 @@ for i in range(epoch):
 
 aver_cpt = np.mean(np.array(cpt), axis=0)
 print(aver_cpt)
-#[  9.33880161e-01   6.61198389e-02   5.00000000e-04   9.99500000e-01]
+#[ 0.99819285  0.00180715  0.1041675   0.8958325 ]
 print('Finished Training')

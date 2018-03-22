@@ -35,6 +35,8 @@ ddm = torch.load(model)
 
 batch = 2000
 #diagnosis result
+d_r0 = None
+h_r0 = []
 d_r = None
 h_r = []
 inputs, labels, _, res = mana.random_batch(batch, normal=0,single_fault=10, two_fault=4)
@@ -42,7 +44,9 @@ labels = labels.data.numpy()
 #Data Driven
 priori = ddm(inputs).data.numpy()
 d_label = (priori > 0.5)
-d_r = [x==y for x,y in zip(d_label, labels)]
+d_r = [np.sum(x==y) == 6 for x,y in zip(d_label, labels)]
+d_r0 = [x==y for x,y in zip(d_label, labels)]
+d_a0 = (sum(d_r0)/len(d_r0))
 d_a = (sum(d_r)/len(d_r))
 
 #Hybrid
@@ -66,8 +70,12 @@ for i in range(len(inputs)):
             hybrid_isolator.add_consistency(pc[j])
     m_i = hybrid_isolator.most_probable(1)
     best = np.array(m_i[0])
-    h_r.append(best[0] == the_label)
+    h_r.append(np.sum(best[0] == the_label) == 6)
+    h_r0.append(best[0] == the_label)
+h_a0 = (sum(h_r0)/len(h_r0))
 h_a = (sum(h_r)/len(h_r))
 
+print("d_a0={}".format(d_a0))
+print("h_a0={}".format(h_a0))
 print("d_a={}".format(d_a))
 print("h_a={}".format(h_a))

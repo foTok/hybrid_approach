@@ -32,7 +32,7 @@ mana.info()
 detector = torch.load(MODEL_PATH+"bpsk_mbs_detector.pkl")
 detector.eval()
 
-epoch = 1000
+epoch = 100
 batch = 1000
 cpt_m = []
 cpt_d = []
