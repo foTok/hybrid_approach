@@ -1,6 +1,7 @@
 """
-This file finding probability of residuals for fault detection
+This file finding probability of residuals for fault isolation
 """
+
 
 import os
 import numpy as np
@@ -29,18 +30,7 @@ mana.info()
 #train
 epoch = 2000
 batch = 2000
+
 cpt = []
 for i in range(epoch):
-    print("epoch = {}".format(i))
-    inputs, labels, _, res = mana.random_batch(batch, normal=0.5,single_fault=10, two_fault=4)
-    labels = (torch.sum(labels, 1) > 0).float().view(-1, 1)
-    labels = labels.data.numpy()
-    Z = Z_test(res, 0.98)
-    Z = [1 if True in i else 0 for i in Z]
-    p = statistic(labels, Z)
-    cpt.append(p)
-
-aver_cpt = np.mean(np.array(cpt), axis=0)
-print(aver_cpt)
-#[  9.33880161e-01   6.61198389e-02   5.00000000e-04   9.99500000e-01]
-print('Finished Training')
+    

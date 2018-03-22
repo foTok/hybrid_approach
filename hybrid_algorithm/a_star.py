@@ -4,13 +4,13 @@ A* search for fault isolation
 
 import torch
 import numpy as np
-from hybrid_detector import shrink
+from hybrid_algorithm.hybrid_detector import shrink
 
 class a_star:
     """
     A* search
     """
-    def __init__(self, fault_num, epsilon=5e-3, beta=1e-10):
+    def __init__(self, fault_num, epsilon=1e-1, beta=1e-1):
         """
         conflict/consistency set: a set of fault type. start from 0
         """
@@ -20,7 +20,6 @@ class a_star:
         self.priori = None          #numpy arrary of priori probabilities
         self.epsilon = epsilon      #epsilon
         self.beta = beta            #beta
-        self.ddm = None             #data driven model
         self.queue = []             #search queue, queue = [(health_state1, cost1), (health_state2, cost2) ...]
 
     def add_conflict(self, conf):
@@ -35,19 +34,18 @@ class a_star:
         """
         self.consistency.append(consis)
 
-    def load_ddm(self, model):
+    def clear_conf_consis(self):
         """
-        load data driven model
-        model: string, model name
+        clear all conflicts and consistencies
         """
-        self.ddm = torch.load(model)
+        self.conflict = []
+        self.consistency = []
 
-    def set_priori(self, obs):
+    def set_priori(self, priori):
         """
         set priori probability based on observation
         """
-        priori = self.ddm(obs)
-        self.priori = priori.data.numpy()
+        self.priori = np.array([shrink(x, 1e-15) for x in priori])
 
     def zero_residual_num4i(self, i):
         """
@@ -76,6 +74,8 @@ class a_star:
         if len(health_state) < len(conflict):
             return 0
         for i in conflict:
+            if i >= len(health_state):
+                return 0
             if health_state[i] == 1:
                 return 0
         return 1
@@ -114,7 +114,13 @@ class a_star:
         #conflict solve cost
         conflict_solve_cost = self.unsolve_conflict_num(health_state) * beta_cost
 
-        cost = priori_cost + consistency_break_cost + conflict_solve_cost
+        #estimated cost
+        last_priori = self.priori[len(health_state):]
+        max_last_priori = [x if x > 0.5 else 1-x for x in last_priori]
+        neg_ln_max_last_priori = [-np.log(x) for x in max_last_priori]
+        estimated_cost = sum(neg_ln_max_last_priori)
+
+        cost = priori_cost + consistency_break_cost + conflict_solve_cost + estimated_cost
         return cost
 
     def init_queue(self):
@@ -136,12 +142,12 @@ class a_star:
         assert len(health_state) < self.fault_num
         # 0
         health_state0 = health_state[:]
-        health_state0.append[0]
+        health_state0.append(0)
         cost0 = self.cost(health_state0)
         self.queue.append((health_state0, cost0))
         # 1
         health_state1 = health_state[:]
-        health_state1.append[1]
+        health_state1.append(1)
         cost1 = self.cost(health_state1)
         self.queue.append((health_state1, cost1))
 

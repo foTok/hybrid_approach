@@ -11,7 +11,8 @@ def Z_test(res, alpha):
     """
     #confidence
     thresh = stats.norm.ppf(1-(1-alpha)/2)
-    delta = array([0.01, 0.005, 0.005, 0.3])
+    #[0.01, 0.005, 0.005, 0.3]
+    delta = array([0.01, 0.0002, 0.005, 0.3])
     res = array(res)
     res = np.abs(res)
     res = np.mean(res, axis=2)
