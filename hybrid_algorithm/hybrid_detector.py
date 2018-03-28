@@ -2,7 +2,7 @@
 hybrid detector
 """
 
-def hybrid_detector(model, data, alpha=0.01):
+def hybrid_detector(model, data, alpha=0.0001):
     """
     combing result in model and data together
     model: residuals, batch × {0, 1}
