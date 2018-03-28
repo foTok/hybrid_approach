@@ -28,7 +28,7 @@ for file in list_files:
     mana.read_data(DATA_PATH+file, step_len=step_len, snr=20, norm=True)
 
 pc = [{0, 1, 2}, {3}, {0, 1, 2, 3, 4}, {0, 1, 2, 3, 4, 5}]
-model = MODEL_PATH + "bpsk_mbs_isolator.pkl"
+model = MODEL_PATH + "bpsk_mbs_isolator3.pkl"
 hybrid_isolator = a_star(6)
 ddm = torch.load(model)
 
@@ -39,7 +39,7 @@ d_r0 = None
 h_r0 = []
 d_r = None
 h_r = []
-inputs, labels, _, res = mana.random_batch(batch, normal=0,single_fault=10, two_fault=4)
+inputs, labels, _, res = mana.random_batch(batch, normal=0,single_fault=10, two_fault=1)
 labels = labels.data.numpy()
 #Data Driven
 priori = ddm(inputs).data.numpy()
@@ -48,6 +48,11 @@ d_r = [np.sum(x==y) == 6 for x,y in zip(d_label, labels)]
 d_r0 = [x==y for x,y in zip(d_label, labels)]
 d_a0 = (sum(d_r0)/len(d_r0))
 d_a = (sum(d_r)/len(d_r))
+
+#to debug
+# for i in range(len(d_r)):
+#     if not d_r[i]:
+#         print("d_priori={}, label={}".format(priori[i], labels[i]))
 
 #Hybrid
 #find residuals
@@ -71,6 +76,10 @@ for i in range(len(inputs)):
     m_i = hybrid_isolator.most_probable(1)
     best = np.array(m_i[0])
     h_r.append(np.sum(best[0] == the_label) == 6)
+    #to debug
+    # if not (np.sum(best[0] == the_label) == 6):
+    #     print("priori={}, res={}, best={}, label={}".format(priori[i, :], Z_i, best[0], the_label))
+    #     m_i = hybrid_isolator.most_probable(1)
     h_r0.append(best[0] == the_label)
 h_a0 = (sum(h_r0)/len(h_r0))
 h_a = (sum(h_r)/len(h_r))

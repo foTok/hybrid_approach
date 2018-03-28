@@ -29,16 +29,16 @@ list_files = get_file_list(DATA_PATH)
 for file in list_files:
     mana.read_data(DATA_PATH+file, step_len=step_len, snr=20, norm=True)
 mana.info()
-detector = torch.load(MODEL_PATH+"bpsk_mbs_detector.pkl")
+detector = torch.load(MODEL_PATH+"bpsk_mbs_detector2.pkl")
 detector.eval()
 
-epoch = 100
+epoch = 1000
 batch = 1000
 cpt_m = []
 cpt_d = []
 cpt_h = []
 for i in range(epoch):
-    inputs, labels, _, res = mana.random_batch(batch, normal=0.5,single_fault=10, two_fault=4)
+    inputs, labels, _, res = mana.random_batch(batch, normal=0.8,single_fault=10, two_fault=1)
     labels = (torch.sum(labels, 1) > 0).float().view(-1, 1)
     labels = labels.data.numpy()
     #MBD

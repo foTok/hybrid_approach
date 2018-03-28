@@ -36,6 +36,14 @@ def shrink(p, alpha):
     """
     return (1-2*alpha)*p + alpha
 
+def shrink_vector(p_v, alpha_v):
+    """
+    shrink a vector
+    """
+    assert len(p_v) == len(alpha_v)
+    s_r = [shrink(p, alpha) for p, alpha in zip(p_v, alpha_v)]
+    return s_r
+
 def shrink_cpt(cpt, alpha):
     """
     shrink a conditional probability table
@@ -44,3 +52,17 @@ def shrink_cpt(cpt, alpha):
     for i in range(len(cpt)):
         cpt2[i] = shrink(cpt[i], alpha)
     return cpt2
+
+def half_shrink(p, alpha):
+    """
+    shrink a probability into [0, 0.5]
+    """
+    return shrink(p, alpha) * 0.5
+
+def half_shrink_vector(p_v, alpha_v):
+    """
+    half shrink a vector
+    """
+    assert len(p_v) == len(alpha_v)
+    s_r = [0.5 * shrink(p, alpha) for p, alpha in zip(p_v, alpha_v)]
+    return s_r

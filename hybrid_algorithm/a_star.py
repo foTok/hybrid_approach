@@ -4,13 +4,15 @@ A* search for fault isolation
 
 import torch
 import numpy as np
-from hybrid_algorithm.hybrid_detector import shrink
+from hybrid_algorithm.hybrid_detector import shrink_vector
+from hybrid_algorithm.hybrid_detector import half_shrink_vector
+
 
 class a_star:
     """
     A* search
     """
-    def __init__(self, fault_num, epsilon=1e-1, beta=1e-1):
+    def __init__(self, fault_num, epsilon=3e-1, beta=3e-1):
         """
         conflict/consistency set: a set of fault type. start from 0
         """
@@ -45,7 +47,12 @@ class a_star:
         """
         set priori probability based on observation
         """
-        self.priori = np.array([shrink(x, 1e-15) for x in priori])
+        p = [ 0.97532729,  0.98136959,  0.98992951,  0.99144008,  0.83987915,  0.97230614]
+        p = np.array(p)
+        alpha = 1 - p
+        priori = shrink_vector(priori, alpha)
+        #priori = half_shrink_vector(priori, alpha)
+        self.priori = np.array(priori)
 
     def zero_residual_num4i(self, i):
         """

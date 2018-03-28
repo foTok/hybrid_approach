@@ -28,7 +28,8 @@ for file in list_files:
 diagnoser = DiagnoerBlockScan(step_len=mana.step_len())
 print(diagnoser)
 criterion = CrossEntropy
-optimizer = optim.SGD(diagnoser.parameters(), lr=0.06, momentum=0.9, weight_decay=1e-3)
+optimizer = optim.Adam(diagnoser.parameters(), lr=0.001, weight_decay=5e-3)
+#optimizer = optim.SGD(diagnoser.parameters(), lr=0.005, momentum=0.1, weight_decay=3e-3)
 
 #train
 epoch = 2000
@@ -36,7 +37,7 @@ batch = 2000
 train_loss = []
 running_loss = 0.0
 for i in range(epoch):
-    inputs, labels, _, _ = mana.random_batch(batch, normal=0, single_fault=10, two_fault=4)
+    inputs, labels, _, _ = mana.random_batch(batch, normal=0, single_fault=10, two_fault=1)
     optimizer.zero_grad()
     outputs = diagnoser(inputs)
     loss = criterion(outputs, labels)
@@ -51,8 +52,8 @@ for i in range(epoch):
 print('Finished Training')
 
 #save model
-torch.save(diagnoser, "ann_model\\bpsk_mbs_isolator.pkl")
-torch.save(diagnoser.state_dict(), "ann_model\\bpsk_mbs_isolator_para.pkl")
+torch.save(diagnoser, "ann_model\\bpsk_mbs_isolator3.pkl")
+torch.save(diagnoser.state_dict(), "ann_model\\bpsk_mbs_isolator_para3.pkl")
 
 #figure 1
 pl.figure(1)
@@ -67,13 +68,13 @@ mana2 = BpskDataTank()
 list_files2 = get_file_list(TEST_DATA_PATH)
 for file in list_files2:
     mana2.read_data(TEST_DATA_PATH+file, step_len=step_len, snr=20)
-isolator = torch.load("ann_model\\bpsk_mbs_isolator.pkl")
+isolator = torch.load("ann_model\\bpsk_mbs_isolator3.pkl")
 isolator.eval()
 eval_loss = []
 batch2 = 1000
 epoch2 = 1000
 for i in range(epoch2):
-    inputs, labels, _, _ = mana2.random_batch(batch2, normal=0, single_fault=10, two_fault=4)
+    inputs, labels, _, _ = mana2.random_batch(batch2, normal=0, single_fault=10, two_fault=1)
     outputs = isolator(inputs)
     loss = criterion(outputs, labels)
     eval_loss.append(loss.data[0])
