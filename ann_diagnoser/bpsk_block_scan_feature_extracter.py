@@ -51,7 +51,9 @@ class BlockScanFE(nn.Module):#feature extracter, FE
         self.fc_sequence = nn.Sequential(
                             nn.Linear(4*20*20, 4*5),
                             nn.ReLU(),
-                            nn.BatchNorm1d(4*5)
+                            nn.BatchNorm1d(4*5),
+                            nn.ReLU(),
+                            nn.Threshold(0.1, 1)
                           )
         #fault predictor
         self.fc1 = nn.Linear(4*5, 6)

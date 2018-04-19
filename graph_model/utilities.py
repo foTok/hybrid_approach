@@ -2,6 +2,8 @@
 some utilities
 """
 
+import numpy as np
+
 def number2vector(num, n):
     """
     convert a int number into a n bit vector
@@ -14,7 +16,7 @@ def vector2number(vec):
     """
     convert a vector to number
     """
-    str_vec = [str(i) for i in vec]
+    str_vec = [str(int(i)) for i in vec]
     str_bin_num = ''.join(str_vec)
     num = int(str_bin_num, 2)
     return num
