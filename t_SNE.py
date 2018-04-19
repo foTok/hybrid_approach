@@ -23,7 +23,7 @@ for file in list_files:
     mana.read_data(DATA_PATH+file, step_len=step_len, snr=20)
 
 batch = 2000
-FE_test = torch.load("ann_model\\FE2.pkl")
+FE_test = torch.load("ann_model\\FE3.pkl")
 FE_test.eval()
 inputs, labels, _, _ = mana.random_batch(batch, normal=0, single_fault=10, two_fault=1)
 features = FE_test.fe(inputs)
