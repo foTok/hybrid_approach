@@ -19,7 +19,6 @@ PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '.'))
 DATA_PATH = PATH + "\\bpsk_navigate\\data\\"
 step_len=100
 criterion = CrossEntropy
-optimizer = optim.Adam(FE.parameters(), lr=0.001, weight_decay=5e-3)
 
 mana = BpskDataTank()
 list_files = get_file_list(DATA_PATH)
@@ -27,6 +26,7 @@ for file in list_files:
     mana.read_data(DATA_PATH+file, step_len=step_len, snr=20)
 
 FE = BlockScanFE()
+optimizer = optim.Adam(FE.parameters(), lr=0.001, weight_decay=5e-3)
 print(FE)
 
 #train
