@@ -2,8 +2,12 @@
 learning Bayesian model
 """
 import numpy as np
-from utilities import vector2number
-from utilities import number2vector
+from math import log2
+from graph_model.utilities import vector2number
+from graph_model.utilities import number2vector
+
+#small number to avoid numeric problems
+alpha = 1e-20
 
 class Bayesian_structure:
     """
@@ -74,6 +78,7 @@ class Bayesian_structure:
         if self.i == self.n:
             raise StopIteration
         parents = list(self.struct[self.i, :])
+        parents = [i for i, v in enumerate(parents) if v==1]
         kid = [self.i]
         fml = parents + kid
         self.i = self.i + 1
@@ -83,102 +88,265 @@ class Bayesian_learning:
     """
     learning Bayesian model from data
     """
-    def __init__(self, gama=0.1):
-        self.gama = gama
-        self.queue = []             #search queue, queue = [(structure, cost)...]
-        self.queue_set = set()      #store the existing structure in self.queue to chekc conveniently
-        self.rule = []              #priori knowledge about system structure, [(i, j , d)...]
-        self.local_cache = {}       #{local:cost}
-        self.batch  = None          #data for the current batch, batch × (label + residuals + features)
-        self.batch_cache = set()    #store computed cpt in this batch
+    def __init__(self):
+        #queue
+        self.queue = {}             #We call it search queue although it is a dict, queue = {G:cost,...].
+        #priori knowledge
+        self.known_edge = []        #priori knowledge about system structure, [(i, j , d)...]. Edges in this list exist.
+        self.no_edge = []           #priori knowledge about system structure, [(i, j , d)...]. Edges in this list never exist.
+        #batch
+        self.batch  = None          #data for the current batch, batch × (label + residuals + features).
+        self.decay  = 0             #regular factor
+        #cache
+        self.JPT_cache = {}         #cache for JPT (Joint Probability Distribution) of a Joint Random Variables: {JRV:[JPT, N]}.
+                                    #JRV is a tuple: nodes are put in ascending order.
+                                    #JPT is a np.array() whose size is 2^n.
+                                    #N is the batch number where the batchs contribute the JPT.
+                                    #Some values in it will be updated in each iteration but the diction will NOT be cleared.
+        self.batch_JPT_cache = set()#batch JPT cache. Should be cleared and updated in each iteration.
+                                    #NOTICE: This set just store the JRV that computed from batch
+                                    #the real JPT is merged into self.JPT_cache.
+        self.l_cost_cache = {}      #Likelihood cost cache for each family. Should be cleared and updated in each iteration.
+                                    #{FML:l_cost}. FML:(p1,p2,...pn, kid)
+                                    #because JPT may change because of new batch.
+        self.r_cost_cache = {}      #Regular cost cache for each family. Should NOT be cleared.
+                                    #{FML:r_cost}.
+        self.graph_l_cost_cache = {}#Likelihood cost cache for a graph. Should be cleard and updated in each iteration.
+                                    #{G:cost,...}.
+        self.graph_r_cost_cache = {}#Regular cost cache for a graph. Should NOT be cleared.
+                                    #{G:cost,...}.
+    #For queue
+    def init_queue(self):
+        """
+        init the search queue
+        """
+        #TODO
+        pass
 
+    def add_struct2queue(self, struct, cost):
+        """
+        add a struct and its cost into the queue.
+        """
+        self.queue[struct] = cost
+
+    def best_candidate(self):
+        """
+        get the best candidate
+        """
+        queue = self.queue
+        best = min(zip(queue.values(),queue.keys()))
+        return best[1]
+
+    #For self.batch
     def set_batch(self, batch):
         """
         set the current batch
         """
         self.batch = batch
+        n = len(batch)
+        self.decay = log2(n)/(2*n)
 
-    def cpt_from_local_cache(self, fml):
+    #For self.JPT_cache
+    def JPT_cache_has(self, JRV):
         """
-        obtain the Conditional Probability Table (CPT) of family fml from the self.local_cache
+        check if self.JPT_cache has JRV
         """
-        if self.local_cache_has(fml):
-            return self.local_cache[fml]
-        return None
+        return JRV in self.JPT_cache
 
-    def cpt_from_data(self, fml):
+    def JPT_from_cache(self, JRV):
         """
-        compute the Conditional Probability Table (CPT) of family fml from the current batch
-        fml:[1,2,3,...,kid], the last one the kid, others are the parents.
+        obtain the JPT of JRV from the self.JPT_cache
+        """
+        return self.JPT_cache[JRV][0]
+
+    def JPT_weight_in_cache(self, JRV):
+        """
+        return JPT weight
+        """
+        return self.JPT_cache[JRV][1]
+
+    #for self.batch_JPT_cache
+    def batch_JPT_cache_has(self, JRV):
+        """
+        return if self.batch_JPT_cache has JRV
+        """
+        return JRV in self.batch_JPT_cache
+
+    def JPT_from_batch(self, JRV):
+        """
+        compute the JPT of JVR from the current batch
         """
         #index of parents and kid
-        data = self.batch[:, fml]
-        n = len(fml)
-        cpt = [0] * (2**n)
+        data = self.batch[:, JRV]
+        n = len(JRV)
+        JPT = [0] * (2**n)
         for i in range(2**n):
             vec = number2vector(i, n)
             comp = (vec == data)
             result = [x.all() for x in comp]
             # +1 to avoid sum(result)=0 cause numeric problems
-            cpt[i] = sum(result) + 1
+            JPT[i] = sum(result) + 1
         for i in range(0, 2**n, 2):
-            num = cpt[i] + cpt[i+1]
-            cpt[i] = cpt[i] / num
-            cpt[i+1] = 1 - cpt[i]
-        return np.array(cpt)
+            num = JPT[i] + JPT[i+1]
+            JPT[i] = JPT[i] / num
+            JPT[i+1] = 1 - JPT[i]
+        return np.array(JPT)
 
-    def queue_has(self, struct):
+    #For cost
+    #for likelihood cost
+    def l_cost_cache_has(self, fml):
         """
-        check if self.queue has the structure
+        return if self.l_cost_cache has fml
         """
-        return struct in self.queue_set
+        return fml in self.l_cost_cache
 
-    def batch_cache_has(self, fml):
+    def l_cost_from_cache(self, fml):
         """
-        check if family fml is in self.batch_cpt
+        return cached cost
         """
-        return fml in self.batch_cache
+        return self.l_cost_cache[fml]
 
-    def local_cache_has(self, fml):
+    def graph_l_cost_cache_has(self, graph):
         """
-        check if self.local_cache has fml
+        return if self.graph_l_cost_cache has graph
         """
-        return fml in self.local_cache
+        return graph in self.graph_l_cost_cache
 
-    def add_fml2batch_cache(self, fml):
+    def graph_l_cost_from_cache(self, graph):
         """
-        add family fml into self.batch_cache
+        return cached cost
         """
-        self.batch_cache.add(fml)
+        return self.graph_l_cost_cache[graph]
 
-    def add_struct2queue(self, struct, cost):
+    def l_cost(self, graph):
         """
-        add a struct and its cost into the queue.
-        and store it in the struct set
+        compute the likelihood cost
         """
-        self.queue.append((struct, cost))
-        self.queue_set.add(struct)
-   
-    def init_queue(self):
-        """
-        init the search queue
-        """
-        pass
+        if self.graph_l_cost_cache_has(graph):
+            return self.l_cost_from_cache(graph)
+        #Now we know that the likelihood cache is not computed for the current batch
+        cost = 0
+        for fml in graph:
+            if self.l_cost_cache_has(fml):
+                cost = cost + self.l_cost_from_cache(fml)
+            else:#Now we know the fml is not cached
+                cost = cost + self.fml_l_cost(fml)
+        return cost
 
-    def sort_queue(self):
+    def fml_l_cost(self, fml):
         """
-        sort the queue. structure with minimal cost in the first
+        compute l_cost for family fml
         """
-        self.queue = sorted(self.queue, key=lambda item:item[1])
+        if len(fml)<=1:
+            return 0
+        #parents
+        par = fml[:-1]
+        #kid
+        kid = fml[-1:]
+        #ordered fml
+        ordered_fml = tuple(sorted(list(fml)))
+        #par_JPT, kid_JPT, fml_JPT
+        par_JPT = self.get_JPT(par)
+        kid_JPT = self.get_JPT(kid)
+        fml_JPT = self.get_JPT(ordered_fml)
+        cost = self.information_gain_cost(par, par_JPT, kid, kid_JPT, ordered_fml, fml_JPT)
+        return cost
+    
+    def information_gain_cost(self, par, par_JPT, kid, kid_JPT, fml, fml_JPT):
+        """
+        compute information gain
+        par, kid and fml are tuples and variables in them are in ascending order
+        """
+        kid_index = fml.index(kid[0])
+        n = len(fml)
+        cost = 0
+        for i in range(2**n):
+            #family vector
+            fml_vec = number2vector(i, n)
+            #kid vector
+            kid_vec = [fml_vec[kid_index]]
+            #par vector
+            par_vec = fml_vec[:]
+            del par_vec[kid_index]
+            #find index in JPT for par and kid
+            i_p = vector2number(par_vec)
+            i_k = vector2number(kid_vec)
+            cost = cost + fml_JPT[i] * log2((par_JPT(i_p) * kid_JPT[i_k] + alpha)/ (fml_JPT[i] + alpha))
+        return cost
 
-    def cost(self, struct):
+    #get JPT
+    def get_JPT(self, JVR):
+        """
+        Get a JPT from cache or batch. Update or add automatically.
+        """
+        #please make sure JVR is listed in ascending order
+        if self.batch_JPT_cache_has(JVR):
+            JPT = self.JPT_from_cache(JVR)
+        else:#We must update par_JPT from data
+            tmp_JPT = self.JPT_from_batch(JVR)
+            if self.JPT_cache_has(JVR):#should update
+                cached_JPT = self.JPT_from_cache(JVR)
+                cached_weight = self.JPT_weight_in_cache(JVR)
+                JPT = (cached_weight/(cached_weight + 1))*cached_JPT\
+                     +(1/(cached_weight + 1))*tmp_JPT
+                #update par_JPT
+                self.JPT_cache[JVR] = [JPT, cached_weight + 1]
+            else:#should add
+                JPT = tmp_JPT
+                self.JPT_cache[JVR] = [JPT, 1]
+        return JPT
+
+    #for regular cost
+    def r_cost_cache_has(self, fml):
+        """
+        return if self.r_cost_cache has fml
+        """
+        return fml in self.r_cost_cache
+
+    def r_cost_from_cache(self, fml):
+        """
+        return cached regular cost
+        """
+        return self.r_cost_cache[fml]
+
+    def graph_r_cost_cache_has(self, graph):
+        """
+        return if self.graph_r_cost_cache has graph
+        """
+        return graph in self.graph_r_cost_cache
+
+    def graph_r_cost_from_cache(self, graph):
+        """
+        return cached graph regular cost
+        """
+        return self.graph_r_cost_cache[graph]
+
+    def r_cost(self, graph):
+        """
+        compute the regular cost for graph
+        """
+        if self.graph_r_cost_cache_has(graph):
+            return self.graph_r_cost_from_cache(graph)
+        #Now we know the regular cost is not computed for the graph
+        cost = 0
+        for fml in graph:
+            if self.r_cost_cache_has(fml):
+                cost = cost + self.r_cost_from_cache(fml)
+            else:#Now we know the fml is not cached
+                n = len(fml)
+                fml_cost = 2**(n-1)
+                self.r_cost_cache[fml] = fml_cost #add it to cache
+                cost = cost + fml_cost
+        return cost
+
+    #Cost
+    def cost(self, graph):
         """
         compute the cost of a structure
         """
-        cost = 0
-        for fml in struct:
-            if not self.batch_cache_has(fml):
-                cpt = self.cpt_from_data(fml)
-                pass
-            else:
-                pass
+        cost = self.l_cost(graph) + (self.decay * self.r_cost(graph))
+        return cost
+        
+    #TODO
+    #satisfy acycle ?
+    #satisfy priori ?
