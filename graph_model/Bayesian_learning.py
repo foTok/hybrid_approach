@@ -21,7 +21,7 @@ class Bayesian_structure:
         self.n = n
         self.struct = np.array([[0] * n] * n)
 
-    def set_edge(self, i, j):
+    def add_edge(self, i, j):
         """
         set connection from node i to node j
         """
@@ -51,6 +51,44 @@ class Bayesian_structure:
         """
         assert i != j
         return self.struct[i, j]
+
+    def is_DAG_DFS(self, i, color):
+        """
+        deep first search
+        return if it is acycle in this search
+        True: acycle
+        False:cycle
+        """
+        color[i] = 1
+        for j in range(self.n):
+            if self.struct[i, j] != 0:
+                if color[j] == 1:
+                    return False
+                elif color[j] == -1:
+                    continue
+                else:
+                    if not self.is_DAG_DFS(j, color):
+                        return False
+        color[i] == -1
+        return True
+
+    def is_acycle(self):
+        """
+        check if the structure is acycle
+        """
+        color = [0]*self.n
+        for i in range(self.n):
+            if not self.is_DAG_DFS(i, color):
+                return False
+        return True
+
+    def clone(self):
+        """
+        clone it
+        """
+        copy = Bayesian_structure(self.n)
+        copy.struct = self.struct.copy()
+        return copy
 
     def __eq__(self, other):
         """
@@ -88,12 +126,14 @@ class Bayesian_learning:
     """
     learning Bayesian model from data
     """
-    def __init__(self):
+    def __init__(self, n):
+        #nodes number
+        self.n = n
         #queue
         self.queue = {}             #We call it search queue although it is a dict, queue = {G:cost,...].
         #priori knowledge
-        self.known_edge = []        #priori knowledge about system structure, [(i, j , d)...]. Edges in this list exist.
-        self.no_edge = []           #priori knowledge about system structure, [(i, j , d)...]. Edges in this list never exist.
+        self.known_edge = set()     #priori knowledge about system structure, {(i, j)...}. Edges in this list exist.
+        self.no_edge = set()        #priori knowledge about system structure, {(i, j)...}. Edges in this list never exist.
         #batch
         self.batch  = None          #data for the current batch, batch × (label + residuals + features).
         self.decay  = 0             #regular factor
@@ -103,15 +143,15 @@ class Bayesian_learning:
                                     #JPT is a np.array() whose size is 2^n.
                                     #N is the batch number where the batchs contribute the JPT.
                                     #Some values in it will be updated in each iteration but the diction will NOT be cleared.
-        self.batch_JPT_cache = set()#batch JPT cache. Should be cleared and updated in each iteration.
+        self.batch_JPT_cache = set()#batch JPT cache. Should BE cleared and updated in each iteration.
                                     #NOTICE: This set just store the JRV that computed from batch
                                     #the real JPT is merged into self.JPT_cache.
-        self.l_cost_cache = {}      #Likelihood cost cache for each family. Should be cleared and updated in each iteration.
+        self.l_cost_cache = {}      #Likelihood cost cache for each family. Should BE cleared and updated in each iteration.
                                     #{FML:l_cost}. FML:(p1,p2,...pn, kid)
                                     #because JPT may change because of new batch.
         self.r_cost_cache = {}      #Regular cost cache for each family. Should NOT be cleared.
                                     #{FML:r_cost}.
-        self.graph_l_cost_cache = {}#Likelihood cost cache for a graph. Should be cleard and updated in each iteration.
+        self.graph_l_cost_cache = {}#Likelihood cost cache for a graph. Should BE cleard and updated in each iteration.
                                     #{G:cost,...}.
         self.graph_r_cost_cache = {}#Regular cost cache for a graph. Should NOT be cleared.
                                     #{G:cost,...}.
@@ -120,8 +160,11 @@ class Bayesian_learning:
         """
         init the search queue
         """
-        #TODO
-        pass
+        graph = Bayesian_structure(self.n)
+        for edge in self.known_edge:
+            graph.add_edge(edge[0], edge[1])
+        cost = self.cost(graph)
+        self.queue[graph] = cost
 
     def add_struct2queue(self, struct, cost):
         """
@@ -136,6 +179,20 @@ class Bayesian_learning:
         queue = self.queue
         best = min(zip(queue.values(),queue.keys()))
         return best[1]
+
+    #For priori knowledge
+    def add_known_edge(self, i, j):
+        """
+        add a known edge (i==>j)
+        """
+        self.known_edge.add((i, j))
+
+    def add_no_edge(self, i, j):
+        """
+        add no edge means both edges (i==>j) and (j==>i) don't exist
+        """
+        self.no_edge.add((i, j))
+        self.no_edge.add((j, i))
 
     #For self.batch
     def set_batch(self, batch):
@@ -347,6 +404,67 @@ class Bayesian_learning:
         cost = self.l_cost(graph) + (self.decay * self.r_cost(graph))
         return cost
         
-    #TODO
-    #satisfy acycle ?
-    #satisfy priori ?
+    #if the graph is valid
+    def priori_obeyed_by(self, graph):
+        """
+        check if the priori knowledge is obeyed by the graph
+        """
+        #existing edges
+        for edge in self.known_edge:
+            if not graph.get_edge(edge[0], edge[1]):
+                return False
+        #no edges
+        for edge in self.no_edge:
+            if graph.get_edge(edge[0], edge[1]):
+                return False
+        return True
+
+    def valid_graph(self, graph):
+        """
+        DAG + obey priori knowledge
+        """
+        if not graph.is_acycle():
+            return False
+        if not self.priori_obeyed_by(graph):
+            return False
+        return True
+
+    def step(self):
+        """
+        step forward
+        """
+        #clear some cache
+        self.batch_JPT_cache.clear()
+        self.l_cost_cache.clear()
+        self.graph_l_cost_cache.clear()
+        #pick out the current best candidate
+        best = self.best_candidate()
+        #change randomly
+        for i in range(self.n):
+            for j in range(i+1, self.n):
+                if best.get_edge(i, j) or best.get_edge(j, i):#there are edges
+                    #remove edge
+                    rem_best = best.clone()
+                    rem_best.remove_edge(i, j)
+                    if self.valid_graph(rem_best):
+                        rem_cost = self.cost(rem_best)
+                        self.queue[rem_best] = rem_cost
+                    #reverse edge
+                    rev_best = best.clone()
+                    rev_best.reverse_edge(i, j)
+                    if self.valid_graph(rev_best):
+                        rev_cost = self.cost(rev_best)
+                        self.queue[rev_best] = rev_cost
+                else:#there is no edge
+                    #add i==>j 
+                    addij_best = best.clone()
+                    addij_best.add_edge(i, j)
+                    if self.valid_graph(addij_best):
+                        addij_cost = self.cost(addij_best)
+                        self.queue[addij_best] = addij_cost
+                    #add j==>i
+                    addji_best = best.clone()
+                    addji_best.add_edge(j, i)
+                    if self.valid_graph(addji_best):
+                        addji_cost = self.cost(addji_best)
+                        self.queue[addji_best] = addji_cost

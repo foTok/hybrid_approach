@@ -26,7 +26,7 @@ for file in list_files:
     mana.read_data(DATA_PATH+file, step_len=step_len, snr=20)
 
 FE = BlockScanFE()
-optimizer = optim.Adam(FE.parameters(), lr=0.001, weight_decay=5e-3)
+optimizer = optim.Adam(FE.parameters(), lr=0.001, weight_decay=1e-2)
 print(FE)
 
 #train
@@ -42,15 +42,16 @@ for i in range(epoch):
     loss.backward()
     optimizer.step()
 
-    running_loss += loss.data[0]
-    train_loss.append(loss.data[0])
+    loss_i = loss.item()
+    running_loss += loss_i
+    train_loss.append(loss_i)
     if i % 10 == 9:
         print('%d loss: %.5f' %(i + 1, running_loss / 10))
         running_loss = 0.0
 print('Finished Training')
 
 #save model
-torch.save(FE, "ann_model\\FE3.pkl")
+torch.save(FE, "ann_model\\FE6.pkl")
 
 #figure 1
 pl.figure(1)
@@ -65,7 +66,7 @@ mana2 = BpskDataTank()
 list_files2 = get_file_list(TEST_DATA_PATH)
 for file in list_files2:
     mana2.read_data(TEST_DATA_PATH+file, step_len=step_len, snr=20)
-FE_test = torch.load("ann_model\\FE3.pkl")
+FE_test = torch.load("ann_model\\FE6.pkl")
 FE_test.eval()
 eval_loss = []
 batch2 = 1000
@@ -74,7 +75,7 @@ for i in range(epoch2):
     inputs, labels, _, _ = mana2.random_batch(batch2, normal=0, single_fault=10, two_fault=1)
     outputs = FE_test(inputs)
     loss = criterion(outputs, labels)
-    eval_loss.append(loss.data[0])
+    eval_loss.append(loss.item())
 
 #figure 2
 pl.figure(2)

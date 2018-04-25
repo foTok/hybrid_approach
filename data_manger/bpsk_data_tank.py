@@ -168,9 +168,9 @@ class BpskDataTank():
                 batch = batch + fault_num[m]
             #input – input tensor (minibatch x in_channels x iLen)
             #random init
-            input_data = Variable(torch.randn(batch, self.feature_num(), self.step_len()))
-            mode = Variable(torch.randn(batch, 6))
-            para = Variable(torch.randn(batch, 7))
+            input_data = torch.randn(batch, self.feature_num(), self.step_len())
+            mode = torch.randn(batch, 6)
+            para = torch.randn(batch, 7)
             res = []
             #counter
             i = -1
