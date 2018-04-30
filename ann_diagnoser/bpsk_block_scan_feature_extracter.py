@@ -21,7 +21,7 @@ class BlockScanFE(nn.Module):#feature extracter, FE
                             nn.ReLU(),
                             nn.Conv1d(10, 20, window, padding=window//2),
                             nn.ReLU(),
-                            nn.MaxPool1d(window)
+                            nn.MaxPool1d(window),
                           )
 
         self.c_sequence = nn.Sequential(
@@ -29,7 +29,7 @@ class BlockScanFE(nn.Module):#feature extracter, FE
                             nn.ReLU(),
                             nn.Conv1d(10, 20, window, padding=window//2),
                             nn.ReLU(),
-                            nn.MaxPool1d(window)
+                            nn.MaxPool1d(window),
                           )
 
         self.m_sequence = nn.Sequential(
@@ -37,7 +37,7 @@ class BlockScanFE(nn.Module):#feature extracter, FE
                             nn.ReLU(),
                             nn.Conv1d(10, 20, window, padding=window//2),
                             nn.ReLU(),
-                            nn.MaxPool1d(window)
+                            nn.MaxPool1d(window),
                           )
 
         self.a_sequence = nn.Sequential(
@@ -45,19 +45,23 @@ class BlockScanFE(nn.Module):#feature extracter, FE
                             nn.ReLU(),
                             nn.Conv1d(10, 20, window, padding=window//2),
                             nn.ReLU(),
-                            nn.MaxPool1d(window)
+                            nn.MaxPool1d(window),
                           )
 
         self.fc_sequence = nn.Sequential(
-                            nn.Linear(4*20*20, 4*5),
+                            nn.Linear(4*20*20, 4*64),
                             nn.ReLU(),
-                            nn.BatchNorm1d(4*5),
-                            nn.ReLU(),
-                            nn.Threshold(0.1, 1)
+                            nn.BatchNorm1d(4*64),
+                            nn.Linear(4*64, 4*5),
+                            nn.Hardtanh(min_val=-0.01, max_val=0.01, min_value=0, max_value=1),
                           )
         #fault predictor
-        self.fc1 = nn.Linear(4*5, 6)
-
+        self.fc1 = nn.Sequential(
+                            nn.Linear(4*5, 10),
+                            nn.ReLU(),
+                            nn.Linear(10, 6),
+                            nn.Sigmoid(),
+                          )
     def fe(self, x):
         x1 = x[:, [1], :]
         x2 = x[:, [2], :]
@@ -74,7 +78,6 @@ class BlockScanFE(nn.Module):#feature extracter, FE
 
     def fp(self, x):
         x = self.fc1(x)
-        x = nn.functional.sigmoid(x)
         return x
 
     def forward(self, x):

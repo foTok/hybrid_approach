@@ -49,6 +49,7 @@ class DiagnoerBlockScan(nn.Module):
         self.fc_sequence = nn.Sequential(
                             nn.Linear(4*20*20, 4*64),
                             nn.ReLU(),
+                            nn.BatchNorm1d(4*64),
                             nn.Linear(4*64, 6),
                             nn.Sigmoid()
                           )

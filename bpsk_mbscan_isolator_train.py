@@ -29,7 +29,6 @@ diagnoser = DiagnoerBlockScan(step_len=mana.step_len())
 print(diagnoser)
 criterion = CrossEntropy
 optimizer = optim.Adam(diagnoser.parameters(), lr=0.001, weight_decay=5e-3)
-#optimizer = optim.SGD(diagnoser.parameters(), lr=0.005, momentum=0.1, weight_decay=3e-3)
 
 #train
 epoch = 2000
