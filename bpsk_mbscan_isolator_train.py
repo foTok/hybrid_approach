@@ -44,16 +44,16 @@ for i in range(epoch):
     loss.backward()
     optimizer.step()
 
-    running_loss += loss.data[0]
-    train_loss.append(loss.data[0])
+    loss_i = loss.item()
+    running_loss += loss_i
+    train_loss.append(loss_i)
     if i % 10 == 9:
         print('%d loss: %.5f' %(i + 1, running_loss / 10))
         running_loss = 0.0
 print('Finished Training')
 
 #save model
-torch.save(diagnoser, "ann_model\\bpsk_mbs_isolator3.pkl")
-torch.save(diagnoser.state_dict(), "ann_model\\bpsk_mbs_isolator_para3.pkl")
+torch.save(diagnoser, "ann_model\\bpsk_mbs_isolator1.pkl")
 
 #figure 1
 pl.figure(1)
@@ -68,7 +68,7 @@ mana2 = BpskDataTank()
 list_files2 = get_file_list(TEST_DATA_PATH)
 for file in list_files2:
     mana2.read_data(TEST_DATA_PATH+file, step_len=step_len, snr=20)
-isolator = torch.load("ann_model\\bpsk_mbs_isolator3.pkl")
+isolator = torch.load("ann_model\\bpsk_mbs_isolator1.pkl")
 isolator.eval()
 eval_loss = []
 batch2 = 1000
@@ -77,7 +77,7 @@ for i in range(epoch2):
     inputs, labels, _, _ = mana2.random_batch(batch2, normal=0, single_fault=10, two_fault=1)
     outputs = isolator(inputs)
     loss = criterion(outputs, labels)
-    eval_loss.append(loss.data[0])
+    eval_loss.append(loss.item())
 
 #figure 2
 pl.figure(2)
