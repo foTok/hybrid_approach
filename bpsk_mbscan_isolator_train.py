@@ -13,7 +13,10 @@ import torch.nn as nn
 import torch.optim as optim
 import matplotlib.pyplot as pl
 import numpy as np
+from tensorboardX import SummaryWriter
 
+#visual
+writer = SummaryWriter()
 
 #prepare data
 PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '.'))
@@ -35,8 +38,13 @@ epoch = 2000
 batch = 2000
 train_loss = []
 running_loss = 0.0
+#add graph flag
+agf = False
 for i in range(epoch):
     inputs, labels, _, _ = mana.random_batch(batch, normal=0, single_fault=10, two_fault=1)
+    if not agf:                         #visual
+        writer.add_graph(FE, inputs)    #visual
+        agf = True                      #visual
     optimizer.zero_grad()
     outputs = diagnoser(inputs)
     loss = criterion(outputs, labels)
@@ -44,6 +52,7 @@ for i in range(epoch):
     optimizer.step()
 
     loss_i = loss.item()
+    writer.add_scalar('Loss', loss_i, i) #visual
     running_loss += loss_i
     train_loss.append(loss_i)
     if i % 10 == 9:
@@ -53,6 +62,9 @@ print('Finished Training')
 
 #save model
 torch.save(diagnoser, "ann_model\\bpsk_mbs_isolator1.pkl")
+
+#visual
+writer.close()
 
 #figure 1
 pl.figure(1)

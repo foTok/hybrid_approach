@@ -34,7 +34,7 @@ optimizer = optim.Adam(FE.parameters(), lr=0.001, weight_decay=8e-3)
 print(FE)
 
 #train
-epoch = 4000
+epoch = 3000
 batch = 2000
 train_loss = []
 running_loss = 0.0

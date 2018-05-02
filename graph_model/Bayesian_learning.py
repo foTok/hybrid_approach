@@ -3,6 +3,7 @@ learning Bayesian model
 """
 import numpy as np
 from math import log2
+from scipy.linalg import solve
 from graph_model.utilities import vector2number
 from graph_model.utilities import number2vector
 
@@ -138,17 +139,26 @@ class Bayesian_learning:
         self.batch  = None          #data for the current batch, batch × (label + residuals + features).
         self.decay  = 0             #regular factor
         #cache
-        self.JPT_cache = {}         #cache for JPT (Joint Probability Distribution) of a Joint Random Variables: {JRV:[JPT, N]}.
-                                    #JRV is a tuple: nodes are put in ascending order.
-                                    #JPT is a np.array() whose size is 2^n.
-                                    #N is the batch number where the batchs contribute the JPT.
+        # self.JPT_cache = {}         #cache for JPT (Joint Probability Distribution) of a Joint Random Variables: {JRV:[JPT, N]}.
+        #                             #JRV is a tuple: nodes are put in ascending order.
+        #                             #JPT is a np.array() whose size is 2^n.
+        #                             #N is the batch number where the batchs contribute the JPT.
+        #                             #Some values in it will be updated in each iteration but the diction will NOT be cleared.
+        self.GGM_cache = {}         #cache for GGM (Guassian Graph Model).{FML:[beta, delta, N]}
+                                    #FML:(p1,p2,...pn, kid), nodes are put in ascending order.
+                                    #beta:[beta0, beta1,...,beta_n]
+                                    #delta: real
+                                    #N: real (weight), N is the batch number where the batchs contribute the JPT.
                                     #Some values in it will be updated in each iteration but the diction will NOT be cleared.
-        self.batch_JPT_cache = set()#batch JPT cache. Should BE cleared and updated in each iteration.
+        # self.batch_JPT_cache = set()#batch JPT cache. Should BE cleared and updated in each iteration.
+        #                             #NOTICE: This set just store the JRV that computed from batch
+        #                             #the real JPT is merged into self.JPT_cache.
+        self.batch_GGM_cache = set()#batch GGM cache. Should BE cleared and updated in each iteration.
                                     #NOTICE: This set just store the JRV that computed from batch
                                     #the real JPT is merged into self.JPT_cache.
         self.l_cost_cache = {}      #Likelihood cost cache for each family. Should BE cleared and updated in each iteration.
-                                    #{FML:l_cost}. FML:(p1,p2,...pn, kid)
-                                    #because JPT may change because of new batch.
+                                    #{FML:l_cost}.
+                                    #because GGM may change because of new batch.
         self.r_cost_cache = {}      #Regular cost cache for each family. Should NOT be cleared.
                                     #{FML:r_cost}.
         self.graph_l_cost_cache = {}#Likelihood cost cache for a graph. Should BE cleard and updated in each iteration.
