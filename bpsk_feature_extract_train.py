@@ -61,7 +61,7 @@ for i in range(epoch):
 print('Finished Training')
 
 #save model
-torch.save(FE, "ann_model\\FE1.pkl")
+torch.save(FE, "ann_model\\FE2.pkl")
 
 #visual
 writer.close()
@@ -79,7 +79,7 @@ mana2 = BpskDataTank()
 list_files2 = get_file_list(TEST_DATA_PATH)
 for file in list_files2:
     mana2.read_data(TEST_DATA_PATH+file, step_len=step_len, snr=20)
-FE_test = torch.load("ann_model\\FE1.pkl")
+FE_test = torch.load("ann_model\\FE2.pkl")
 FE_test.eval()
 eval_loss = []
 batch2 = 1000

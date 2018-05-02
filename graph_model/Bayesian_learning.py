@@ -144,18 +144,20 @@ class Bayesian_learning:
         #                             #JPT is a np.array() whose size is 2^n.
         #                             #N is the batch number where the batchs contribute the JPT.
         #                             #Some values in it will be updated in each iteration but the diction will NOT be cleared.
-        self.GGM_cache = {}         #cache for GGM (Guassian Graph Model).{FML:[beta, delta, N]}
+        self.GGM_cache = {}         #cache for GGM (Guassian Graph Model).{FML:[beta, sigma, N]}
                                     #FML:(p1,p2,...pn, kid), nodes are put in ascending order.
                                     #beta:[beta0, beta1,...,beta_n]
-                                    #delta: real
+                                    #sigma: real
                                     #N: real (weight), N is the batch number where the batchs contribute the JPT.
                                     #Some values in it will be updated in each iteration but the diction will NOT be cleared.
         # self.batch_JPT_cache = set()#batch JPT cache. Should BE cleared and updated in each iteration.
         #                             #NOTICE: This set just store the JRV that computed from batch
         #                             #the real JPT is merged into self.JPT_cache.
         self.batch_GGM_cache = set()#batch GGM cache. Should BE cleared and updated in each iteration.
-                                    #NOTICE: This set just store the JRV that computed from batch
-                                    #the real JPT is merged into self.JPT_cache.
+                                    #NOTICE: This set just store the GGM that computed from batch
+                                    #the real GGM is merged into self.GGM_cache.
+        self.e_cache = {}           #Expectation cache.
+                                    #TODO
         self.l_cost_cache = {}      #Likelihood cost cache for each family. Should BE cleared and updated in each iteration.
                                     #{FML:l_cost}.
                                     #because GGM may change because of new batch.
@@ -214,50 +216,60 @@ class Bayesian_learning:
         self.decay = log2(n)/(2*n)
 
     #For self.JPT_cache
-    def JPT_cache_has(self, JRV):
-        """
-        check if self.JPT_cache has JRV
-        """
-        return JRV in self.JPT_cache
+    # def JPT_cache_has(self, JRV):
+    #     """
+    #     check if self.JPT_cache has JRV
+    #     """
+    #     return JRV in self.JPT_cache
+    def GGM_cache_has(self, FML):
+        return FML in self.GGM_cache
 
-    def JPT_from_cache(self, JRV):
-        """
-        obtain the JPT of JRV from the self.JPT_cache
-        """
-        return self.JPT_cache[JRV][0]
+    # def JPT_from_cache(self, JRV):
+    #     """
+    #     obtain the JPT of JRV from the self.JPT_cache
+    #     """
+    #     return self.JPT_cache[JRV][0]
+    def beta_sigma_weight_from_cache(self, FML):
+        bdw = self.GGM_cache[FML]
+        return bdw[0], bdw[1], bdw[2]
 
-    def JPT_weight_in_cache(self, JRV):
-        """
-        return JPT weight
-        """
-        return self.JPT_cache[JRV][1]
+    # def JPT_weight_in_cache(self, JRV):
+    #     """
+    #     return JPT weight
+    #     """
+    #     return self.JPT_cache[JRV][1]
 
     #for self.batch_JPT_cache
-    def batch_JPT_cache_has(self, JRV):
-        """
-        return if self.batch_JPT_cache has JRV
-        """
-        return JRV in self.batch_JPT_cache
+    # def batch_JPT_cache_has(self, JRV):
+    #     """
+    #     return if self.batch_JPT_cache has JRV
+    #     """
+    #     return JRV in self.batch_JPT_cache
 
-    def JPT_from_batch(self, JRV):
-        """
-        compute the JPT of JVR from the current batch
-        """
-        #index of parents and kid
-        data = self.batch[:, JRV]
-        n = len(JRV)
-        JPT = [0] * (2**n)
-        for i in range(2**n):
-            vec = number2vector(i, n)
-            comp = (vec == data)
-            result = [x.all() for x in comp]
-            # +1 to avoid sum(result)=0 cause numeric problems
-            JPT[i] = sum(result) + 1
-        for i in range(0, 2**n, 2):
-            num = JPT[i] + JPT[i+1]
-            JPT[i] = JPT[i] / num
-            JPT[i+1] = 1 - JPT[i]
-        return np.array(JPT)
+    def batch_GGM_cache_has(self, FML):
+        return FML in self.batch_GGM_cache
+
+    # def JPT_from_batch(self, JRV):
+    #     """
+    #     compute the JPT of JVR from the current batch
+    #     """
+    #     #index of parents and kid
+    #     data = self.batch[:, JRV]
+    #     n = len(JRV)
+    #     JPT = [0] * (2**n)
+    #     for i in range(2**n):
+    #         vec = number2vector(i, n)
+    #         comp = (vec == data)
+    #         result = [x.all() for x in comp]
+    #         # +1 to avoid sum(result)=0 cause numeric problems
+    #         JPT[i] = sum(result) + 1
+    #     for i in range(0, 2**n, 2):
+    #         num = JPT[i] + JPT[i+1]
+    #         JPT[i] = JPT[i] / num
+    #         JPT[i+1] = 1 - JPT[i]
+    #     return np.array(JPT)
+    def GGM_from_batch(self, FML):
+
 
     #For cost
     #for likelihood cost
