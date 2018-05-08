@@ -10,7 +10,7 @@ class DiagnoerBlockScan(nn.Module):
     """
     The basic diagnoser constructed by block scan
     """
-    def __init__(self, step_len):
+    def __init__(self):
         super(DiagnoerBlockScan, self).__init__()
         window = 5
         #dim_relation = [[1], [2], [0, 1, 2, 3], [3, 4]]
@@ -72,7 +72,7 @@ class DetectorBlockScan(nn.Module):
     """
     The basic detector constructed by block scan
     """
-    def __init__(self, step_len):
+    def __init__(self):
         super(DetectorBlockScan, self).__init__()
         window = 5
         #dim_relation = [[1], [2], [0, 1, 2, 3], [3, 4]]
@@ -133,7 +133,7 @@ class PredictorBlockScan(nn.Module):
     """
     The basic detector constructed by block scan
     """
-    def __init__(self, step_len):
+    def __init__(self):
         super(PredictorBlockScan, self).__init__()
         window = 5
         #dim_relation = [[1], [2], [0, 1, 2, 3], [3, 4]]

@@ -3,6 +3,7 @@ defines some loss function
 """
 
 import torch
+import numpy as np
 from torch.autograd import Variable
 
 def CrossEntropy(output, label, size_average = True):
@@ -20,6 +21,20 @@ def CrossEntropy(output, label, size_average = True):
     else:
         loss1 = torch.sum(loss0)
     return loss1
+
+def VectorCrossEntropy(output, label):
+    """
+    output: pytorch Variable vector, output of nerual network
+    label: pytorch Variable vector, observed values
+    warning: make sure all numbers in output and label in the range [0, 1]
+    output, label: batch × fault
+    """
+    assert output.size() == label.size()
+    output = output.detach().numpy()
+    label  = label.detach().numpy()
+    loss = -(label*np.log(output+1e-10) + (1-label)*np.log(1-output+1e-10))
+    loss0 = np.mean(loss, axis= 0)
+    return loss0
 
 def MSE(output, label, size_average = True):
     """

@@ -15,7 +15,8 @@ class BlockScanFE(nn.Module):#feature extracter, FE
         super(BlockScanFE, self).__init__()
         #feature extract
         window = 5
-        #dim_relation = [[1], [2], [0, 1, 2, 3], [3, 4]]
+        #based on physical connection: dim_relation = [[1], [2], [0, 1, 2, 3], [3, 4]]
+        #based on the influence graph: dim_relation = [[1], [2], [1, 2, 3], [3, 4]]
         #pesudo
         self.fe0_sequence = nn.Sequential(
                             nn.Conv1d(1, 10, window, padding=window//2),
@@ -32,9 +33,9 @@ class BlockScanFE(nn.Module):#feature extracter, FE
                             nn.ReLU(),
                             nn.MaxPool1d(window),
                           )
-        #mixer
+        #mixer  now, in influence graph mode. 4-->3 in nn.Conv1d(4, 10, window, padding=window//2)
         self.fe2_sequence = nn.Sequential(
-                            nn.Conv1d(4, 10, window, padding=window//2),
+                            nn.Conv1d(3, 10, window, padding=window//2),
                             nn.ReLU(),
                             nn.Conv1d(10, 20, window, padding=window//2),
                             nn.ReLU(),
@@ -67,7 +68,7 @@ class BlockScanFE(nn.Module):#feature extracter, FE
     def fe(self, x):
         x0 = x[:, [1], :]               #p
         x1 = x[:, [2], :]               #c
-        x2 = x[:, [0, 1, 2, 3], :]      #m
+        x2 = x[:, [1, 2, 3], :]         #m      now, in influence graph mode. [0, 1, 2, 3] --> [1, 2, 3]
         x3 = x[:, [3, 4], :]            #a
         x0 = self.fe0_sequence(x0)
         x1 = self.fe1_sequence(x1)

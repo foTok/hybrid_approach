@@ -28,7 +28,7 @@ list_files = get_file_list(DATA_PATH)
 for file in list_files:
     mana.read_data(DATA_PATH+file, step_len=step_len, snr=20)
 
-diagnoser = DiagnoerBlockScan(step_len=mana.step_len())
+diagnoser = DiagnoerBlockScan()
 print(diagnoser)
 criterion = CrossEntropy
 optimizer = optim.Adam(diagnoser.parameters(), lr=0.001, weight_decay=5e-3)
@@ -42,9 +42,9 @@ running_loss = 0.0
 agf = False
 for i in range(epoch):
     inputs, labels, _, _ = mana.random_batch(batch, normal=0, single_fault=10, two_fault=1)
-    if not agf:                         #visual
-        writer.add_graph(FE, inputs)    #visual
-        agf = True                      #visual
+    if not agf:                                 #visual
+        writer.add_graph(diagnoser, inputs)     #visual
+        agf = True                              #visual
     optimizer.zero_grad()
     outputs = diagnoser(inputs)
     loss = criterion(outputs, labels)
