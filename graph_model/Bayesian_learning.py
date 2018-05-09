@@ -2,7 +2,8 @@
 learning Bayesian model
 """
 import numpy as np
-from math import log2
+from math import log
+from math import exp
 from scipy.linalg import solve
 from graph_model.utilities import vector2number
 from graph_model.utilities import number2vector
@@ -129,44 +130,53 @@ class Bayesian_learning:
     """
     def __init__(self, n):
         #nodes number
-        self.n = n
+        self.n                      = n
         #queue
-        self.queue = {}             #We call it search queue although it is a dict, queue = {G:cost,...].
+        #We call it search queue although it is a dict, queue = {G:cost,...].
+        self.queue                  = {}
         #priori knowledge
-        self.known_edge = set()     #priori knowledge about system structure, {(i, j)...}. Edges in this list exist.
-        self.no_edge = set()        #priori knowledge about system structure, {(i, j)...}. Edges in this list never exist.
+        #priori knowledge about system structure, {(i, j)...}. Edges in this list exist.
+        self.known_edge             = set()
+        #priori knowledge about system structure, {(i, j)...}. Edges in this list never exist.     
+        self.no_edge                = set()
         #batch
-        self.batch  = None          #data for the current batch, batch × (label + residuals + features).
-        self.decay  = 0             #regular factor
+        #np.array(). Data for the current batch, batch × (label + residuals + features).
+        self.batch                  = None
+        #regular factor      
+        self.decay                  = 0
         #cache
-        # self.JPT_cache = {}         #cache for JPT (Joint Probability Distribution) of a Joint Random Variables: {JRV:[JPT, N]}.
-        #                             #JRV is a tuple: nodes are put in ascending order.
-        #                             #JPT is a np.array() whose size is 2^n.
-        #                             #N is the batch number where the batchs contribute the JPT.
-        #                             #Some values in it will be updated in each iteration but the diction will NOT be cleared.
-        self.GGM_cache = {}         #cache for GGM (Guassian Graph Model).{FML:[beta, sigma, N]}
-                                    #FML:(p1,p2,...pn, kid), nodes are put in ascending order.
-                                    #beta:[beta0, beta1,...,beta_n]
-                                    #sigma: real
-                                    #N: real (weight), N is the batch number where the batchs contribute the JPT.
-                                    #Some values in it will be updated in each iteration but the diction will NOT be cleared.
-        # self.batch_JPT_cache = set()#batch JPT cache. Should BE cleared and updated in each iteration.
-        #                             #NOTICE: This set just store the JRV that computed from batch
-        #                             #the real JPT is merged into self.JPT_cache.
-        self.batch_GGM_cache = set()#batch GGM cache. Should BE cleared and updated in each iteration.
-                                    #NOTICE: This set just store the GGM that computed from batch
-                                    #the real GGM is merged into self.GGM_cache.
-        self.e_cache = {}           #Expectation cache.
-                                    #TODO
-        self.l_cost_cache = {}      #Likelihood cost cache for each family. Should BE cleared and updated in each iteration.
-                                    #{FML:l_cost}.
-                                    #because GGM may change because of new batch.
-        self.r_cost_cache = {}      #Regular cost cache for each family. Should NOT be cleared.
-                                    #{FML:r_cost}.
-        self.graph_l_cost_cache = {}#Likelihood cost cache for a graph. Should BE cleard and updated in each iteration.
-                                    #{G:cost,...}.
-        self.graph_r_cost_cache = {}#Regular cost cache for a graph. Should NOT be cleared.
-                                    #{G:cost,...}.
+        #cache for GGM (Guassian Graph Model).{FML:[beta, var, N]}.
+        #FML:(p1,p2,...pn, kid), nodes are put in ascending order.
+        #beta:[beta0, beta1,...,beta_n].
+        #var: real (var = sigma**2).
+        #N: real (weight), N is the batch number where the batchs contribute the JPT.
+        #Some values in it will be updated in each iteration but the diction will NOT be cleared.
+        self.GGM_cache              = {}
+        #batch GGM cache. Should BE cleared and updated in each iteration.
+        #NOTICE: This set just store the GGM that computed from batch.
+        #the real GGM is merged into self.GGM_cache.
+        #It should BE cleared before each iteration.
+        self.batch_GGM_cache        = set()                                                             #remember to clear
+        #Expectation cache.
+        #E_cache: {x/(x1, x2):E}
+        #x, x1, x2: int
+        #E: real
+        #this cache just store E for this batch. Should BE cleared and updated in each iteration.
+        self.E_cache                = {}                                                                #remember to clear
+        #Likelihood cost cache for each family. Should BE cleared and updated in each iteration.
+        #{FML:l_cost}.
+        #because GGM may change because of new batch.                           
+        self.fml_l_cost_cache       = {}                                                                #remember to clear
+        #Regular cost cache for each family. Should NOT be cleared.
+        #{FML:r_cost}.
+        self.fml_r_cost_cache       = {}
+        #Likelihood cost cache for a graph. Should BE cleard and updated in each iteration.
+        #{G:cost,...}.
+        self.graph_l_cost_cache     = {}                                                                #remember to clear
+        #Regular cost cache for a graph. Should NOT be cleared.
+        #{G:cost,...}.
+        self.graph_r_cost_cache     = {}
+
     #For queue
     def init_queue(self):
         """
@@ -213,77 +223,121 @@ class Bayesian_learning:
         """
         self.batch = batch
         n = len(batch)
-        self.decay = log2(n)/(2*n)
+        self.decay = log(n)/(2*n)
 
-    #For self.JPT_cache
-    # def JPT_cache_has(self, JRV):
-    #     """
-    #     check if self.JPT_cache has JRV
-    #     """
-    #     return JRV in self.JPT_cache
-    def GGM_cache_has(self, FML):
-        return FML in self.GGM_cache
+    #For GGM
+    def get_beta_var(self, FML):
+        """
+        get beta var and weight
+        """
+        if FML in self.batch_GGM_cache:
+            bvw = self.GGM_cache[FML]
+        else:
+            beta1, var1 = self.GGM_from_batch(FML)
+            if FML in self.GGM_cache:
+                bvw0 = self.GGM_cache[FML]
+                beta0, var0, n = bvw0[0], bvw[1], bvw[2]
+                w0 = n / (1 + n)
+                w1 = 1 / (1 + n)
+                beta = w0 * beta0 + w1 * beta1
+                var  = w0**2 * var0 + w1**2 * var1
+                n = n + 1
+                bvw = [beta, var, n]
+            else:
+                bvw = [beta, var, 1]
+            #save in cache
+            self.GGM_cache[FML] = bvw
+            self.batch_GGM_cache.add(FML)
+        #return beta, var and weight(n)
+        return bvw[0], bvw[1]
 
-    # def JPT_from_cache(self, JRV):
-    #     """
-    #     obtain the JPT of JRV from the self.JPT_cache
-    #     """
-    #     return self.JPT_cache[JRV][0]
-    def beta_sigma_weight_from_cache(self, FML):
-        bdw = self.GGM_cache[FML]
-        return bdw[0], bdw[1], bdw[2]
-
-    # def JPT_weight_in_cache(self, JRV):
-    #     """
-    #     return JPT weight
-    #     """
-    #     return self.JPT_cache[JRV][1]
-
-    #for self.batch_JPT_cache
-    # def batch_JPT_cache_has(self, JRV):
-    #     """
-    #     return if self.batch_JPT_cache has JRV
-    #     """
-    #     return JRV in self.batch_JPT_cache
-
-    def batch_GGM_cache_has(self, FML):
-        return FML in self.batch_GGM_cache
-
-    # def JPT_from_batch(self, JRV):
-    #     """
-    #     compute the JPT of JVR from the current batch
-    #     """
-    #     #index of parents and kid
-    #     data = self.batch[:, JRV]
-    #     n = len(JRV)
-    #     JPT = [0] * (2**n)
-    #     for i in range(2**n):
-    #         vec = number2vector(i, n)
-    #         comp = (vec == data)
-    #         result = [x.all() for x in comp]
-    #         # +1 to avoid sum(result)=0 cause numeric problems
-    #         JPT[i] = sum(result) + 1
-    #     for i in range(0, 2**n, 2):
-    #         num = JPT[i] + JPT[i+1]
-    #         JPT[i] = JPT[i] / num
-    #         JPT[i+1] = 1 - JPT[i]
-    #     return np.array(JPT)
     def GGM_from_batch(self, FML):
+        """
+        compute GGM for FML in this batch
+        !!!Please make sure parents are listed in incresing order
+        """
+        parents = FML[:-1]  #a tuple
+        X       = FML[-1]   #an int
+        Kp = len(parents)
+        #Compute beta
+        #b         = beta * A
+        #E[X]      = β0     +β1E[U1]     +. . .+βkE[Uk].
+        #E[X · Ui] = β0E[Ui]+β1E[U1 · Ui]+. . .+βkE[Uk · Ui].
+        A = np.matrix(np.zeros((Kp+1, Kp+1)))
+        b = np.zeros(Kp+1)
+        #for the first equation
+        A[0, 0] = 1
+        b[0] = self.get_E(X)
+        for k in range(Kp):
+            U_k = parents[k]
+            A[0, k+1] = self.get_E(U_k)
+        
+        #for the rest equations
+        for i in range(Kp):# for row i+1
+            U_i = parents[i]
+            A[i+1, 0] = self.get_E(U_i)
+            b[i+1]    = self.get_E((X, U_i))
+            for k in range(Kp):
+                U_k = parents[k]
+                A[i+1, k+1] = self.get_E((U_k, U_i))
+        beta = np.linalg.solve(A, b)
+        #Compute var
+        #Cov[X;X] = E[X · X]−E[X] · E[X]
+        #Cov[X;Ui] = E[X · Ui]−E[X] · E[Ui]
+        #var = Cov[X;X]−SIGMA{βiβjCov[Ui;Uj]}
+        var = self.get_E((X, X)) - self.get_E(X)**2
+        for i in range(Kp):
+            U_i = parents[i]
+            for j in range(Kp):
+                U_j = parents[j]
+                var = var - beta[i+1] * beta[j+1] * (self.get_E((U_i, U_j)) - self.get_E(U_i) * self.get_E(U_j))
+        assert(var >= 0)
 
+        return beta, var
+
+    def E_from_batch(self, x):
+        """
+        get Expection from batch
+        x: int or (x1, x2) where x1 and x2 are int
+        x1 < x2 is ensured by self.get_E()
+        """
+        if isinstance(x, tuple):
+            x1 = self.batch[:, x[0]]
+            x2 = self.batch[:, x[1]]
+            E = np.mean(x1 * x2)
+        E = np.mean(self.batch[:, x])
+        #save in cache
+        self.E_cache[x] = E
+        return E
+
+    def get_E(self, x):
+        """
+        get Expection from batch or cache
+        x: int or (x1, x2) where x1 and x2 are int
+        """
+        #insure x1 < x2 for tuple
+        if isinstance(x, tuple):
+            x1 = min(x)
+            x2 = max(x)
+            x = (x1, x2)
+        if x in self.E_cache:
+            E = self.E_cache[x]
+        E = self.E_from_batch(x)
+        return E
 
     #For cost
     #for likelihood cost
-    def l_cost_cache_has(self, fml):
+    def fml_l_cost_cache_has(self, fml):
         """
-        return if self.l_cost_cache has fml
+        return if self.fml_l_cost_cache has fml
         """
-        return fml in self.l_cost_cache
+        return fml in self.fml_l_cost_cache
 
-    def l_cost_from_cache(self, fml):
+    def fml_l_cost_from_cache(self, fml):
         """
         return cached cost
         """
-        return self.l_cost_cache[fml]
+        return self.fml_l_cost_cache[fml]
 
     def graph_l_cost_cache_has(self, graph):
         """
@@ -302,12 +356,12 @@ class Bayesian_learning:
         compute the likelihood cost
         """
         if self.graph_l_cost_cache_has(graph):
-            return self.l_cost_from_cache(graph)
+            return self.graph_l_cost_from_cache(graph)
         #Now we know that the likelihood cache is not computed for the current batch
         cost = 0
         for fml in graph:
-            if self.l_cost_cache_has(fml):
-                cost = cost + self.l_cost_from_cache(fml)
+            if self.fml_l_cost_cache_has(fml):
+                cost = cost + self.fml_l_cost_from_cache(fml)
             else:#Now we know the fml is not cached
                 cost = cost + self.fml_l_cost(fml)
         return cost
@@ -316,77 +370,32 @@ class Bayesian_learning:
         """
         compute l_cost for family fml
         """
-        if len(fml)<=1:
-            return 0
-        #parents
-        par = fml[:-1]
-        #kid
-        kid = fml[-1:]
-        #ordered fml
-        ordered_fml = tuple(sorted(list(fml)))
-        #par_JPT, kid_JPT, fml_JPT
-        par_JPT = self.get_JPT(par)
-        kid_JPT = self.get_JPT(kid)
-        fml_JPT = self.get_JPT(ordered_fml)
-        cost = self.information_gain_cost(par, par_JPT, kid, kid_JPT, ordered_fml, fml_JPT)
+        beta, var = self.get_beta_var(fml)
+        parents = fml[:-1]
+        kid = fml[-1]
+        U = self.batch[:, parents]
+        X = self.batch[:, kid]
+        predict = np.sum(U*beta[1:], axis=1)
+        predict = predict + beta[0]
+        res = (predict - X)**2
+        rela_res = res / (2*var)
+        cost = np.mean(rela_res)
+        #save it in self.fml_l_cost_cache
+        self.fml_l_cost_cache[fml] = cost
         return cost
-    
-    def information_gain_cost(self, par, par_JPT, kid, kid_JPT, fml, fml_JPT):
-        """
-        compute information gain
-        par, kid and fml are tuples and variables in them are in ascending order
-        """
-        kid_index = fml.index(kid[0])
-        n = len(fml)
-        cost = 0
-        for i in range(2**n):
-            #family vector
-            fml_vec = number2vector(i, n)
-            #kid vector
-            kid_vec = [fml_vec[kid_index]]
-            #par vector
-            par_vec = fml_vec[:]
-            del par_vec[kid_index]
-            #find index in JPT for par and kid
-            i_p = vector2number(par_vec)
-            i_k = vector2number(kid_vec)
-            cost = cost + fml_JPT[i] * log2((par_JPT(i_p) * kid_JPT[i_k] + alpha)/ (fml_JPT[i] + alpha))
-        return cost
-
-    #get JPT
-    def get_JPT(self, JVR):
-        """
-        Get a JPT from cache or batch. Update or add automatically.
-        """
-        #please make sure JVR is listed in ascending order
-        if self.batch_JPT_cache_has(JVR):
-            JPT = self.JPT_from_cache(JVR)
-        else:#We must update par_JPT from data
-            tmp_JPT = self.JPT_from_batch(JVR)
-            if self.JPT_cache_has(JVR):#should update
-                cached_JPT = self.JPT_from_cache(JVR)
-                cached_weight = self.JPT_weight_in_cache(JVR)
-                JPT = (cached_weight/(cached_weight + 1))*cached_JPT\
-                     +(1/(cached_weight + 1))*tmp_JPT
-                #update par_JPT
-                self.JPT_cache[JVR] = [JPT, cached_weight + 1]
-            else:#should add
-                JPT = tmp_JPT
-                self.JPT_cache[JVR] = [JPT, 1]
-        return JPT
 
     #for regular cost
-    def r_cost_cache_has(self, fml):
+    def fml_r_cost_cache_has(self, fml):
         """
         return if self.r_cost_cache has fml
         """
-        return fml in self.r_cost_cache
+        return fml in self.fml_r_cost_cache
 
-    def r_cost_from_cache(self, fml):
+    def fml_r_cost_from_cache(self, fml):
         """
         return cached regular cost
         """
-        return self.r_cost_cache[fml]
+        return self.fml_r_cost_cache[fml]
 
     def graph_r_cost_cache_has(self, graph):
         """
@@ -409,12 +418,12 @@ class Bayesian_learning:
         #Now we know the regular cost is not computed for the graph
         cost = 0
         for fml in graph:
-            if self.r_cost_cache_has(fml):
-                cost = cost + self.r_cost_from_cache(fml)
+            if self.fml_r_cost_cache_has(fml):
+                cost = cost + self.fml_r_cost_from_cache(fml)
             else:#Now we know the fml is not cached
                 n = len(fml)
-                fml_cost = 2**(n-1)
-                self.r_cost_cache[fml] = fml_cost #add it to cache
+                fml_cost = exp(n-1)
+                self.fml_r_cost_cache[fml] = fml_cost #add it to cache
                 cost = cost + fml_cost
         return cost
 
@@ -456,8 +465,9 @@ class Bayesian_learning:
         step forward
         """
         #clear some cache
-        self.batch_JPT_cache.clear()
-        self.l_cost_cache.clear()
+        self.batch_GGM_cache.clear()
+        self.E_cache.clear()
+        self.fml_l_cost_cache.clear()
         self.graph_l_cost_cache.clear()
         #pick out the current best candidate
         best = self.best_candidate()
