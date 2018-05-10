@@ -144,6 +144,8 @@ class Bayesian_learning:
         self.batch                  = None
         #regular factor      
         self.decay                  = 0
+        #cost weight
+        self.alpha                  = 0
         #cache
         #cache for GGM (Guassian Graph Model).{FML:[beta, var, N]}.
         #FML:(p1,p2,...pn, kid), nodes are put in ascending order.
@@ -163,10 +165,14 @@ class Bayesian_learning:
         #E: real
         #this cache just store E for this batch. Should BE cleared and updated in each iteration.
         self.E_cache                = {}                                                                #remember to clear
-        #Likelihood cost cache for each family. Should BE cleared and updated in each iteration.
+        #Likelihood cost cache for each family.
         #{FML:l_cost}.
+        #Should be  updated in each iteration
         #because GGM may change because of new batch.                           
-        self.fml_l_cost_cache       = {}                                                                #remember to clear
+        self.fml_l_cost_cache       = {}
+        #update flag
+        #Should be cleared before each iteration.
+        self.fml_l_cost_update_flag = set()                                                             #remember to clear
         #Regular cost cache for each family. Should NOT be cleared.
         #{FML:r_cost}.
         self.fml_r_cost_cache       = {}
@@ -327,18 +333,6 @@ class Bayesian_learning:
 
     #For cost
     #for likelihood cost
-    def fml_l_cost_cache_has(self, fml):
-        """
-        return if self.fml_l_cost_cache has fml
-        """
-        return fml in self.fml_l_cost_cache
-
-    def fml_l_cost_from_cache(self, fml):
-        """
-        return cached cost
-        """
-        return self.fml_l_cost_cache[fml]
-
     def graph_l_cost_cache_has(self, graph):
         """
         return if self.graph_l_cost_cache has graph
@@ -360,10 +354,19 @@ class Bayesian_learning:
         #Now we know that the likelihood cache is not computed for the current batch
         cost = 0
         for fml in graph:
-            if self.fml_l_cost_cache_has(fml):
-                cost = cost + self.fml_l_cost_from_cache(fml)
-            else:#Now we know the fml is not cached
-                cost = cost + self.fml_l_cost(fml)
+            if fml in self.fml_l_cost_update_flag:                      #must be updated and in self.fml_l_cost_cache
+                cost_u = self.fml_l_cost_cache[fml]
+            elif fml in self.fml_l_cost_cache:                          #in self.fml_l_cost_cache but not update in this iteration
+                cost0 = self.fml_l_cost_cache[fml]
+                cost1 = self.fml_l_cost(fml)
+                cost_u = cost0 + self.alpha * (cost1 - cost0)
+                self.fml_l_cost_cache[fml] = cost_u
+                self.fml_l_cost_update_flag.add(fml)
+            else:#Now we know the fml is the first time to compute
+                cost_u = self.fml_l_cost(fml)
+                self.fml_l_cost_cache[fml] = cost_u
+                self.fml_l_cost_update_flag.add(fml)
+            cost = cost + cost_u
         return cost
 
     def fml_l_cost(self, fml):
@@ -467,7 +470,7 @@ class Bayesian_learning:
         #clear some cache
         self.batch_GGM_cache.clear()
         self.E_cache.clear()
-        self.fml_l_cost_cache.clear()
+        self.fml_l_cost_update_flag.clear()
         self.graph_l_cost_cache.clear()
         #pick out the current best candidate
         best = self.best_candidate()

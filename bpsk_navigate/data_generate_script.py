@@ -7,7 +7,7 @@ from bpsk_generator import Bpsk
 
 PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '.'))
 #fault types
-FAULT = FAULT = ["tma", "tmb", "pseudo_rate", "carrier_rate", "carrier_leak", "amplify"]
+FAULT = ["tma", "tmb", "pseudo_rate", "carrier_rate", "carrier_leak", "amplify"]
 #fault parameters
 PARA_BEGIN = [0.15, (0.8 * 10**6, 7.3 * 10**6), -0.05, -0.05, 0.1, -1]
 PARA_STEP = [0.1, (1 * 10**6, 0.5 * 10**6), 0.01, 0.01, 0.1, 0.1]
