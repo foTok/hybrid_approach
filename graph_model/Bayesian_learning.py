@@ -242,7 +242,7 @@ class Bayesian_learning:
             beta1, var1 = self.GGM_from_batch(FML)
             if FML in self.GGM_cache:
                 bvw0 = self.GGM_cache[FML]
-                beta0, var0, n = bvw0[0], bvw[1], bvw[2]
+                beta0, var0, n = bvw0[0], bvw0[1], bvw0[2]
                 w0 = n / (1 + n)
                 w1 = 1 / (1 + n)
                 beta = w0 * beta0 + w1 * beta1
@@ -250,7 +250,7 @@ class Bayesian_learning:
                 n = n + 1
                 bvw = [beta, var, n]
             else:
-                bvw = [beta, var, 1]
+                bvw = [beta1, var1, 1]
             #save in cache
             self.GGM_cache[FML] = bvw
             self.batch_GGM_cache.add(FML)
@@ -292,11 +292,15 @@ class Bayesian_learning:
         #Cov[X;Ui] = E[X · Ui]−E[X] · E[Ui]
         #var = Cov[X;X]−SIGMA{βiβjCov[Ui;Uj]}
         var = self.get_E((X, X)) - self.get_E(X)**2
+        print("var={}",var)
         for i in range(Kp):
             U_i = parents[i]
             for j in range(Kp):
                 U_j = parents[j]
                 var = var - beta[i+1] * beta[j+1] * (self.get_E((U_i, U_j)) - self.get_E(U_i) * self.get_E(U_j))
+        var = var + 1.0e-5
+        if var<0:
+            print("Stop here")
         assert(var >= 0)
 
         return beta, var
@@ -311,7 +315,8 @@ class Bayesian_learning:
             x1 = self.batch[:, x[0]]
             x2 = self.batch[:, x[1]]
             E = np.mean(x1 * x2)
-        E = np.mean(self.batch[:, x])
+        else:
+            E = np.mean(self.batch[:, x])
         #save in cache
         self.E_cache[x] = E
         return E
@@ -328,7 +333,8 @@ class Bayesian_learning:
             x = (x1, x2)
         if x in self.E_cache:
             E = self.E_cache[x]
-        E = self.E_from_batch(x)
+        else:
+            E = self.E_from_batch(x)
         return E
 
     #For cost
