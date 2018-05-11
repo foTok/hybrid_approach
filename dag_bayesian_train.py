@@ -29,8 +29,9 @@ list_files = get_file_list(DATA_PATH)
 for file in list_files:
     mana.read_data(DATA_PATH+file, step_len=step_len, snr=20, norm=True)
 
-#labels, 6; features, 12; residuals 3.
-BL = Bayesian_learning(6+12+3)
+#labels, 6; features, 10 (12-10); residuals 3.
+BL = Bayesian_learning(6+10+3)
+BL.init_queue()
 for i in range(epoch):
     inputs, labels, _, res = mana.random_batch(batch, normal=0, single_fault=10, two_fault=0)
     feature = FE.fe(inputs)
@@ -67,10 +68,18 @@ for i in range(epoch):
     # pl.figure(3)
     # pl.scatter(lb, plt[:, 2])
     # pl.show()
-    BL.set_batch(batch_data)
-    BL.init_queue()
+    
+    #data analysis
+    # var = np.var(batch_data, axis=0)
+    # print("var=", var)
+
+    a1 = batch_data[:, :7]
+    a2 = batch_data[:, 8:17]
+    a3 = batch_data[:, 18:]
+    real_data = np.concatenate((a1,a2,a3), axis=1)
+
+    BL.set_batch(real_data)
     BL.step()
-    #TODO
     #Add loss to visual
 best = BL.best_candidate()
 #TODO

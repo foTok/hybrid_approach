@@ -7,6 +7,7 @@ from math import exp
 from scipy.linalg import solve
 from graph_model.utilities import vector2number
 from graph_model.utilities import number2vector
+from copy import deepcopy
 
 #small number to avoid numeric problems
 alpha = 1e-20
@@ -117,7 +118,7 @@ class Bayesian_structure:
         """
         if self.i == self.n:
             raise StopIteration
-        parents = list(self.struct[self.i, :])
+        parents = list(self.struct[:, self.i])
         parents = [i for i, v in enumerate(parents) if v==1]
         kid = [self.i]
         fml = parents + kid
@@ -191,8 +192,7 @@ class Bayesian_learning:
         graph = Bayesian_structure(self.n)
         for edge in self.known_edge:
             graph.add_edge(edge[0], edge[1])
-        cost = self.cost(graph)
-        self.queue[graph] = cost
+        self.queue[graph] = 10000                                                                       #this one can never be the right one
 
     def add_struct2queue(self, struct, cost):
         """
@@ -269,38 +269,37 @@ class Bayesian_learning:
         #b         = beta * A
         #E[X]      = β0     +β1E[U1]     +. . .+βkE[Uk].
         #E[X · Ui] = β0E[Ui]+β1E[U1 · Ui]+. . .+βkE[Uk · Ui].
-        A = np.matrix(np.zeros((Kp+1, Kp+1)))
+        #A = np.matrix(np.zeros((Kp+1, Kp+1)))
+        A = np.array(np.zeros((Kp+1, Kp+1)))
         b = np.zeros(Kp+1)
         #for the first equation
         A[0, 0] = 1
-        b[0] = self.get_E(X)
+        b[0] = deepcopy(self.get_E(X))
         for k in range(Kp):
             U_k = parents[k]
-            A[0, k+1] = self.get_E(U_k)
+            A[0, k+1] = deepcopy(self.get_E(U_k))
         
         #for the rest equations
         for i in range(Kp):# for row i+1
             U_i = parents[i]
-            A[i+1, 0] = self.get_E(U_i)
-            b[i+1]    = self.get_E((X, U_i))
+            A[i+1, 0] = deepcopy(self.get_E(U_i))
+            b[i+1]    = deepcopy(self.get_E((X, U_i)))
             for k in range(Kp):
                 U_k = parents[k]
-                A[i+1, k+1] = self.get_E((U_k, U_i))
+                A[i+1, k+1] = deepcopy(self.get_E((U_k, U_i)))
         beta = np.linalg.solve(A, b)
         #Compute var
         #Cov[X;X] = E[X · X]−E[X] · E[X]
         #Cov[X;Ui] = E[X · Ui]−E[X] · E[Ui]
         #var = Cov[X;X]−SIGMA{βiβjCov[Ui;Uj]}
         var = self.get_E((X, X)) - self.get_E(X)**2
-        print("var={}",var)
+        #print("var=",var)
         for i in range(Kp):
             U_i = parents[i]
             for j in range(Kp):
                 U_j = parents[j]
                 var = var - beta[i+1] * beta[j+1] * (self.get_E((U_i, U_j)) - self.get_E(U_i) * self.get_E(U_j))
         var = var + 1.0e-5
-        if var<0:
-            print("Stop here")
         assert(var >= 0)
 
         return beta, var
@@ -480,30 +479,40 @@ class Bayesian_learning:
         self.graph_l_cost_cache.clear()
         #pick out the current best candidate
         best = self.best_candidate()
+        #debug
+        print("best cost = {}", self.queue[best])
         #change randomly
         for i in range(self.n):
             for j in range(i+1, self.n):
                 if best.get_edge(i, j) or best.get_edge(j, i):#there are edges
                     #remove edge
+                    #debug
+                    print("remove {}--{}", i, j)
                     rem_best = best.clone()
                     rem_best.remove_edge(i, j)
                     if self.valid_graph(rem_best):
                         rem_cost = self.cost(rem_best)
                         self.queue[rem_best] = rem_cost
                     #reverse edge
+                    #debug
+                    print("reverse {}--{}", i, j)
                     rev_best = best.clone()
                     rev_best.reverse_edge(i, j)
                     if self.valid_graph(rev_best):
                         rev_cost = self.cost(rev_best)
                         self.queue[rev_best] = rev_cost
                 else:#there is no edge
-                    #add i==>j 
+                    #add i==>j
+                    #debug
+                    print("add {}-->{}", i, j)
                     addij_best = best.clone()
                     addij_best.add_edge(i, j)
                     if self.valid_graph(addij_best):
                         addij_cost = self.cost(addij_best)
                         self.queue[addij_best] = addij_cost
                     #add j==>i
+                    #debug
+                    print("add {}-->{}", j, i)
                     addji_best = best.clone()
                     addji_best.add_edge(j, i)
                     if self.valid_graph(addji_best):
