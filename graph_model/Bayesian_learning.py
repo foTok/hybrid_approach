@@ -21,8 +21,10 @@ class Bayesian_structure:
         n is the number of nodes
         """
         #adjacent matrix
-        self.n = n
         self.struct = np.array([[0] * n] * n)
+        #for iteration
+        self.n = n
+        self.i = 0
 
     def add_edge(self, i, j):
         """
@@ -109,7 +111,6 @@ class Bayesian_structure:
         """
         enumerate all edeges
         """
-        self.i = 0
         return self
 
     def __next__(self):
@@ -117,6 +118,7 @@ class Bayesian_structure:
         work with __iter__
         """
         if self.i == self.n:
+            self.i = 0
             raise StopIteration
         parents = list(self.struct[:, self.i])
         parents = [i for i, v in enumerate(parents) if v==1]
@@ -129,7 +131,7 @@ class Bayesian_learning:
     """
     learning Bayesian model from data
     """
-    def __init__(self, n):
+    def __init__(self, n, alpha=0.2):
         #nodes number
         self.n                      = n
         #queue
@@ -146,7 +148,9 @@ class Bayesian_learning:
         #regular factor      
         self.decay                  = 0
         #cost weight
-        self.alpha                  = 0
+        self.alpha                  = alpha
+        #best candidate
+        self.best                   = None
         #cache
         #cache for GGM (Guassian Graph Model).{FML:[beta, var, N]}.
         #FML:(p1,p2,...pn, kid), nodes are put in ascending order.
@@ -192,7 +196,8 @@ class Bayesian_learning:
         graph = Bayesian_structure(self.n)
         for edge in self.known_edge:
             graph.add_edge(edge[0], edge[1])
-        self.queue[graph] = 10000                                                                       #this one can never be the right one
+        self.queue[graph] = 10000
+        self.best = graph                                                                       #this one can never be the right one
 
     def add_struct2queue(self, struct, cost):
         """
@@ -204,9 +209,18 @@ class Bayesian_learning:
         """
         get the best candidate
         """
+        # epsilon = 1e-3
         queue = self.queue
-        best = min(zip(queue.values(),queue.keys()))
-        return best[1]
+        # while True:
+        #     graph, cost0 = min(queue.items(), key=lambda x:x[1])
+        #     cost1 = self.cost(graph)
+        #     if abs(cost0 - cost1) < epsilon:
+        #         cost = cost1
+        #         break
+        #     else:
+        #         self.queue[graph] = cost1
+        graph, cost = min(queue.items(), key=lambda x:x[1])
+        return graph, cost
 
     #For priori knowledge
     def add_known_edge(self, i, j):
@@ -246,7 +260,8 @@ class Bayesian_learning:
                 w0 = n / (1 + n)
                 w1 = 1 / (1 + n)
                 beta = w0 * beta0 + w1 * beta1
-                var  = w0**2 * var0 + w1**2 * var1
+                # var  = w0**2 * var0 + w1**2 * var1
+                var  = w0 * var0 + w1 * var1
                 n = n + 1
                 bvw = [beta, var, n]
             else:
@@ -378,6 +393,9 @@ class Bayesian_learning:
         """
         compute l_cost for family fml
         """
+        #for debug
+        # if fml == (0,):
+        #     print("Stop here")
         beta, var = self.get_beta_var(fml)
         parents = fml[:-1]
         kid = fml[-1]
@@ -440,7 +458,9 @@ class Bayesian_learning:
         """
         compute the cost of a structure
         """
-        cost = self.l_cost(graph) + (self.decay * self.r_cost(graph))
+        l_cost = self.l_cost(graph)
+        r_cost = self.r_cost(graph)
+        cost = l_cost + self.decay * r_cost
         return cost
         
     #if the graph is valid
@@ -468,26 +488,31 @@ class Bayesian_learning:
             return False
         return True
 
+    def clear_cache(self):
+        """
+        clear some caches
+        """
+        self.batch_GGM_cache.clear()
+        #debug
+        # print("E_cache=", self.E_cache)
+        self.E_cache.clear()
+        self.fml_l_cost_update_flag.clear()
+        self.graph_l_cost_cache.clear()
+
     def step(self):
         """
         step forward
         """
-        #clear some cache
-        self.batch_GGM_cache.clear()
-        self.E_cache.clear()
-        self.fml_l_cost_update_flag.clear()
-        self.graph_l_cost_cache.clear()
-        #pick out the current best candidate
-        best = self.best_candidate()
-        #debug
-        print("best cost = {}", self.queue[best])
+        #clear cache
+        self.clear_cache()
+        best = self.best
         #change randomly
         for i in range(self.n):
             for j in range(i+1, self.n):
                 if best.get_edge(i, j) or best.get_edge(j, i):#there are edges
                     #remove edge
                     #debug
-                    print("remove {}--{}", i, j)
+                    #print("remove {}--{}", i, j)
                     rem_best = best.clone()
                     rem_best.remove_edge(i, j)
                     if self.valid_graph(rem_best):
@@ -495,7 +520,7 @@ class Bayesian_learning:
                         self.queue[rem_best] = rem_cost
                     #reverse edge
                     #debug
-                    print("reverse {}--{}", i, j)
+                    #print("reverse {}--{}", i, j)
                     rev_best = best.clone()
                     rev_best.reverse_edge(i, j)
                     if self.valid_graph(rev_best):
@@ -504,7 +529,7 @@ class Bayesian_learning:
                 else:#there is no edge
                     #add i==>j
                     #debug
-                    print("add {}-->{}", i, j)
+                    #print("add {}-->{}", i, j)
                     addij_best = best.clone()
                     addij_best.add_edge(i, j)
                     if self.valid_graph(addij_best):
@@ -512,9 +537,13 @@ class Bayesian_learning:
                         self.queue[addij_best] = addij_cost
                     #add j==>i
                     #debug
-                    print("add {}-->{}", j, i)
+                    #print("add {}-->{}", j, i)
                     addji_best = best.clone()
                     addji_best.add_edge(j, i)
                     if self.valid_graph(addji_best):
                         addji_cost = self.cost(addji_best)
                         self.queue[addji_best] = addji_cost
+        #pick out the current best candidate
+        best, cost = self.best_candidate()
+        #debug
+        print(cost)
