@@ -39,13 +39,27 @@ for i in range(epoch):
     feature = FE.fe(inputs)
     batch_data = organise_data(inputs, labels, res, feature)
 
-    #for test
+    # #for test
     # length = len(batch_data)
-    # plt = np.zeros((length, 13))
-    # plt[:, 0:13] = batch_data[:,-13:]
+    # n = len(batch_data[0, :])
+    # lb = np.array([np.argwhere(x == 1)[0][0] for x in batch_data[:, :6]])
+    # for k in range(13):
+    #     sk = batch_data[:, k+6]
+    #     pl.figure(k+1)
+    #     for i in range(6):
+    #         mask = (lb==i)
+    #         sk_i = sk[mask]
+    #         pl.subplot(6,1,i+1)
+    #         pl.hist(sk_i, 30)
+    # pl.show()
+
+    # #for test
+    # length = len(batch_data)
+    # n = len(batch_data[0, :])
+    # plt = batch_data[:, 6:]
     # lb = np.array([np.argwhere(x == 1)[0][0] for x in batch_data[:, :6]])
     # pl.figure()
-    # for i in range(13):
+    # for i in range(n-6):
     #     pl.subplot(5, 3, i+1)
     #     pl.scatter(lb, plt[:, i])
     # pl.show()

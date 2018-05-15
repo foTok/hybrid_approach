@@ -155,7 +155,7 @@ class Bayesian_learning:
         #cache for GGM (Guassian Graph Model).{FML:[beta, var, N]}.
         #FML:(p1,p2,...pn, kid), nodes are put in ascending order.
         #beta:[beta0, beta1,...,beta_n].
-        #var: real (var = sigma**2).
+        #var: [var0, var1,...,var_n].
         #N: real (weight), N is the batch number where the batchs contribute the JPT.
         #Some values in it will be updated in each iteration but the diction will NOT be cleared.
         self.GGM_cache              = {}
@@ -164,16 +164,20 @@ class Bayesian_learning:
         #the real GGM is merged into self.GGM_cache.
         #It should BE cleared before each iteration.
         self.batch_GGM_cache        = set()                                                             #remember to clear
-        #Expectation cache.
-        #E_cache: {x/(x1, x2):E}
-        #x, x1, x2: int
-        #E: real
-        #this cache just store E for this batch. Should BE cleared and updated in each iteration.
-        self.E_cache                = {}                                                                #remember to clear
+        # #Expectation cache.
+        # #E_cache: {x/(x1, x2):E}
+        # #x, x1, x2: int
+        # #E: real
+        # #this cache just store E for this batch. Should BE cleared and updated in each iteration.
+        # self.E_cache                = {}                                                                #remember to clear
+
+        #cache pesudo inverse of X
+        #{X:var}
+        self.p_inverse_cache        = {}                                                                #remember to clear
         #Likelihood cost cache for each family.
         #{FML:l_cost}.
         #Should be  updated in each iteration
-        #because GGM may change because of new batch.                           
+        #because GGM may change because of new batch.                  
         self.fml_l_cost_cache       = {}
         #update flag
         #Should be cleared before each iteration.
@@ -275,81 +279,119 @@ class Bayesian_learning:
     def GGM_from_batch(self, FML):
         """
         compute GGM for FML in this batch
-        !!!Please make sure parents are listed in incresing order
+        !!!Please make sure parents are listed in increasing order
         """
-        parents = FML[:-1]  #a tuple
-        X       = FML[-1]   #an int
-        Kp = len(parents)
-        #Compute beta
-        #b         = beta * A
-        #E[X]      = β0     +β1E[U1]     +. . .+βkE[Uk].
-        #E[X · Ui] = β0E[Ui]+β1E[U1 · Ui]+. . .+βkE[Uk · Ui].
-        #A = np.matrix(np.zeros((Kp+1, Kp+1)))
-        A = np.array(np.zeros((Kp+1, Kp+1)))
-        b = np.zeros(Kp+1)
-        #for the first equation
-        A[0, 0] = 1
-        b[0] = deepcopy(self.get_E(X))
-        for k in range(Kp):
-            U_k = parents[k]
-            A[0, k+1] = deepcopy(self.get_E(U_k))
+        # parents = FML[:-1]  #a tuple
+        # X       = FML[-1]   #an int
+        # Kp = len(parents)
+        # #Compute beta
+        # #b         = beta * A
+        # #E[X]      = β0     +β1E[U1]     +. . .+βkE[Uk].
+        # #E[X · Ui] = β0E[Ui]+β1E[U1 · Ui]+. . .+βkE[Uk · Ui].
+        # #A = np.matrix(np.zeros((Kp+1, Kp+1)))
+        # A = np.array(np.zeros((Kp+1, Kp+1)))
+        # b = np.zeros(Kp+1)
+        # #for the first equation
+        # A[0, 0] = 1
+        # b[0] = deepcopy(self.get_E(X))
+        # for k in range(Kp):
+        #     U_k = parents[k]
+        #     A[0, k+1] = deepcopy(self.get_E(U_k))
         
-        #for the rest equations
-        for i in range(Kp):# for row i+1
-            U_i = parents[i]
-            A[i+1, 0] = deepcopy(self.get_E(U_i))
-            b[i+1]    = deepcopy(self.get_E((X, U_i)))
-            for k in range(Kp):
-                U_k = parents[k]
-                A[i+1, k+1] = deepcopy(self.get_E((U_k, U_i)))
-        beta = np.linalg.solve(A, b)
-        #Compute var
-        #Cov[X;X] = E[X · X]−E[X] · E[X]
-        #Cov[X;Ui] = E[X · Ui]−E[X] · E[Ui]
-        #var = Cov[X;X]−SIGMA{βiβjCov[Ui;Uj]}
-        var = self.get_E((X, X)) - self.get_E(X)**2
-        #print("var=",var)
-        for i in range(Kp):
-            U_i = parents[i]
-            for j in range(Kp):
-                U_j = parents[j]
-                var = var - beta[i+1] * beta[j+1] * (self.get_E((U_i, U_j)) - self.get_E(U_i) * self.get_E(U_j))
-        var = var + 1.0e-5
-        assert(var >= 0)
+        # #for the rest equations
+        # for i in range(Kp):# for row i+1
+        #     U_i = parents[i]
+        #     A[i+1, 0] = deepcopy(self.get_E(U_i))
+        #     b[i+1]    = deepcopy(self.get_E((X, U_i)))
+        #     for k in range(Kp):
+        #         U_k = parents[k]
+        #         A[i+1, k+1] = deepcopy(self.get_E((U_k, U_i)))
+        # beta = np.linalg.solve(A, b)
+        # #Compute var
+        # #Cov[X;X] = E[X · X]−E[X] · E[X]
+        # #Cov[X;Ui] = E[X · Ui]−E[X] · E[Ui]
+        # #var = Cov[X;X]−SIGMA{βiβjCov[Ui;Uj]}
+        # var = self.get_E((X, X)) - self.get_E(X)**2
+        # #print("var=",var)
+        # for i in range(Kp):
+        #     U_i = parents[i]
+        #     for j in range(Kp):
+        #         U_j = parents[j]
+        #         var = var - beta[i+1] * beta[j+1] * (self.get_E((U_i, U_j)) - self.get_E(U_i) * self.get_E(U_j))
+        # var = var + 1.0e-5
+        # assert(var >= 0)
 
+        x = FML[:-1]  #a tuple
+        y = FML[-1]   #an int
+        N = len(self.batch)
+        e = np.ones((N, 1))
+        X = np.hstack((e, self.batch[:, x]))
+        X = np.mat(X)
+        Y = self.batch[:, y]
+        Y.shape = (N, 1)
+        p_inv  =self.get_p_inverse(x)
+        beta = p_inv * Y
+        res = (Y - X*beta)
+        var = p_inv * np.multiply(res, res)
+        #avoid numeric problems
+        var = var + 1e-8
         return beta, var
 
-    def E_from_batch(self, x):
+    def get_p_inverse(self, x):
         """
-        get Expection from batch
-        x: int or (x1, x2) where x1 and x2 are int
-        x1 < x2 is ensured by self.get_E()
+        get p_inverse
         """
-        if isinstance(x, tuple):
-            x1 = self.batch[:, x[0]]
-            x2 = self.batch[:, x[1]]
-            E = np.mean(x1 * x2)
+        if x in self.p_inverse_cache:
+            p_inv = self.p_inverse_cache[x]
         else:
-            E = np.mean(self.batch[:, x])
-        #save in cache
-        self.E_cache[x] = E
-        return E
+            p_inv = self.p_inverse_from_batch(x)
+            self.p_inverse_cache[x] = p_inv             #cache it
+        return p_inv
 
-    def get_E(self, x):
+    def p_inverse_from_batch(self, x):
         """
-        get Expection from batch or cache
-        x: int or (x1, x2) where x1 and x2 are int
+        get p_inverse_from_batch
+        x: a tuple
+        !!!Please make sure x are listed in increasing order
         """
-        #insure x1 < x2 for tuple
-        if isinstance(x, tuple):
-            x1 = min(x)
-            x2 = max(x)
-            x = (x1, x2)
-        if x in self.E_cache:
-            E = self.E_cache[x]
-        else:
-            E = self.E_from_batch(x)
-        return E
+        N = len(self.batch)
+        e = np.ones((N, 1))
+        X = np.hstack((e, self.batch[:, x]))
+        X = np.mat(X)
+        p_inv = (X.T * X).I * X.T
+        return p_inv
+
+    # def E_from_batch(self, x):
+    #     """
+    #     get Expection from batch
+    #     x: int or (x1, x2) where x1 and x2 are int
+    #     x1 < x2 is ensured by self.get_E()
+    #     """
+    #     if isinstance(x, tuple):
+    #         x1 = self.batch[:, x[0]]
+    #         x2 = self.batch[:, x[1]]
+    #         E = np.mean(x1 * x2)
+    #     else:
+    #         E = np.mean(self.batch[:, x])
+    #     #save in cache
+    #     self.E_cache[x] = E
+    #     return E
+
+    # def get_E(self, x):
+    #     """
+    #     get Expection from batch or cache
+    #     x: int or (x1, x2) where x1 and x2 are int
+    #     """
+    #     #insure x1 < x2 for tuple
+    #     if isinstance(x, tuple):
+    #         x1 = min(x)
+    #         x2 = max(x)
+    #         x = (x1, x2)
+    #     if x in self.E_cache:
+    #         E = self.E_cache[x]
+    #     else:
+    #         E = self.E_from_batch(x)
+    #     return E
 
     #For cost
     #for likelihood cost
@@ -394,19 +436,27 @@ class Bayesian_learning:
         compute l_cost for family fml
         """
         #for debug
-        # if fml == (0,):
-        #     print("Stop here")
+        fml = (0,1,2,3,4,5,7)
         beta, var = self.get_beta_var(fml)
-        parents = fml[:-1]
-        kid = fml[-1]
-        U = self.batch[:, parents]
-        X = self.batch[:, kid]
-        predict = np.sum(U*beta[1:], axis=1)
-        predict = predict + beta[0]
-        res = (predict - X)**2
-        rela_res = res / (2*var)
-        cost = np.mean(rela_res)
-        #save it in self.fml_l_cost_cache
+        x = fml[:-1]
+        y = fml[-1]
+        N = len(self.batch)
+        e = np.ones((N, 1))
+        X = np.hstack((e, self.batch[:, x]))
+        X = np.mat(X)
+        Y = self.batch[:, y]
+        Y_p = X * beta
+        Var = X * var
+        Y_p.shape = (N,)
+        Var.shape = (N,)
+        res = Y_p - Y
+
+        res = np.array(res)
+        Var = np.array(Var)
+
+        relative_res = (res**2) / (2*Var)
+        cost = np.mean(relative_res)
+        #cache it in self.fml_l_cost_cache
         self.fml_l_cost_cache[fml] = cost
         return cost
 
@@ -495,7 +545,7 @@ class Bayesian_learning:
         self.batch_GGM_cache.clear()
         #debug
         # print("E_cache=", self.E_cache)
-        self.E_cache.clear()
+        # self.E_cache.clear()
         self.fml_l_cost_update_flag.clear()
         self.graph_l_cost_cache.clear()
 

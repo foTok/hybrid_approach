@@ -1,0 +1,54 @@
+digraph {
+	//fault
+	F [label=Fault]
+	//features
+	subgraph features{
+		node[style=filled, color=green]
+		label="features"
+
+		fe0 [label=fe0]
+		fe1 [label=fe1]
+		fe2 [label=fe2]
+		fe3 [label=fe3]
+		fe4 [label=fe4]
+		fe5 [label=fe5]
+		fe6 [label=fe6]
+		fe7 [label=fe7]
+		fe8 [label=fe8]
+		fe9 [label=fe9]
+		
+		fe0 -> fe7
+		fe1 -> fe6
+		fe2 -> fe4
+		fe3 -> fe7
+	}
+	
+	//residuals
+	subgraph residuals{
+		node[style=filled, color=red ]
+		label="residuals"
+
+		r1 [label=r1]
+		r2 [label=r2]
+		r3 [label=r3]
+	}
+	F -> fe0
+	F -> fe1
+	F -> fe2
+	F -> fe3
+	F -> fe4
+	F -> fe5
+	F -> fe6
+	F -> fe7
+	F -> fe8
+	F -> fe9
+
+	F -> r1
+	F -> r2
+	F -> r3
+
+	fe1 -> r1
+	fe1 -> r3
+	fe6 -> r1
+	fe8 -> r2
+}

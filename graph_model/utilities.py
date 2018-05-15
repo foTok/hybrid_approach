@@ -48,6 +48,7 @@ def organise_data(inputs, labels, res, feature):
     s3 = inputs[:, 3]
     s4 = inputs[:, 4]
     batch_data[:, -1] = np.mean(np.abs( s4 - 10 * s3), axis=1)
+    # return batch_data
 
     a1 = batch_data[:, :7]
     a2 = batch_data[:, 8:17]
