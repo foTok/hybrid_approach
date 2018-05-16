@@ -2,6 +2,9 @@
 train a DAG Bayesian network
 """
 import os
+import sys
+parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  
+sys.path.insert(0,parentdir) 
 import torch
 import numpy as np
 import matplotlib.pyplot as pl
@@ -12,7 +15,7 @@ from graph_model.Bayesian_learning import Bayesian_learning
 from graph_model.utilities import organise_data
 
 #settings
-PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '.'))
+PATH = parentdir
 DATA_PATH = PATH + "\\bpsk_navigate\\data\\test\\"
 FE_PATH = PATH + "\\ann_model\\"
 fe_file = "FE0.pkl"

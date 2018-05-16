@@ -2,6 +2,9 @@
 analyze variable relationship
 """
 import os
+import sys
+parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  
+sys.path.insert(0,parentdir) 
 from ann_diagnoser.simple_diagnoser import SimpleDiagnoer
 from data_manger.bpsk_data_tank import BpskDataTank
 from data_manger.utilities import get_file_list
@@ -17,7 +20,7 @@ import numpy as np
 from tensorboardX import SummaryWriter
 
 #prepare data
-PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '.'))
+PATH = parentdir
 DATA_PATH = PATH + "\\bpsk_navigate\\data\\"
 step_len=100
 criterion = CrossEntropy

@@ -2,6 +2,9 @@
 analyze feature relationship
 """
 import os
+import sys
+parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  
+sys.path.insert(0,parentdir)
 import torch
 import numpy as np
 import pandas as pd
@@ -14,13 +17,12 @@ from graph_model.Bayesian_learning import Bayesian_learning
 from graph_model.utilities import organise_data
 
 #settings
-PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '.'))
+PATH = parentdir
 DATA_PATH = PATH + "\\bpsk_navigate\\data\\test\\"
 FE_PATH = PATH + "\\ann_model\\"
 fe_file = "FE0.pkl"
 step_len=100
-epoch = 2000
-batch = 2000
+batch = 20000
 
 #load fe
 FE = torch.load(FE_PATH+fe_file)
@@ -63,7 +65,7 @@ for i in range(6):
         relation_graph[i][j] = 1
         relation_graph[j][i] = 1
 
-# no edges between features with correfficency < 0.5
+# no edges between features with correfficency < 0.6
 for i in range(6, 19):
     for j in range(i+1, 19):
         if relation_graph[i][j]>0.6:
@@ -73,21 +75,53 @@ for i in range(6, 19):
             relation_graph[i][j] = 0
             relation_graph[j][i] = 0
 
-# np.savetxt("relation_graph.txt", relation_graph)
-# print(relation_graph)
+# model information
+#r1 --- node 16
+#unrelated fault [2,3,4]
+uf1 = [2,3,4]
+for i in uf1:
+    relation_graph[i][16] = 0
+    relation_graph[16][i] = 0
+#r2 --- node 17
+uf2 = [0,1,3,4,5]
+for i in uf2:
+    relation_graph[i][17] = 0
+    relation_graph[17][i] = 0
+#r3 --- node 18
+uf3 = [0,1,2,3,5]
+for i in uf3:
+    relation_graph[i][18] = 0
+    relation_graph[18][i] = 0
 
-
-
-index = ['F',\
-         'fe0', 'fe1', 'fe2', 'fe3', 'fe4', 'fe5', 'fe6', 'fe7', 'fe8', 'fe9',\
-         'r1', 'r2', 'r3']
-
-dot = Digraph()
-for node in index:
-    dot.node(node, node)
+#undirected to directed
+#Warning!!!
+#pandas DataFrame will choose the cloum firstly and then choose rows.
 for i in range(19):
-    for j in range(i+1,19):
-        if relation_graph[i][j] == 1:
-            dot.edge(index[i], index[j])
-print(dot.source)
-dot.render('Bayesian0.gv')
+    for j in range(i):
+        #debug
+        relation_graph[j][i] = 0
+
+relation_graph_np = np.array(relation_graph)
+np.save("relation_graph.npy", relation_graph_np)
+
+# np.savetxt("relation_graph.txt", relation_graph)
+print(relation_graph)
+
+#save to graphviz
+labels = ["F[0:6]",\
+          "fe0", "fe1", "fe2", "fe3", "fe4", "fe5", "fe6", "fe7", "fe8", "fe9",\
+          "r1", "r2", "r3"]
+G = Digraph()
+#add nodes
+for i in labels:
+    G.node(i, i)
+#add edges
+#fault to all
+for i in range(13):
+    G.edge(labels[0], labels[i+1])
+#feature/res to feature/res
+for i in range(6, 19):
+    for j in range(i+1, 19):
+        if relation_graph_np[i, j] == 1:
+            G.edge(labels[i-5], labels[j-5])
+print(G)

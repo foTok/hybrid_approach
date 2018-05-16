@@ -56,3 +56,4 @@ def organise_data(inputs, labels, res, feature):
     real_data = np.concatenate((a1,a2,a3), axis=1)
     
     return real_data
+

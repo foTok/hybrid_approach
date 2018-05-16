@@ -1,0 +1,12 @@
+digraph {
+        //node definition
+        p [label=PesudoCode]
+        c [label=Carrier]
+        os [label=OriginalSignal]
+        as [label=AmplifiedSignal]
+
+        //connection definition
+        p -> os
+        c -> os
+        os -> as
+}

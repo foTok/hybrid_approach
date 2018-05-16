@@ -1,10 +1,9 @@
-digraph {
+digraph g{
 	//fault
-	F [label=Fault]
+	F [label="Fault[0:6]"]
 	//features
 	subgraph features{
 		node[style=filled, color=green]
-		label="features"
 
 		fe0 [label=fe0]
 		fe1 [label=fe1]
@@ -21,6 +20,9 @@ digraph {
 		fe1 -> fe6
 		fe2 -> fe4
 		fe3 -> fe7
+		
+
+		label="features";
 	}
 	
 	//residuals
@@ -43,9 +45,9 @@ digraph {
 	F -> fe8
 	F -> fe9
 
-	F -> r1
-	F -> r2
-	F -> r3
+	F -> r1 [label="[0,1,5]"]
+	F -> r2 [label="[2]"]
+	F -> r3 [label="[4]"]
 
 	fe1 -> r1
 	fe1 -> r3

@@ -1,7 +1,10 @@
 """"
 use tSNE to evaluate featrues
 """
-
+import os
+import sys
+parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  
+sys.path.insert(0,parentdir)
 import numpy as np
 import torch
 from sklearn.manifold import TSNE
@@ -13,7 +16,7 @@ import matplotlib.pyplot as plt
 from graph_model.utilities import vector2number
 
 #prepare data
-PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '.'))
+PATH = parentdir
 DATA_PATH = PATH + "\\bpsk_navigate\\data\\test\\"
 mana = BpskDataTank()
 
@@ -23,7 +26,7 @@ for file in list_files:
     mana.read_data(DATA_PATH+file, step_len=step_len, snr=20)
 
 batch = 20000
-FE_test = torch.load("ann_model\\FE0.pkl")
+FE_test = torch.load(PATH + "\\ann_model\\FE0.pkl")
 FE_test.eval()
 inputs, labels, _, _ = mana.random_batch(batch, normal=0, single_fault=10, two_fault=1)
 features = FE_test.fe(inputs)
