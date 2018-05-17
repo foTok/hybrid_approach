@@ -80,35 +80,35 @@ class Bayesian_structure:
         assert i != j
         return self.struct[i, j]
 
-    def is_DAG_DFS(self, i, color):
-        """
-        deep first search
-        return if it is acycle in this search
-        True: acycle
-        False:cycle
-        """
-        color[i] = 1
-        for j in range(self.n):
-            if self.struct[i, j] != 0:
-                if color[j] == 1:
-                    return False
-                elif color[j] == -1:
-                    continue
-                else:
-                    if not self.is_DAG_DFS(j, color):
-                        return False
-        color[i] == -1
-        return True
+    # def is_DAG_DFS(self, i, color):
+    #     """
+    #     deep first search
+    #     return if it is acycle in this search
+    #     True: acycle
+    #     False:cycle
+    #     """
+    #     color[i] = 1
+    #     for j in range(self.n):
+    #         if self.struct[i, j] != 0:
+    #             if color[j] == 1:
+    #                 return False
+    #             elif color[j] == -1:
+    #                 continue
+    #             else:
+    #                 if not self.is_DAG_DFS(j, color):
+    #                     return False
+    #     color[i] == -1
+    #     return True
 
-    def is_acycle(self):
-        """
-        check if the structure is acycle
-        """
-        color = [0]*self.n
-        for i in range(self.n):
-            if not self.is_DAG_DFS(i, color):
-                return False
-        return True
+    # def is_acycle(self):
+    #     """
+    #     check if the structure is acycle
+    #     """
+    #     color = [0]*self.n
+    #     for i in range(self.n):
+    #         if not self.is_DAG_DFS(i, color):
+    #             return False
+    #     return True
 
     def clone(self):
         """

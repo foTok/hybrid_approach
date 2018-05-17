@@ -3,6 +3,7 @@ some utilities
 """
 
 import numpy as np
+import matplotlib.pyplot as pl
 
 def number2vector(num, n):
     """
@@ -57,3 +58,30 @@ def organise_data(inputs, labels, res, feature):
     
     return real_data
 
+def hist_batch(batch_data):
+    """
+    scatter the batch in different modes
+    """
+    lb = np.array([np.argwhere(x == 1)[0][0] for x in batch_data[:, :6]])
+    for k in range(13):
+        sk = batch_data[:, k+6]
+        pl.figure(k+1)
+        for i in range(6):
+            mask = (lb==i)
+            sk_i = sk[mask]
+            pl.subplot(6,1,i+1)
+            pl.hist(sk_i, 30)
+    pl.show()
+
+def scatter_batch(batch_data):
+    """
+    scatter batch
+    """
+    n = len(batch_data[0, :])
+    plt = batch_data[:, 6:]
+    lb = np.array([np.argwhere(x == 1)[0][0] for x in batch_data[:, :6]])
+    pl.figure()
+    for i in range(n-6):
+        pl.subplot(5, 3, i+1)
+        pl.scatter(lb, plt[:, i])
+    pl.show()

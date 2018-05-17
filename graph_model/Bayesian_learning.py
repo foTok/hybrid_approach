@@ -18,14 +18,13 @@ class Bayesian_learning:
     def __init__(self, n, alpha=0.2):
         #nodes number
         self.n                      = n
+        #init flag
+        self.init_flag              = False
         #queue
         #We call it search queue although it is a dict, queue = {G:cost,...].
         self.queue                  = {}
         #priori knowledge
-        #priori knowledge about system structure, {(i, j)...}. Edges in this list exist.
-        self.known_edge             = set()
-        #priori knowledge about system structure, {(i, j)...}. Edges in this list never exist.     
-        self.no_edge                = set()
+        self.priori_knowledge       = None
         #batch
         #np.array(). Data for the current batch, batch × (label + residuals + features).
         self.batch                  = None
@@ -82,10 +81,10 @@ class Bayesian_learning:
         init the search queue
         """
         graph = Bayesian_structure(self.n)
-        for edge in self.known_edge:
-            graph.add_edge(edge[0], edge[1])
-        self.queue[graph] = 10000
-        self.best = graph                                                                       #this one can never be the right one
+        #TODO
+        #initi the queue based on the 
+        self.best = graph
+        self.init_flag = True
 
     def add_struct2queue(self, struct, cost):
         """
@@ -110,19 +109,11 @@ class Bayesian_learning:
         graph, cost = min(queue.items(), key=lambda x:x[1])
         return graph, cost
 
-    #For priori knowledge
-    def add_known_edge(self, i, j):
+    def set_priori(self, priori_knowledge):
         """
-        add a known edge (i==>j)
+        set the priori knowledge
         """
-        self.known_edge.add((i, j))
-
-    def add_no_edge(self, i, j):
-        """
-        add no edge means both edges (i==>j) and (j==>i) don't exist
-        """
-        self.no_edge.add((i, j))
-        self.no_edge.add((j, i))
+        self.priori_knowledge = priori_knowledge
 
     #For self.batch
     def set_batch(self, batch):
@@ -165,46 +156,6 @@ class Bayesian_learning:
         compute GGM for FML in this batch
         !!!Please make sure parents are listed in increasing order
         """
-        # parents = FML[:-1]  #a tuple
-        # X       = FML[-1]   #an int
-        # Kp = len(parents)
-        # #Compute beta
-        # #b         = beta * A
-        # #E[X]      = β0     +β1E[U1]     +. . .+βkE[Uk].
-        # #E[X · Ui] = β0E[Ui]+β1E[U1 · Ui]+. . .+βkE[Uk · Ui].
-        # #A = np.matrix(np.zeros((Kp+1, Kp+1)))
-        # A = np.array(np.zeros((Kp+1, Kp+1)))
-        # b = np.zeros(Kp+1)
-        # #for the first equation
-        # A[0, 0] = 1
-        # b[0] = deepcopy(self.get_E(X))
-        # for k in range(Kp):
-        #     U_k = parents[k]
-        #     A[0, k+1] = deepcopy(self.get_E(U_k))
-        
-        # #for the rest equations
-        # for i in range(Kp):# for row i+1
-        #     U_i = parents[i]
-        #     A[i+1, 0] = deepcopy(self.get_E(U_i))
-        #     b[i+1]    = deepcopy(self.get_E((X, U_i)))
-        #     for k in range(Kp):
-        #         U_k = parents[k]
-        #         A[i+1, k+1] = deepcopy(self.get_E((U_k, U_i)))
-        # beta = np.linalg.solve(A, b)
-        # #Compute var
-        # #Cov[X;X] = E[X · X]−E[X] · E[X]
-        # #Cov[X;Ui] = E[X · Ui]−E[X] · E[Ui]
-        # #var = Cov[X;X]−SIGMA{βiβjCov[Ui;Uj]}
-        # var = self.get_E((X, X)) - self.get_E(X)**2
-        # #print("var=",var)
-        # for i in range(Kp):
-        #     U_i = parents[i]
-        #     for j in range(Kp):
-        #         U_j = parents[j]
-        #         var = var - beta[i+1] * beta[j+1] * (self.get_E((U_i, U_j)) - self.get_E(U_i) * self.get_E(U_j))
-        # var = var + 1.0e-5
-        # assert(var >= 0)
-
         x = FML[:-1]  #a tuple
         y = FML[-1]   #an int
         N = len(self.batch)
@@ -244,38 +195,6 @@ class Bayesian_learning:
         X = np.mat(X)
         p_inv = (X.T * X).I * X.T
         return p_inv
-
-    # def E_from_batch(self, x):
-    #     """
-    #     get Expection from batch
-    #     x: int or (x1, x2) where x1 and x2 are int
-    #     x1 < x2 is ensured by self.get_E()
-    #     """
-    #     if isinstance(x, tuple):
-    #         x1 = self.batch[:, x[0]]
-    #         x2 = self.batch[:, x[1]]
-    #         E = np.mean(x1 * x2)
-    #     else:
-    #         E = np.mean(self.batch[:, x])
-    #     #save in cache
-    #     self.E_cache[x] = E
-    #     return E
-
-    # def get_E(self, x):
-    #     """
-    #     get Expection from batch or cache
-    #     x: int or (x1, x2) where x1 and x2 are int
-    #     """
-    #     #insure x1 < x2 for tuple
-    #     if isinstance(x, tuple):
-    #         x1 = min(x)
-    #         x2 = max(x)
-    #         x = (x1, x2)
-    #     if x in self.E_cache:
-    #         E = self.E_cache[x]
-    #     else:
-    #         E = self.E_from_batch(x)
-    #     return E
 
     #For cost
     #for likelihood cost
@@ -398,29 +317,23 @@ class Bayesian_learning:
         return cost
         
     #if the graph is valid
-    def priori_obeyed_by(self, graph):
+    def priori_permit(self, i, j, v):
         """
         check if the priori knowledge is obeyed by the graph
+        edge i-->j
+        v = 1:      add
+            0/else: delete
         """
-        #existing edges
-        for edge in self.known_edge:
-            if not graph.get_edge(edge[0], edge[1]):
+        if v == 1: #if add
+            if self.priori_knowledge[i, j] == -1:
                 return False
-        #no edges
-        for edge in self.no_edge:
-            if graph.get_edge(edge[0], edge[1]):
+            else:
+                return True
+        else:#if delete
+            if self.priori_knowledge[i, j] == 1:
                 return False
-        return True
-
-    def valid_graph(self, graph):
-        """
-        DAG + obey priori knowledge
-        """
-        if not graph.is_acycle():
-            return False
-        if not self.priori_obeyed_by(graph):
-            return False
-        return True
+            else:
+                return True
 
     def clear_cache(self):
         """
@@ -439,44 +352,28 @@ class Bayesian_learning:
         """
         #clear cache
         self.clear_cache()
+        #init the queue if it is needed
+        if not self.init_flag:
+            self.init_queue()
+        if not self.queue:
+            print("Empty queue. Break")
+            return
         best = self.best
         #change randomly
-        for i in range(self.n):
+        for i in range(6, self.n):
             for j in range(i+1, self.n):
-                if best.get_edge(i, j) or best.get_edge(j, i):#there are edges
-                    #remove edge
-                    #debug
-                    #print("remove {}--{}", i, j)
-                    rem_best = best.clone()
-                    rem_best.remove_edge(i, j)
-                    if self.valid_graph(rem_best):
+                if best.get_edge(i, j):             #if there is an edge from i to j.
+                    if self.priori_permit(i, j, 0): #and could be removed.
+                        rem_best = best.clone()
+                        rem_best.remove_edge(i, j)
                         rem_cost = self.cost(rem_best)
                         self.queue[rem_best] = rem_cost
-                    #reverse edge
-                    #debug
-                    #print("reverse {}--{}", i, j)
-                    rev_best = best.clone()
-                    rev_best.reverse_edge(i, j)
-                    if self.valid_graph(rev_best):
-                        rev_cost = self.cost(rev_best)
-                        self.queue[rev_best] = rev_cost
-                else:#there is no edge
-                    #add i==>j
-                    #debug
-                    #print("add {}-->{}", i, j)
-                    addij_best = best.clone()
-                    addij_best.add_edge(i, j)
-                    if self.valid_graph(addij_best):
+                else:                               #there is no edge
+                    if self.priori_permit(i, j, 1): #and could be added.
+                        addij_best = best.clone()
+                        addij_best.add_edge(i, j)
                         addij_cost = self.cost(addij_best)
                         self.queue[addij_best] = addij_cost
-                    #add j==>i
-                    #debug
-                    #print("add {}-->{}", j, i)
-                    addji_best = best.clone()
-                    addji_best.add_edge(j, i)
-                    if self.valid_graph(addji_best):
-                        addji_cost = self.cost(addji_best)
-                        self.queue[addji_best] = addji_cost
         #pick out the current best candidate
         best, cost = self.best_candidate()
         #debug

@@ -13,6 +13,45 @@ from data_manger.utilities import get_file_list
 from graph_model.Bayesian_learning import Bayesian_structure
 from graph_model.Bayesian_learning import Bayesian_learning
 from graph_model.utilities import organise_data
+from graph_model.utilities import hist_batch
+from graph_model.utilities import scatter_batch
+
+#priori knowledge
+#0 ~can not determine
+#1 ~connection
+#-1~no connection
+#initially, all connection can not be determined.
+pri_knowledge = np.zeros((19, 19))
+#no self connection and downstair connection
+for i in range(19):
+    for j in range(i+1):
+        pri_knowledge[i,j] = -1
+#no connection between faults
+for i in range(6):
+    for j in range(i+1, 6):
+        pri_knowledge[i, j] = -1
+        pri_knowledge[j, i] = -1
+#connections from faults to features or residuals
+for i in range(6):
+    for j in range(6,19):
+        pri_knowledge[i, j] = 1
+# model information
+#r1 --- node 16
+#unrelated fault [2,3,4]
+uf1 = [2,3,4]
+for i in uf1:
+    pri_knowledge[i][16] = -1
+    pri_knowledge[16][i] = -1
+#r2 --- node 17
+uf2 = [0,1,3,4,5]
+for i in uf2:
+    pri_knowledge[i][17] = -1
+    pri_knowledge[17][i] = -1
+#r3 --- node 18
+uf3 = [0,1,2,3,5]
+for i in uf3:
+    pri_knowledge[i][18] = -1
+    pri_knowledge[18][i] = -1
 
 #settings
 PATH = parentdir
@@ -36,36 +75,16 @@ for file in list_files:
 #labels, 6; features, 10 (12-10); residuals 3.
 BL = Bayesian_learning(6+10+3)
 BL.init_queue()
-inputs, labels, _, res = mana.random_batch(batch, normal=0, single_fault=10, two_fault=0)
 for i in range(epoch):
-    # inputs, labels, _, res = mana.random_batch(batch, normal=0, single_fault=10, two_fault=0)
+    inputs, labels, _, res = mana.random_batch(batch, normal=0, single_fault=10, two_fault=0)
     feature = FE.fe(inputs)
     batch_data = organise_data(inputs, labels, res, feature)
 
     # #for test
-    # length = len(batch_data)
-    # n = len(batch_data[0, :])
-    # lb = np.array([np.argwhere(x == 1)[0][0] for x in batch_data[:, :6]])
-    # for k in range(13):
-    #     sk = batch_data[:, k+6]
-    #     pl.figure(k+1)
-    #     for i in range(6):
-    #         mask = (lb==i)
-    #         sk_i = sk[mask]
-    #         pl.subplot(6,1,i+1)
-    #         pl.hist(sk_i, 30)
-    # pl.show()
+    # hist_batch(batch_data)
 
     # #for test
-    # length = len(batch_data)
-    # n = len(batch_data[0, :])
-    # plt = batch_data[:, 6:]
-    # lb = np.array([np.argwhere(x == 1)[0][0] for x in batch_data[:, :6]])
-    # pl.figure()
-    # for i in range(n-6):
-    #     pl.subplot(5, 3, i+1)
-    #     pl.scatter(lb, plt[:, i])
-    # pl.show()
+    # scatter_batch(batch_data)
 
     BL.set_batch(batch_data)
     BL.step()
