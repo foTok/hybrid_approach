@@ -7,7 +7,10 @@ from math import exp
 from scipy.linalg import solve
 from graph_model.utilities import vector2number
 from graph_model.utilities import number2vector
+from graph_model.utilities import Guassian_cost
 from graph_component import Bayesian_structure
+from graph_model.Bayesian_network import Bayesian_network
+
 
 #small number to avoid numeric problems
 alpha = 1e-20
@@ -30,10 +33,8 @@ class Bayesian_learning:
         self.batch                  = None
         #regular factor      
         self.decay                  = 0
-        #cost weight
-        self.alpha                  = alpha
-        #best candidate
-        self.best                   = None
+        # #cost weight
+        # self.alpha                  = alpha
         #cache
         #cache for GGM (Guassian Graph Model).{FML:[beta, var, N]}.
         #FML:(p1,p2,...pn, kid), nodes are put in ascending order.
@@ -47,13 +48,6 @@ class Bayesian_learning:
         #the real GGM is merged into self.GGM_cache.
         #It should BE cleared before each iteration.
         self.batch_GGM_cache        = set()                                                             #remember to clear
-        # #Expectation cache.
-        # #E_cache: {x/(x1, x2):E}
-        # #x, x1, x2: int
-        # #E: real
-        # #this cache just store E for this batch. Should BE cleared and updated in each iteration.
-        # self.E_cache                = {}                                                                #remember to clear
-
         #cache pesudo inverse of X
         #{X:var}
         self.p_inverse_cache        = {}                                                                #remember to clear
@@ -81,16 +75,14 @@ class Bayesian_learning:
         init the search queue
         """
         graph = Bayesian_structure(self.n)
-        #TODO
-        #initi the queue based on the 
-        self.best = graph
+        graph.set_skip()
+        for i in range(self.n):
+            for j in range(self.n):
+                if self.priori_knowledge[i, j] == 1:
+                    graph.add_edge(i, j)
+        cost = self.cost(graph)
+        self.queue[graph] = cost
         self.init_flag = True
-
-    def add_struct2queue(self, struct, cost):
-        """
-        add a struct and its cost into the queue.
-        """
-        self.queue[struct] = cost
 
     def best_candidate(self):
         """
@@ -222,9 +214,10 @@ class Bayesian_learning:
             if fml in self.fml_l_cost_update_flag:                      #must be updated and in self.fml_l_cost_cache
                 cost_u = self.fml_l_cost_cache[fml]
             elif fml in self.fml_l_cost_cache:                          #in self.fml_l_cost_cache but not update in this iteration
-                cost0 = self.fml_l_cost_cache[fml]
-                cost1 = self.fml_l_cost(fml)
-                cost_u = cost0 + self.alpha * (cost1 - cost0)
+                # cost0 = self.fml_l_cost_cache[fml]
+                # cost1 = self.fml_l_cost(fml)
+                # cost_u = cost0 + self.alpha * (cost1 - cost0)
+                cost_u = self.fml_l_cost(fml)
                 self.fml_l_cost_cache[fml] = cost_u
                 self.fml_l_cost_update_flag.add(fml)
             else:#Now we know the fml is the first time to compute
@@ -238,27 +231,8 @@ class Bayesian_learning:
         """
         compute l_cost for family fml
         """
-        #for debug
-        fml = (0,1,2,3,4,5,7)
         beta, var = self.get_beta_var(fml)
-        x = fml[:-1]
-        y = fml[-1]
-        N = len(self.batch)
-        e = np.ones((N, 1))
-        X = np.hstack((e, self.batch[:, x]))
-        X = np.mat(X)
-        Y = self.batch[:, y]
-        Y_p = X * beta
-        Var = X * var
-        Y_p.shape = (N,)
-        Var.shape = (N,)
-        res = Y_p - Y
-
-        res = np.array(res)
-        Var = np.array(Var)
-
-        relative_res = (res**2) / (2*Var)
-        cost = np.mean(relative_res)
+        cost = Guassian_cost(self.batch, fml, beta, var)
         #cache it in self.fml_l_cost_cache
         self.fml_l_cost_cache[fml] = cost
         return cost
@@ -300,7 +274,7 @@ class Bayesian_learning:
             if self.fml_r_cost_cache_has(fml):
                 cost = cost + self.fml_r_cost_from_cache(fml)
             else:#Now we know the fml is not cached
-                n = len(fml)
+                n = sum(np.array(fml) > 5)
                 fml_cost = exp(n-1)
                 self.fml_r_cost_cache[fml] = fml_cost #add it to cache
                 cost = cost + fml_cost
@@ -340,13 +314,11 @@ class Bayesian_learning:
         clear some caches
         """
         self.batch_GGM_cache.clear()
-        #debug
-        # print("E_cache=", self.E_cache)
-        # self.E_cache.clear()
+        self.p_inverse_cache.clear()
         self.fml_l_cost_update_flag.clear()
         self.graph_l_cost_cache.clear()
 
-    def step(self):
+    def step(self, time_step=None):
         """
         step forward
         """
@@ -358,7 +330,11 @@ class Bayesian_learning:
         if not self.queue:
             print("Empty queue. Break")
             return
-        best = self.best
+        best, cost = self.best_candidate()
+        if time_step is not None:
+            print("cost ",time_step, " = ", cost)
+        else:
+            print(cost)
         #change randomly
         for i in range(6, self.n):
             for j in range(i+1, self.n):
@@ -375,6 +351,14 @@ class Bayesian_learning:
                         addij_cost = self.cost(addij_best)
                         self.queue[addij_best] = addij_cost
         #pick out the current best candidate
-        best, cost = self.best_candidate()
-        #debug
-        print(cost)
+     
+    def best_BN(self):
+        """
+        best BN
+        """
+        bBN = Bayesian_network()
+        bBN.struct, _ = self.best_candidate()
+        for fml in bBN.struct:
+            para = self.GGM_from_batch(fml)
+            bBN.parameters.add_fml(fml, para)
+        return bBN

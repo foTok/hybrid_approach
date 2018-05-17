@@ -114,8 +114,11 @@ class Bayesian_structure:
         """
         clone it
         """
-        copy = Bayesian_structure(self.n)
+        copy = Bayesian_structure()
         copy.struct = self.struct.copy()
+        copy.n = self.n
+        copy.i = self.i
+        copy.skip = self.skip
         return copy
 
     def __eq__(self, other):

@@ -4,8 +4,9 @@ train a DAG Bayesian network
 import os
 import sys
 parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  
-sys.path.insert(0,parentdir) 
+sys.path.insert(0,parentdir)
 import torch
+import pickle
 import numpy as np
 import matplotlib.pyplot as pl
 from data_manger.bpsk_data_tank import BpskDataTank
@@ -15,6 +16,7 @@ from graph_model.Bayesian_learning import Bayesian_learning
 from graph_model.utilities import organise_data
 from graph_model.utilities import hist_batch
 from graph_model.utilities import scatter_batch
+from graph_model.utilities import graphviz_Bayes
 
 #priori knowledge
 #0 ~can not determine
@@ -52,6 +54,10 @@ uf3 = [0,1,2,3,5]
 for i in uf3:
     pri_knowledge[i][18] = -1
     pri_knowledge[18][i] = -1
+#no connection between residuals
+for i in range(16, 19):
+    for j in range(16, 19):
+        pri_knowledge[i, j] = -1
 
 #settings
 PATH = parentdir
@@ -59,7 +65,7 @@ DATA_PATH = PATH + "\\bpsk_navigate\\data\\test\\"
 FE_PATH = PATH + "\\ann_model\\"
 fe_file = "FE0.pkl"
 step_len=100
-epoch = 2000
+epoch = 20
 batch = 2000
 
 #load fe
@@ -74,9 +80,9 @@ for file in list_files:
 
 #labels, 6; features, 10 (12-10); residuals 3.
 BL = Bayesian_learning(6+10+3)
-BL.init_queue()
+BL.set_priori(pri_knowledge)
 for i in range(epoch):
-    inputs, labels, _, res = mana.random_batch(batch, normal=0, single_fault=10, two_fault=0)
+    inputs, labels, _, res = mana.random_batch(batch, normal=0.2, single_fault=10, two_fault=0)
     feature = FE.fe(inputs)
     batch_data = organise_data(inputs, labels, res, feature)
 
@@ -87,9 +93,12 @@ for i in range(epoch):
     # scatter_batch(batch_data)
 
     BL.set_batch(batch_data)
-    BL.step()
-    #Add loss to visual
-best = BL.best_candidate()
-#TODO
-#get CPT
-#save model
+    BL.step(i)
+
+best, _ = BL.best_candidate()
+graphviz_Bayes(best.struct,"Greedy_Bayes.gv")
+
+BN = BL.best_BN()
+s = pickle.dumps(BN)
+with open('Greedy_Bayes.bn', "wb") as f:
+    f.write(s)

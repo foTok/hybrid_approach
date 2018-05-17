@@ -15,4 +15,3 @@ class Bayesian_network:
     def __init__(self):
         self.struct             = Bayesian_structure()
         self.parameters         = Bayesian_Gaussian_parameter()
-    

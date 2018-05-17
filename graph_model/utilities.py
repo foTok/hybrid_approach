@@ -4,6 +4,7 @@ some utilities
 
 import numpy as np
 import matplotlib.pyplot as pl
+from graphviz import Digraph
 
 def number2vector(num, n):
     """
@@ -85,3 +86,62 @@ def scatter_batch(batch_data):
         pl.subplot(5, 3, i+1)
         pl.scatter(lb, plt[:, i])
     pl.show()
+
+def graphviz_Bayes(struct, file):
+    """
+    convert struct into graphviz file
+    """
+    labels = ["F[0..6]",\
+          "fe0", "fe1", "fe2", "fe3", "fe4", "fe5", "fe6", "fe7", "fe8", "fe9",\
+          "r1", "r2", "r3"]
+    G = Digraph()
+    #add nodes
+    for i, lab in zip(range(len(labels)), labels):
+        if i == 0:
+            color = "yellow"
+        elif  1<=i<11:
+            color = "green"
+        else:
+            color = "red"
+        G.node(lab, lab, fillcolor=color, style="filled")
+    #add edges from fault to features
+    for i in range(10):
+        G.edge(labels[0], labels[i+1])
+    #add edges from fault to residuals
+    G.edge(labels[0], labels[11], label="[0,1,5]")
+    G.edge(labels[0], labels[12], label="[2]")
+    G.edge(labels[0], labels[13], label="[4]")
+
+    #add edges in struct
+    for i in range(6, 19):
+        for j in range(i+1, 19):
+            if struct[i, j] == 1:
+                G.edge(labels[i-5], labels[j-5])
+    print(G)
+    G.render(file, view=True)
+    print("Saved in: ", file)
+
+def Guassian_cost(batch, fml, beta, var):
+    """
+    the cost function
+    """
+    var_basis = 1e-3
+    x = fml[:-1]
+    y = fml[-1]
+    N = len(batch)
+    e = np.ones((N, 1))
+    X = np.hstack((e, batch[:, x]))
+    X = np.mat(X)
+    Y = batch[:, y]
+    Y_p = X * beta
+    Var = X * var
+    Y_p.shape = (N,)
+    Var.shape = (N,)
+    res = Y_p - Y
+
+    res = np.abs(np.array(res))
+    Var = np.abs(np.array(Var))+ var_basis
+
+    relative_res = (res**2) / (2*Var)
+    cost = np.mean(relative_res)
+    return cost
