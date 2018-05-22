@@ -1,45 +1,18 @@
-class test:
-    def __init__(self):
-        self.a = [0,1,2,3,4,5,6,7,8,9]
-        self.n = 10
-        self.i = 0
+import pandas as pd
+import numpy as np
 
-    def __iter__(self):
-        """
-        enumerate all edeges
-        """
-        #self.i = 0
-        return self
+# 模拟数据
+data = pd.DataFrame({'price': np.random.randn(1000), 
+                     'amount': 100*np.random.randn(1000)})
 
-    def __next__(self):
-        """
-        work with __iter__
-        """
-        if self.i == self.n:
-            self.i = 0
-            raise StopIteration
-        fml = self.a[self.i]
-        a = self.i + 1
-        self.i = a
-        return fml
+# 等分价格为10个区间
+quartiles = pd.cut(data.price, 10)
 
-a = test()
-for i in a:
-    if i == 6:
-        break
-    print(i)
+# 定义聚合函数
+def get_stats(group):
+    return {'amount': group.sum()}
 
-for i in a:
-    print(i)
-
-
-class father:
-    def __init__(self):
-        self.name = "Hello, World!"
-
-class son(father):
-    def __init__(self):
-        super(son,self).__init__()
-
-s = son()
-print(s.name)
+# 分组统计
+grouped = data.amount.groupby(quartiles)
+price_bucket_amount = grouped.apply(get_stats).unstack()
+print("DONE")
