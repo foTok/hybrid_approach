@@ -4,4 +4,5 @@
 *npy
 *.pkl
 *.png
+*.pdf
 /runs/

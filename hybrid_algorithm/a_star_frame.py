@@ -19,6 +19,7 @@ class a_star_frame:
         self.order      = None
         #priori probability
         #priori should be a two-layer tuple that stores the priori probability of varialbe values
+        #priori is organised in [0, 1, 2, 3,...] order
         #for example: ((0.1, 0.9), (0.2, 0.8))
         #initialized as None
         self.priori     = None

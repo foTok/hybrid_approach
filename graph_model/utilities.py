@@ -125,14 +125,22 @@ def Guassian_cost(batch, fml, beta, var):
     """
     the cost function
     """
-    var_basis = 1e-3
     x = fml[:-1]
     y = fml[-1]
-    N = len(batch)
-    e = np.ones((N, 1))
-    X = np.hstack((e, batch[:, x]))
-    X = np.mat(X)
+    X = batch[:, x]
     Y = batch[:, y]
+    cost = Guassian_cost_core(X, Y, beta, var)
+    return cost
+
+def Guassian_cost_core(X, Y, beta, var):
+    """
+    cost function
+    """
+    var_basis = 1e-3
+    N = len(Y)
+    e = np.ones((N, 1))
+    X = np.hstack((e, X))
+    X = np.mat(X)
     Y_p = X * beta
     Var = X * var
     Y_p.shape = (N,)

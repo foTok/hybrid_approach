@@ -31,3 +31,15 @@ for i in a:
 
 for i in a:
     print(i)
+
+
+class father:
+    def __init__(self):
+        self.name = "Hello, World!"
+
+class son(father):
+    def __init__(self):
+        super(son,self).__init__()
+
+s = son()
+print(s.name)

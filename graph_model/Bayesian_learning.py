@@ -1,6 +1,10 @@
 """
 learning Bayesian model
 """
+import os
+import sys
+parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  
+sys.path.insert(0,parentdir)
 import numpy as np
 from math import log
 from math import exp
@@ -8,7 +12,7 @@ from scipy.linalg import solve
 from graph_model.utilities import vector2number
 from graph_model.utilities import number2vector
 from graph_model.utilities import Guassian_cost
-from graph_component import Bayesian_structure
+from graph_model.graph_component import Bayesian_structure
 from graph_model.Bayesian_network import Bayesian_network
 
 
