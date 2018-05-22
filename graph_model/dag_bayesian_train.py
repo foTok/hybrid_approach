@@ -65,7 +65,7 @@ DATA_PATH = PATH + "\\bpsk_navigate\\data\\test\\"
 FE_PATH = PATH + "\\ann_model\\"
 fe_file = "FE0.pkl"
 step_len=100
-epoch = 200
+epoch = 3000
 batch = 2000
 
 #load fe
