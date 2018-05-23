@@ -70,6 +70,8 @@ class hybrid_search(a_star_frame):
         compute the cost of fml based on the candidate and obs
         if not all the values in the fml is assigned, return 0
         """
+        #To avoid numeric problems
+        alpha = 1e-20
         #check if all the variables in fml are assgined
         for i in fml:
             if (not self.candidate_has(candidate, i)) and\
@@ -92,6 +94,8 @@ class hybrid_search(a_star_frame):
         Y = np.array([value_y])
         beta, var = self.graph_model.parameters.fml_tank[fml]
         p = obs_pro(X, Y, beta, var)
+        #To avoid numeric problems
+        p = (p + alpha) / (1+alpha)
         cost = -log(p)
         return cost
 

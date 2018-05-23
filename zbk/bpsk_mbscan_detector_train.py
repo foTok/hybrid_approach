@@ -2,6 +2,9 @@
 the main file to conduct the computation
 """
 import os
+import sys
+parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  
+sys.path.insert(0,parentdir)
 from ann_diagnoser.bpsk_block_scan_diagnoser import DetectorBlockScan
 from data_manger.bpsk_data_tank import BpskDataTank
 from data_manger.utilities import get_file_list
@@ -16,8 +19,9 @@ import numpy as np
 
 
 #prepare data
-PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '.'))
+PATH = parentdir
 DATA_PATH = PATH + "\\bpsk_navigate\\data\\"
+MODEL_PATH = PATH + "\\ann_model\\"
 mana = BpskDataTank()
 step_len=100
 list_files = get_file_list(DATA_PATH)
@@ -27,7 +31,6 @@ for file in list_files:
 diagnoser = DetectorBlockScan()
 print(diagnoser)
 criterion = CrossEntropy
-#optimizer = optim.SGD(diagnoser.parameters(), lr=0.06, momentum=0.9, weight_decay=1e-3)
 optimizer = optim.Adam(diagnoser.parameters(), lr=0.001, weight_decay=5e-3)
 
 #train
@@ -52,7 +55,7 @@ for i in range(epoch):
 print('Finished Training')
 
 #save model
-torch.save(diagnoser, "ann_model\\detector1.pkl")
+torch.save(diagnoser, MODEL_PATH + "detector1.pkl")
 
 #figure 1
 pl.figure(1)
@@ -68,7 +71,7 @@ list_files2 = get_file_list(TEST_DATA_PATH)
 for file in list_files2:
     mana2.read_data(TEST_DATA_PATH+file, step_len=step_len, snr=20)
 
-diagnoser = torch.load("ann_model\\detector1.pkl")
+diagnoser = torch.load(MODEL_PATH + "detector1.pkl")
 diagnoser.eval()
 eval_loss = []
 batch2 = 1000

@@ -2,7 +2,10 @@
 the main file to conduct the computation
 """
 import os
-from ann_diagnoser.bpsk_block_scan_diagnoser import PredictorBlockScan
+import sys
+parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  
+sys.path.insert(0,parentdir)
+from ann_diagnoser.bpsk_block_scan_diagnoser import DiagnoerBlockScan
 from data_manger.bpsk_data_tank import BpskDataTank
 from data_manger.utilities import get_file_list
 from ann_diagnoser.loss_function import CrossEntropy
@@ -13,50 +16,61 @@ import torch.nn as nn
 import torch.optim as optim
 import matplotlib.pyplot as pl
 import numpy as np
+from tensorboardX import SummaryWriter
 
+#visual
+writer = SummaryWriter()
+
+#settings
+PATH = parentdir
+DATA_PATH = PATH + "\\bpsk_navigate\\data\\"
+ANN_PATH = PATH + "\\ddd\\ann_model\\"
+iso_name = "ISO0.pkl"
 
 #prepare data
-step_len=100
-PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '.'))
-normalization = Variable(torch.Tensor([10, 100, 100, 10, 10, 10**-6, 10**-6]))
-DATA_PATH = PATH + "\\bpsk_navigate\\data\\"
 mana = BpskDataTank()
-
+step_len=100
 list_files = get_file_list(DATA_PATH)
 for file in list_files:
     mana.read_data(DATA_PATH+file, step_len=step_len, snr=20)
 
-diagnoser = PredictorBlockScan(step_len=mana.step_len())
+diagnoser = DiagnoerBlockScan()
 print(diagnoser)
-criterion = MSE
-optimizer = optim.Adam(diagnoser.parameters(), lr=0.005, weight_decay=2e-3)
+criterion = CrossEntropy
+optimizer = optim.Adam(diagnoser.parameters(), lr=0.001, weight_decay=5e-3)
 
 #train
 epoch = 2000
 batch = 2000
 train_loss = []
 running_loss = 0.0
+#add graph flag
+agf = False
 for i in range(epoch):
-    #label need normalization
-    inputs, _, labels, _ = mana.random_batch(batch, normal=0, single_fault=10, two_fault=4)
-    labels = labels * normalization
+    inputs, labels, _, _ = mana.random_batch(batch, normal=0.4, single_fault=10, two_fault=0)
+    if not agf:                                 #visual
+        writer.add_graph(diagnoser, inputs)     #visual
+        agf = True                              #visual
     optimizer.zero_grad()
     outputs = diagnoser(inputs)
     loss = criterion(outputs, labels)
     loss.backward()
     optimizer.step()
 
-    running_loss += loss.data[0]
-    train_loss.append(loss.data[0])
+    loss_i = loss.item()
+    writer.add_scalar('Loss', loss_i, i) #visual
+    running_loss += loss_i
+    train_loss.append(loss_i)
     if i % 10 == 9:
         print('%d loss: %.5f' %(i + 1, running_loss / 10))
         running_loss = 0.0
-
 print('Finished Training')
 
 #save model
-torch.save(diagnoser, "ann_model\\bpsk_mbs_predictor.pkl")
-torch.save(diagnoser.state_dict(), "ann_model\\bpsk_mbs_predictor_para.pkl")
+torch.save(diagnoser, ANN_PATH + iso_name)
+
+#visual
+writer.close()
 
 #figure 1
 pl.figure(1)
@@ -71,17 +85,16 @@ mana2 = BpskDataTank()
 list_files2 = get_file_list(TEST_DATA_PATH)
 for file in list_files2:
     mana2.read_data(TEST_DATA_PATH+file, step_len=step_len, snr=20)
-predictor = torch.load("ann_model\\bpsk_mbs_predictor.pkl")
-predictor.eval()
+isolator = torch.load(ANN_PATH + iso_name)
+isolator.eval()
 eval_loss = []
 batch2 = 1000
 epoch2 = 1000
 for i in range(epoch2):
-    inputs, _, labels, _ = mana2.random_batch(batch2, normal=0, single_fault=10, two_fault=4)
-    labels = labels * normalization
-    outputs = predictor(inputs)
+    inputs, labels, _, _ = mana2.random_batch(batch2, normal=0.2, single_fault=10, two_fault=1)
+    outputs = isolator(inputs)
     loss = criterion(outputs, labels)
-    eval_loss.append(loss.data[0])
+    eval_loss.append(loss.item())
 
 #figure 2
 pl.figure(2)

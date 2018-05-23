@@ -2,8 +2,10 @@
 This file finding probability of residuals for fault isolation
 """
 
-
 import os
+import sys
+parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  
+sys.path.insert(0,parentdir)
 import numpy as np
 import torch
 import matplotlib.pyplot as pl
@@ -16,7 +18,7 @@ from data_manger.utilities import statistic
 from mbd.res_Z_test import Z_test
 
 #prepare data
-PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '.'))
+PATH = parentdir
 DATA_PATH = PATH + "\\bpsk_navigate\\data\\test\\"
 mana = BpskDataTank()
 

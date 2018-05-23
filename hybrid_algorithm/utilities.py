@@ -22,3 +22,13 @@ def hypothesis_test(X, Y, beta, var, alpha=0.95):
     negative = N - positive
     p = (positive * alpha + negative * (1-alpha))/N
     return p
+
+def priori_vec2tup(priori):
+    """
+    convert a priori from vector to tuple
+    """
+    tup_pri = []
+    for p in priori:
+        tup_pri.append((1-p, p))
+    tup_pri = tuple(tup_pri)
+    return tup_pri

@@ -2,6 +2,9 @@
 analyze mbscan for fault isolation
 """
 import os
+import sys
+parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  
+sys.path.insert(0,parentdir)
 from ann_diagnoser.bpsk_block_scan_diagnoser import DiagnoerBlockScan
 from data_manger.bpsk_data_tank import BpskDataTank
 from data_manger.utilities import get_file_list
@@ -46,8 +49,10 @@ def hist_eva(label, pro):
 
 #bpsk_mbs_isolator_para3
 #prepare data
-PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '.'))
+PATH = parentdir
 DATA_PATH = PATH + "\\bpsk_navigate\\data\\test\\"
+MODEL_PATH = PATH + "\\ann_model\\"
+model_name = "bpsk_mbs_isolator0.pkl"
 mana = BpskDataTank()
 
 step_len=100
@@ -55,7 +60,7 @@ list_files = get_file_list(DATA_PATH)
 for file in list_files:
     mana.read_data(DATA_PATH+file, step_len=step_len, snr=20)
 
-isolator = torch.load("ann_model\\bpsk_mbs_isolator3.pkl")
+isolator = torch.load(MODEL_PATH + model_name)
 isolator.eval()
 batch = 1000
 epoch = 1000

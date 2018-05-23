@@ -1,8 +1,11 @@
 """
-the main file to conduct the computation
+train the feature extractor
 """
 import os
-from ann_diagnoser.bpsk_block_scan_diagnoser import DiagnoerBlockScan
+import sys
+parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  
+sys.path.insert(0,parentdir)
+from ann_diagnoser.bpsk_block_scan_feature_extracter import BlockScanFE
 from data_manger.bpsk_data_tank import BpskDataTank
 from data_manger.utilities import get_file_list
 from ann_diagnoser.loss_function import CrossEntropy
@@ -19,19 +22,21 @@ from tensorboardX import SummaryWriter
 writer = SummaryWriter()
 
 #prepare data
-PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '.'))
+PATH = parentdir
 DATA_PATH = PATH + "\\bpsk_navigate\\data\\"
-mana = BpskDataTank()
-
+ANN_PATH = PATH + "\\ddd\\ann_model\\"
+fe_name = "FE0.pkl"
 step_len=100
+criterion = CrossEntropy
+
+mana = BpskDataTank()
 list_files = get_file_list(DATA_PATH)
 for file in list_files:
     mana.read_data(DATA_PATH+file, step_len=step_len, snr=20)
 
-diagnoser = DiagnoerBlockScan()
-print(diagnoser)
-criterion = CrossEntropy
-optimizer = optim.Adam(diagnoser.parameters(), lr=0.001, weight_decay=5e-3)
+FE = BlockScanFE()
+optimizer = optim.Adam(FE.parameters(), lr=0.001, weight_decay=8e-3)
+print(FE)
 
 #train
 epoch = 2000
@@ -41,12 +46,12 @@ running_loss = 0.0
 #add graph flag
 agf = False
 for i in range(epoch):
-    inputs, labels, _, _ = mana.random_batch(batch, normal=0, single_fault=10, two_fault=1)
-    if not agf:                                 #visual
-        writer.add_graph(diagnoser, inputs)     #visual
-        agf = True                              #visual
+    inputs, labels, _, _ = mana.random_batch(batch, normal=0.4, single_fault=10, two_fault=0)
+    if not agf:                         #visual
+        writer.add_graph(FE, inputs)    #visual
+        agf = True                      #visual
     optimizer.zero_grad()
-    outputs = diagnoser(inputs)
+    outputs = FE(inputs)
     loss = criterion(outputs, labels)
     loss.backward()
     optimizer.step()
@@ -59,10 +64,8 @@ for i in range(epoch):
         print('%d loss: %.5f' %(i + 1, running_loss / 10))
         running_loss = 0.0
 print('Finished Training')
-
 #save model
-torch.save(diagnoser, "ann_model\\bpsk_mbs_isolator1.pkl")
-
+torch.save(FE, ANN_PATH + fe_name)
 #visual
 writer.close()
 
@@ -79,14 +82,14 @@ mana2 = BpskDataTank()
 list_files2 = get_file_list(TEST_DATA_PATH)
 for file in list_files2:
     mana2.read_data(TEST_DATA_PATH+file, step_len=step_len, snr=20)
-isolator = torch.load("ann_model\\bpsk_mbs_isolator1.pkl")
-isolator.eval()
+FE_test = torch.load(ANN_PATH + fe_name)
+FE_test.eval()
 eval_loss = []
 batch2 = 1000
 epoch2 = 1000
 for i in range(epoch2):
-    inputs, labels, _, _ = mana2.random_batch(batch2, normal=0, single_fault=10, two_fault=1)
-    outputs = isolator(inputs)
+    inputs, labels, _, _ = mana2.random_batch(batch2, normal=0.2, single_fault=10, two_fault=1)
+    outputs = FE_test(inputs)
     loss = criterion(outputs, labels)
     eval_loss.append(loss.item())
 

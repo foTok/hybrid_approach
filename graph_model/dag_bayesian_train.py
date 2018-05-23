@@ -61,15 +61,18 @@ for i in range(16, 19):
 
 #settings
 PATH = parentdir
-DATA_PATH = PATH + "\\bpsk_navigate\\data\\test\\"
-FE_PATH = PATH + "\\ann_model\\"
+DATA_PATH = PATH + "\\bpsk_navigate\\data\\"
+ANN_PATH = PATH + "\\ddd\\ann_model\\"
+PGM_PATH = PATH + "\\graph_model\\pg_model\\"
 fe_file = "FE0.pkl"
+struct_file = "Greedy_Bayes.gv"
+pgm_file = "Greedy_Bayes.bn"
 step_len=100
-epoch = 3000
+epoch = 200
 batch = 2000
 
 #load fe
-FE = torch.load(FE_PATH+fe_file)
+FE = torch.load(ANN_PATH+fe_file)
 FE.eval()
 
 #prepare data
@@ -96,9 +99,9 @@ for i in range(epoch):
     BL.step(i)
 
 best, _ = BL.best_candidate()
-graphviz_Bayes(best.struct,"Greedy_Bayes.gv")
+graphviz_Bayes(best.struct, PGM_PATH + struct_file)
 
 BN = BL.best_BN()
 s = pickle.dumps(BN)
-with open('Greedy_Bayes.bn', "wb") as f:
+with open(PGM_PATH + pgm_file, "wb") as f:
     f.write(s)

@@ -17,12 +17,11 @@ from graph_model.Bayesian_network import Bayesian_network
 
 
 #small number to avoid numeric problems
-alpha = 1e-20
 class Bayesian_learning:
     """
     learning Bayesian model from data
     """
-    def __init__(self, n, alpha=0.2):
+    def __init__(self, n):
         #nodes number
         self.n                      = n
         #init flag
@@ -37,8 +36,6 @@ class Bayesian_learning:
         self.batch                  = None
         #regular factor      
         self.decay                  = 0
-        # #cost weight
-        # self.alpha                  = alpha
         #cache
         #cache for GGM (Guassian Graph Model).{FML:[beta, var, N]}.
         #FML:(p1,p2,...pn, kid), nodes are put in ascending order.
@@ -94,14 +91,6 @@ class Bayesian_learning:
         """
         # epsilon = 1e-3
         queue = self.queue
-        # while True:
-        #     graph, cost0 = min(queue.items(), key=lambda x:x[1])
-        #     cost1 = self.cost(graph)
-        #     if abs(cost0 - cost1) < epsilon:
-        #         cost = cost1
-        #         break
-        #     else:
-        #         self.queue[graph] = cost1
         graph, cost = min(queue.items(), key=lambda x:x[1])
         return graph, cost
 
@@ -135,7 +124,6 @@ class Bayesian_learning:
                 w0 = n / (1 + n)
                 w1 = 1 / (1 + n)
                 beta = w0 * beta0 + w1 * beta1
-                # var  = w0**2 * var0 + w1**2 * var1
                 var  = w0 * var0 + w1 * var1
                 n = n + 1
                 bvw = [beta, var, n]
@@ -218,9 +206,6 @@ class Bayesian_learning:
             if fml in self.fml_l_cost_update_flag:                      #must be updated and in self.fml_l_cost_cache
                 cost_u = self.fml_l_cost_cache[fml]
             elif fml in self.fml_l_cost_cache:                          #in self.fml_l_cost_cache but not update in this iteration
-                # cost0 = self.fml_l_cost_cache[fml]
-                # cost1 = self.fml_l_cost(fml)
-                # cost_u = cost0 + self.alpha * (cost1 - cost0)
                 cost_u = self.fml_l_cost(fml)
                 self.fml_l_cost_cache[fml] = cost_u
                 self.fml_l_cost_update_flag.add(fml)
