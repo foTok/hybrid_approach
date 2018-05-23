@@ -31,7 +31,6 @@ iso_file = "ISO0.pkl"
 graph_file = "Greedy_Bayes.bn"
 step_len=100
 batch = 1000
-fix_priori = ((0.99, 0.01),(0.99, 0.01),(0.99, 0.01),(0.99, 0.01),(0.99, 0.01),(0.99, 0.01))
 
 #load fe and iso
 FE = torch.load(ANN_PATH + fe_file)
@@ -49,7 +48,6 @@ mana = BpskDataTank()
 list_files = get_file_list(DATA_PATH)
 for file in list_files:
     mana.read_data(DATA_PATH+file, step_len=step_len, snr=20, norm=True)
-
 
 inputs, labels, _, res = mana.random_batch(batch, normal=0.2, single_fault=0, two_fault=10)
 feature = FE.fe(inputs)

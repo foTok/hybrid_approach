@@ -28,7 +28,7 @@ GRAPH_PATH = PATH + "\\graph_model\\pg_model\\"
 fe_file = "FE0.pkl"
 graph_file = "Greedy_Bayes.bn"
 step_len=100
-batch = 100
+batch = 1000
 priori = ((0.99, 0.01),(0.99, 0.01),(0.99, 0.01),(0.99, 0.01),(0.99, 0.01),(0.99, 0.01))
 
 #load fe
@@ -46,7 +46,7 @@ for file in list_files:
     mana.read_data(DATA_PATH+file, step_len=step_len, snr=20, norm=True)
 
 
-inputs, labels, _, res = mana.random_batch(batch, normal=0.2, single_fault=10, two_fault=5)
+inputs, labels, _, res = mana.random_batch(batch, normal=0.2, single_fault=0, two_fault=10)
 feature = FE.fe(inputs)
 batch_data = organise_data(inputs, labels, res, feature)
 label = labels.detach().numpy()

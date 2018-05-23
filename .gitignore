@@ -3,6 +3,5 @@
 *pyc
 *npy
 *.pkl
-*.png
 *.pdf
-/runs/
+/ddd/runs/
