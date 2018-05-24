@@ -4,4 +4,4 @@
 *npy
 *.pkl
 *.pdf
-/ddd/runs/
+runs/*

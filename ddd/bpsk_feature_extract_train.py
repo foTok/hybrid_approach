@@ -25,7 +25,7 @@ writer = SummaryWriter()
 PATH = parentdir
 DATA_PATH = PATH + "\\bpsk_navigate\\data\\"
 ANN_PATH = PATH + "\\ddd\\ann_model\\"
-fe_name = "FE0.pkl"
+fe_name = "FE1.pkl"
 step_len=100
 criterion = CrossEntropy
 
