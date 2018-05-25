@@ -19,9 +19,10 @@ from tensorboardX import SummaryWriter
 
 #prepare data
 PATH = parentdir
-DATA_PATH = PATH + "\\bpsk_navigate\\data\\test\\"
+DATA_PATH = PATH + "\\bpsk_navigate\\data\\"
 ANN_PATH = PATH + "\\ddd\\ann_model\\"
-ed_name = "ED0.pkl"
+ed_name = "ED2.pkl"
+basis_name = "ED1.pkl"
 step_len=100
 criterion = torch.nn.MSELoss()
 
@@ -30,12 +31,13 @@ list_files = get_file_list(DATA_PATH)
 for file in list_files:
     mana.read_data(DATA_PATH+file, step_len=step_len, snr=20)
 
-ED = EncoderDecoder()
+# ED = EncoderDecoder()
+ED = torch.load(ANN_PATH + basis_name)
 optimizer = optim.Adam(ED.parameters(), lr=0.001, weight_decay=8e-3)
 print(ED)
 
 #train
-epoch = 2000
+epoch = 8000
 batch = 2000
 train_loss = []
 running_loss = 0.0
