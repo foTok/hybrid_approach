@@ -26,6 +26,10 @@ class Bayesian_learning:
         self.n                      = n
         #init flag
         self.init_flag              = False
+        #constant var flag
+        self.cv                     = False
+        #norm for cost
+        self.norm                   = False
         #queue
         #We call it search queue although it is a dict, queue = {G:cost,...].
         self.queue                  = {}
@@ -69,6 +73,12 @@ class Bayesian_learning:
         #Regular cost cache for a graph. Should NOT be cleared.
         #{G:cost,...}.
         self.graph_r_cost_cache     = {}
+
+    def set_cv(self, cv):
+        self.cv = cv
+
+    def set_norm(self, norm):
+        self.norm = norm
 
     #For queue
     def init_queue(self):
@@ -117,7 +127,7 @@ class Bayesian_learning:
         if FML in self.batch_GGM_cache:
             bvw = self.GGM_cache[FML]
         else:
-            beta1, var1 = self.GGM_from_batch(FML)
+            beta1, var1 = self.GGM_from_batch(FML, cv=self.cv)
             if FML in self.GGM_cache:
                 bvw0 = self.GGM_cache[FML]
                 beta0, var0, n = bvw0[0], bvw0[1], bvw0[2]
@@ -135,10 +145,11 @@ class Bayesian_learning:
         #return beta, var and weight(n)
         return bvw[0], bvw[1]
 
-    def GGM_from_batch(self, FML):
+    def GGM_from_batch(self, FML, cv):
         """
         compute GGM for FML in this batch
         !!!Please make sure parents are listed in increasing order
+        cv = constant var
         """
         x = FML[:-1]  #a tuple
         y = FML[-1]   #an int
@@ -151,7 +162,10 @@ class Bayesian_learning:
         p_inv  =self.get_p_inverse(x)
         beta = p_inv * Y
         res = (Y - X*beta)
-        var = p_inv * np.multiply(res, res)
+        if cv:
+            var = np.mean(np.multiply(res, res))
+        else:
+            var = p_inv * np.multiply(res, res)
         #avoid numeric problems
         var = var + 1e-8
         return beta, var
@@ -221,7 +235,7 @@ class Bayesian_learning:
         compute l_cost for family fml
         """
         beta, var = self.get_beta_var(fml)
-        cost = Guassian_cost(self.batch, fml, beta, var)
+        cost = Guassian_cost(self.batch, fml, beta, var, self.norm)
         #cache it in self.fml_l_cost_cache
         self.fml_l_cost_cache[fml] = cost
         return cost
@@ -348,6 +362,6 @@ class Bayesian_learning:
         bBN = Bayesian_network()
         bBN.struct, _ = self.best_candidate()
         for fml in bBN.struct:
-            para = self.GGM_from_batch(fml)
+            para = self.GGM_from_batch(fml, self.cv)
             bBN.parameters.add_fml(fml, para)
         return bBN

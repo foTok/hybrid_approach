@@ -30,20 +30,7 @@ digraph {
 	"F[0..6]" -> r0 [label="[0,1,5]"]
 	"F[0..6]" -> r1 [label="[2]"]
 	"F[0..6]" -> r2 [label="[4]"]
-	fe0 -> r2
-	fe1 -> r0
-	fe3 -> fe7
-	fe3 -> fe9
-	fe3 -> fe11
-	fe5 -> fe6
-	fe5 -> fe7
-	fe5 -> fe8
-	fe5 -> fe9
-	fe5 -> fe11
-	fe5 -> r0
-	fe6 -> fe8
-	fe6 -> r1
-	fe7 -> fe11
-	fe8 -> fe9
-	fe9 -> r0
+	fe0 -> fe2
+	fe0 -> fe6
+	fe4 -> fe5
 }

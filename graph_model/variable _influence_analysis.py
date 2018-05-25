@@ -1,5 +1,6 @@
 """
-analyze variable relationship
+analyze variable influence relationship.
+the output is a directed graph that show how variables influence each other.
 """
 import os
 import sys

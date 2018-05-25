@@ -5,17 +5,17 @@ import os
 import sys
 parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  
 sys.path.insert(0,parentdir)
-from ann_diagnoser.bpsk_block_scan_diagnoser import DiagnoerBlockScan
-from data_manger.bpsk_data_tank import BpskDataTank
-from data_manger.utilities import get_file_list
-from ann_diagnoser.loss_function import CrossEntropy
-from ann_diagnoser.loss_function import MSE
-from torch.autograd import Variable
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import matplotlib.pyplot as pl
 import numpy as np
+from ann_diagnoser.bpsk_block_scan_diagnoser import BlockScanDiagnoser
+from data_manger.bpsk_data_tank import BpskDataTank
+from data_manger.utilities import get_file_list
+from ann_diagnoser.loss_function import CrossEntropy
+from ann_diagnoser.loss_function import MSE
+from torch.autograd import Variable
 from tensorboardX import SummaryWriter
 
 #visual
@@ -25,7 +25,7 @@ writer = SummaryWriter()
 PATH = parentdir
 DATA_PATH = PATH + "\\bpsk_navigate\\data\\"
 ANN_PATH = PATH + "\\ddd\\ann_model\\"
-iso_name = "ISO0.pkl"
+iso_name = "DIA0.pkl"
 
 #prepare data
 mana = BpskDataTank()
@@ -34,7 +34,7 @@ list_files = get_file_list(DATA_PATH)
 for file in list_files:
     mana.read_data(DATA_PATH+file, step_len=step_len, snr=20)
 
-diagnoser = DiagnoerBlockScan()
+diagnoser = BlockScanDiagnoser()
 print(diagnoser)
 criterion = CrossEntropy
 optimizer = optim.Adam(diagnoser.parameters(), lr=0.001, weight_decay=5e-3)
@@ -89,7 +89,7 @@ isolator = torch.load(ANN_PATH + iso_name)
 isolator.eval()
 eval_loss = []
 batch2 = 1000
-epoch2 = 1000
+epoch2 = 100
 for i in range(epoch2):
     inputs, labels, _, _ = mana2.random_batch(batch2, normal=0.2, single_fault=10, two_fault=1)
     outputs = isolator(inputs)

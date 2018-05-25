@@ -4,11 +4,11 @@ some utilities
 import numpy as np
 from scipy import stats
 
-def hypothesis_test(X, Y, beta, var, alpha=0.95):
+def hypothesis_test(X, Y, beta, var, alpha=0.99):
     """
     Gaussian hypothesis test
     """
-    i_f = 0.2
+    i_f = 0.0
     var_basis = 1e-4
     N = len(Y)
     e = np.ones((N, 1))
@@ -16,7 +16,10 @@ def hypothesis_test(X, Y, beta, var, alpha=0.95):
     X = np.mat(X)
     mean = X * beta
     mean = np.array(mean)
-    var = np.abs(X * var) + var_basis
+    if isinstance(var, float) or isinstance(var, int):
+        var = var
+    else:
+        var = np.abs(X * var) + var_basis
     var = np.array(var)
     std  = np.sqrt(var)
     interval=stats.norm.interval(alpha,mean,std)

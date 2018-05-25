@@ -19,7 +19,7 @@ from graph_model.utilities import vector2number
 PATH = parentdir
 DATA_PATH = PATH + "\\bpsk_navigate\\data\\test\\"
 ANN_PATH = PATH + "\\ddd\\ann_model\\"
-ann_file = "FE0.pkl"
+ann_file = "FE1.pkl"
 
 #prepare data
 mana = BpskDataTank()

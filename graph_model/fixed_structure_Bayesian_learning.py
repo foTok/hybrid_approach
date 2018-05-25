@@ -13,25 +13,25 @@ from data_manger.utilities import get_file_list
 from graph_model.graph_component import Bayesian_structure
 from graph_model.graph_component import Bayesian_Gaussian_parameter
 from graph_model.parameter_learning import Parameters_learning
-from graph_model.utilities import organise_data
+from ddd.utilities import organise_data
 
 #settings
 PATH = parentdir
 DATA_PATH = PATH + "\\bpsk_navigate\\data\\test\\"
-FE_PATH = PATH + "\\ann_model\\"
-STRUCT_PATH = PATH + "\\graph_model\\"
+ANN_PATH = PATH + "\\ddd\\ann_model\\"
+PGM_PATH = PATH + "\\graph_model\\pg_model\\"
 fe_file = "FE0.pkl"
-struct_file = "relation_graph.npy"
+struct_file = "linear_graph.npy"
 step_len=100
 epoch = 2000
 batch = 2000
 
 #load fe
-FE = torch.load(FE_PATH+fe_file)
+FE = torch.load(ANN_PATH+fe_file)
 FE.eval()
 
 #load structure
-np_struct = np.load(STRUCT_PATH + struct_file)
+np_struct = np.load(PGM_PATH + struct_file)
 
 #prepare data
 mana = BpskDataTank()

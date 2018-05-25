@@ -1,5 +1,5 @@
 """
-This file uses block scan method to extract features from BPSK system
+an autoencoder-decoder to extract features in unlabelled data
 """
 
 import torch
@@ -7,13 +7,13 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 
-class BlockScanFE(nn.Module):#feature extracter, FE
+class EncoderDecoder(nn.Module):#feature extracter, FE
     """
     The basic diagnoser constructed by block scan
     """
     def __init__(self):#step_len=100
-        super(BlockScanFE, self).__init__()
-        #feature extract
+        super(EncoderDecoder, self).__init__()
+        #Encoder
         window = 5
         #based on physical connection: dim_relation = [[1], [2], [0, 1, 2, 3], [3, 4]]
         #based on the influence graph: dim_relation = [[1], [2], [1, 2, 3], [3, 4]]
@@ -53,19 +53,20 @@ class BlockScanFE(nn.Module):#feature extracter, FE
         self.fc0_sequence = nn.Sequential(
                             nn.Linear(4*20*20, 4*64),
                             nn.ReLU(),
-                            nn.Linear(4*64, 4*3),
+                            nn.Linear(4*64, 64),
                             nn.ReLU(),
-                            nn.BatchNorm1d(4*3),
+                            nn.BatchNorm1d(64),
                           )
         
-        #fault predictor
+        #Decoder
         self.fc1 = nn.Sequential(
-                            nn.Linear(4*3, 10),
+                            nn.Linear(64, 128),
                             nn.ReLU(),
-                            nn.Linear(10, 6),
-                            nn.Sigmoid(),
+                            nn.Linear(128, 256),
+                            nn.ReLU(),
+                            nn.Linear(256, 500),
                           )
-    def fe(self, x):
+    def encoder(self, x):
         x0 = x[:, [1], :]               #p
         x1 = x[:, [2], :]               #c
         x2 = x[:, [1, 2, 3], :]         #m      now, in influence graph mode. [0, 1, 2, 3] --> [1, 2, 3]
@@ -79,11 +80,12 @@ class BlockScanFE(nn.Module):#feature extracter, FE
         x = self.fc0_sequence(x)
         return x
 
-    def fp(self, x):
+    def decoder(self, x):
         x = self.fc1(x)
+        x = x.view(-1, 5, 100)
         return x
 
     def forward(self, x):
-        x = self.fe(x)
-        x = self.fp(x)
+        x = self.encoder(x)
+        x = self.decoder(x)
         return x

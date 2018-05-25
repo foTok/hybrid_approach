@@ -63,6 +63,7 @@ class hybrid_search(a_star_frame):
         for fml in self.graph_model.struct:
             cost_fml = self.fml_cost(fml, candidate)
             cost = cost + cost_fml
+            _ = self.fml_cost(fml, candidate)
         return cost            
 
     def fml_cost(self, fml, candidate):
