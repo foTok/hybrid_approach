@@ -5,6 +5,7 @@ some utilities
 import numpy as np
 import matplotlib.pyplot as pl
 from graphviz import Digraph
+from queue import PriorityQueue
 
 def number2vector(num, n):
     """
@@ -147,3 +148,85 @@ def priori_knowledge(fea_num = 12):
             pri_knowledge[i, j] = -1
 
     return pri_knowledge
+
+
+def min_span_tree(MIEM):
+    """
+    return a minimal span tree based on maximal information entropy matrix (MIEM)
+    """
+    queue = PriorityQueue()
+    n = len(MIEM)
+    #put all MIE into a priority queue
+    for i in range(n):
+        for j in range(i+1, n):
+            queue.put((MIEM[i, j], (i, j)))
+    #add edge one by one
+    connection_block = []
+    edges = []
+    while len(edges) < n-1:
+        edge = queue.get()
+        if check_loop(connection_block, edge):
+            edges.append(edge)
+    #undirected tree
+    mst = und2d(edges)
+    return mst
+
+def check_loop(connection_block, edge):
+    """
+    check if could add the edge based on the connection blcok
+    return True if could and add the edge into connection block
+    return False if not
+    """
+    b0 = None
+    b1 = None
+    r  = True
+    for b in connection_block:
+        if edge[0] in b:
+            b0 = b
+        if edge[1] in b:
+            b1 = b
+        if (b0 is not None) and (b1 is not None):
+            break
+    if b0 == None:
+        if b1 == None:
+            connection_block.append([edge[0], edge[1]])
+        else:
+            b1.append(edge[0])
+    else:
+        if b1 == None:
+            b0.append(edge[1])
+        else:
+            if b0 == b1:
+                r = False
+            else:
+                i = connection_block.index(b1)
+                del connection_block[i]
+                for i in b1:
+                    b0.append(i)
+    return r
+
+def und2d(edges):
+    """
+    tranfer an undirected graph into a directed graph
+    """
+    def _pop_connected_nodes(_i, _edges):
+        _connected = set()
+        for _edge in _edges:
+            if _edge[0] == _i or _edge[1] == _i:
+                _connected_node = _edge[0] if _edge[1] == _i else _edge[1]
+                _connected.add(_connected_node)
+                _id = _edges.index(_edge)
+                del _edges[_id]
+        return _connected
+    n = len(edges) + 1
+    graph = np.zeros((n,n))
+    tail = set(0)
+    while len(tail) != 0:
+        tmp_tail = set()
+        for i in tail:
+            heads = _pop_connected_nodes(i, edges)
+            for j in heads:
+                graph[i, j] = 1
+                tmp_tail.add(j)
+        tail = tmp_tail     
+    return graph
