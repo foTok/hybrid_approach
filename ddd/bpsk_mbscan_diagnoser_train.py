@@ -25,7 +25,7 @@ writer = SummaryWriter()
 PATH = parentdir
 DATA_PATH = PATH + "\\bpsk_navigate\\data\\"
 ANN_PATH = PATH + "\\ddd\\ann_model\\"
-iso_name = "DIA0.pkl"
+dia_name = "DIA0.pkl"
 
 #prepare data
 mana = BpskDataTank()
@@ -67,7 +67,7 @@ for i in range(epoch):
 print('Finished Training')
 
 #save model
-torch.save(diagnoser, ANN_PATH + iso_name)
+torch.save(diagnoser, ANN_PATH + dia_name)
 
 #visual
 writer.close()
@@ -85,7 +85,7 @@ mana2 = BpskDataTank()
 list_files2 = get_file_list(TEST_DATA_PATH)
 for file in list_files2:
     mana2.read_data(TEST_DATA_PATH+file, step_len=step_len, snr=20)
-isolator = torch.load(ANN_PATH + iso_name)
+isolator = torch.load(ANN_PATH + dia_name)
 isolator.eval()
 eval_loss = []
 batch2 = 1000

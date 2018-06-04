@@ -25,7 +25,7 @@ DATA_PATH = PATH + "\\bpsk_navigate\\data\\test\\"
 ANN_PATH = PATH + "\\ddd\\ann_model\\"
 GRAPH_PATH = PATH + "\\graph_model\\pg_model\\"
 fe_file = "FE0.pkl"
-iso_file = "DIA0.pkl"
+dia_file = "DIA0.pkl"
 graph_file = "Greedy_Bayes.bn"
 step_len=100
 batch = 1000
@@ -33,8 +33,8 @@ batch = 1000
 #load fe and iso
 FE = torch.load(ANN_PATH + fe_file)
 FE.eval()
-ISO = torch.load(ANN_PATH + iso_file)
-ISO.eval()
+DIA = torch.load(ANN_PATH + dia_file)
+DIA.eval()
 
 #load graph model
 with open(GRAPH_PATH + graph_file, "rb") as f:
@@ -47,10 +47,10 @@ list_files = get_file_list(DATA_PATH)
 for file in list_files:
     mana.read_data(DATA_PATH+file, step_len=step_len, snr=20, norm=True)
 
-inputs, labels, _, res = mana.random_batch(batch, normal=0.2, single_fault=10, two_fault=0)
+inputs, labels, _, res = mana.random_batch(batch, normal=0.2, single_fault=0, two_fault=10)
 feature = FE.fe(inputs)
 batch_data = organise_data(inputs, labels, res, feature)
-priori_probability = ISO(inputs).detach().numpy()
+priori_probability = DIA(inputs).detach().numpy()
 label = labels.detach().numpy()
 
 all_ddd = np.round(priori_probability)
@@ -81,12 +81,12 @@ d_count = 0
 d_a = (label == all_ddd)
 for i in d_a:
     d_count = d_count + (1 if i.all() else 0)
-print(d_count)
+print("data driven correct number = ", d_count)
 
 h_count = 0
 h_a = (label == all_hybrid)
 for i in h_a:
     h_count = h_count + (1 if i.all() else 0)
-print(h_count)
+print("hybrid correct number = ", h_count)
 
 print("DONE")
