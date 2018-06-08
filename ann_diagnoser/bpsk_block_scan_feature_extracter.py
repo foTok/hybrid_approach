@@ -61,14 +61,14 @@ class BlockScanFE(nn.Module):#feature extracter, FE
         self.fc0_sequence = nn.Sequential(
                             nn.Linear(20*10, 60),
                             nn.ReLU(),
-                            nn.Linear(60, 12),
+                            nn.Linear(60, 10),
                             nn.ReLU(),
-                            nn.ReLU(12),
+                            nn.BatchNorm1d(10),
                           )
         
         #fault predictor
         self.fc1 = nn.Sequential(
-                            nn.Linear(12, 6),
+                            nn.Linear(10, 6),
                             nn.Sigmoid(),
                           )
     def fe(self, x):
