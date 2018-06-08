@@ -32,7 +32,6 @@ list_files = get_file_list(DATA_PATH)
 for file in list_files:
     mana.read_data(DATA_PATH+file, step_len=step_len, snr=20, norm=True)
 
-
 inputs, labels, _, res = mana.random_batch(batch, normal=0.2, single_fault=10, two_fault=0)
 feature = FE.fe(inputs)
 batch_data = organise_data(inputs, labels, res, feature)

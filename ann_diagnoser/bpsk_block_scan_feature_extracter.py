@@ -50,19 +50,25 @@ class BlockScanFE(nn.Module):#feature extracter, FE
                             nn.MaxPool1d(window),
                           )
 
+        self.merge_sequence = nn.Sequential(
+                            nn.Conv1d(4*20, 40, 1),
+                            nn.ReLU(),
+                            nn.MaxPool1d(2),
+                            nn.Conv1d(40, 20, 1),
+                            nn.ReLU(),
+                        )
+
         self.fc0_sequence = nn.Sequential(
-                            nn.Linear(4*20*20, 4*64),
+                            nn.Linear(20*10, 60),
                             nn.ReLU(),
-                            nn.Linear(4*64, 4*3),
+                            nn.Linear(60, 12),
                             nn.ReLU(),
-                            nn.BatchNorm1d(4*3),
+                            nn.ReLU(12),
                           )
         
         #fault predictor
         self.fc1 = nn.Sequential(
-                            nn.Linear(4*3, 10),
-                            nn.ReLU(),
-                            nn.Linear(10, 6),
+                            nn.Linear(12, 6),
                             nn.Sigmoid(),
                           )
     def fe(self, x):
@@ -75,7 +81,9 @@ class BlockScanFE(nn.Module):#feature extracter, FE
         x2 = self.fe2_sequence(x2)
         x3 = self.fe3_sequence(x3)
         x = torch.cat((x0, x1, x2, x3), 1)
-        x = x.view(-1, 4*20*20)
+        x = x.view(-1, 4*20, 20)
+        x = self.merge_sequence(x)
+        x = x.view(-1, 20*10)
         x = self.fc0_sequence(x)
         return x
 

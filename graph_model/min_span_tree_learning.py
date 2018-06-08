@@ -115,6 +115,8 @@ class mst_learning:
         max_value = np.max(batch)
         min_value = np.min(batch)
         interval = (max_value - min_value) / self.bins
+        if not (interval>0):
+            print("debug here")
         assert interval > 0
         for i in range(self.bins):
             hist[i] = np.sum(self.bin_count(batch, min_value, interval, i)) + 1
@@ -147,7 +149,7 @@ class mst_learning:
                 hist_ij = hist_i * hist_j
                 hist[i, j] = np.sum(hist_ij) + 1
         #normalization
-        hist = hist / (self.batch.size + self.bins**2)
+        hist = hist / (len(self.batch) + self.bins**2)
         return hist
     
     def bin_count(self, batch, min_value, interval, i):

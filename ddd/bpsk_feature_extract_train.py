@@ -23,7 +23,7 @@ writer = SummaryWriter()
 
 #prepare data
 PATH = parentdir
-DATA_PATH = PATH + "\\bpsk_navigate\\data\\test\\"
+DATA_PATH = PATH + "\\bpsk_navigate\\data\\"
 ANN_PATH = PATH + "\\ddd\\ann_model\\"
 fe_name = "FE0.pkl"
 step_len=100

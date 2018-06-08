@@ -28,9 +28,9 @@ PGM_PATH = PATH + "\\graph_model\\pg_model\\"
 fe_file = "FE0.pkl"
 struct_file = "Greedy_Bayes.gv"
 pgm_file = "Greedy_Bayes.bn"
-fea_num = 12
+fea_num = 10
 step_len=100
-epoch = 1000
+epoch = 200
 batch = 2000
 
 #load fe
@@ -55,7 +55,7 @@ for i in range(epoch):
     BL.step(i)
 
 best, _ = BL.best_candidate()
-graphviz_Bayes(best.struct, PGM_PATH + struct_file)
+graphviz_Bayes(best.struct, PGM_PATH + struct_file, fea_num)
 
 BN = BL.best_BN()
 s = pickle.dumps(BN)

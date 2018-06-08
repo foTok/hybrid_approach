@@ -24,7 +24,7 @@ def vector2number(vec):
     num = int(str_bin_num, 2)
     return num
 
-def graphviz_Bayes(struct, file, fea_num = 12):
+def graphviz_Bayes(struct, file, fea_num):
     """
     convert struct into graphviz file
     """
