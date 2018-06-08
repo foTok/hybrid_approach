@@ -1,0 +1,1 @@
+currently, all the model ended with "0" is trained in single fault data.
