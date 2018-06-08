@@ -12,7 +12,7 @@ from graph_model.graph_component import Bayesian_structure
 from graph_model.graph_component import Bayesian_Gaussian_parameter
 from graph_model.utilities import min_span_tree
 
-class tan_learning:
+class mst_learning:
     """
     learning a TAN structure
     """
@@ -21,10 +21,8 @@ class tan_learning:
         self.batch = None
         #bins 10 by default
         self.bins  = 10
-        #fault number fn
-        self.fn    = 6
-        #fault + feature number fen
-        self.ffn   = None
+        #feature number fn
+        self.fn    = None
         #hist cache
         #key: int or tuple(small,big).
         #value: numpy.array. 1 or 2 dimensions.
@@ -38,20 +36,14 @@ class tan_learning:
         """
         self.batch = batch
         #feature number
-        _, ffn = batch.shape
-        self.ffn  = ffn
+        _, fn = batch.shape
+        self.fn  = fn
 
     def set_bins(self, bins):
         """
         RT
         """
         self.bins = bins
-
-    def set_fn(self, fn):
-        """
-        RT
-        """
-        self.fn = fn
 
     def learn_mst(self):
         """
@@ -65,15 +57,13 @@ class tan_learning:
         """
         RT
         """
-        #feature number
-        fen = self.ffn - self.fn
         #Mutual Information Entropy Matrix
-        MIEM = np.zeros((fen, fen))
-        for i in range(self.fn, self.ffn):
-            for j in range(i+1, self.ffn):
+        MIEM = np.zeros((self.fn, self.fn))
+        for i in range(self.fn):
+            for j in range(i+1, self.fn):
                 MIE = self.learn_feature_MIEij(i, j)
-                MIEM[i-self.fn, j-self.fn] = MIE
-                MIEM[j-self.fn, i-self.fn] = MIE
+                MIEM[i, j] = MIE
+                MIEM[j, i] = MIE
         return MIEM
 
     def learn_feature_MIEij(self, i, j):
@@ -96,7 +86,7 @@ class tan_learning:
         """
         learn the parameters of discritized feature i
         """
-        assert 0 <= i <self.ffn
+        assert 0 <= i <self.fn
         if i in self.hist_cache:
             hist = self.hist_cache[i]
         else:
@@ -108,7 +98,7 @@ class tan_learning:
         """
         learn the discritized features i, j
         """
-        assert 0 <= i < j <self.ffn
+        assert 0 <= i < j <self.fn
         if (i, j) in self.hist_cache:
             hist = self.hist_cache[(i, j)]
         else:
@@ -137,7 +127,7 @@ class tan_learning:
         """
         RT
         """
-        assert 0 <= i < j <self.ffn
+        assert 0 <= i < j <self.fn
         hist  = np.zeros((self.bins, self.bins))
         #data i
         batch_i = self.batch[:, i]
