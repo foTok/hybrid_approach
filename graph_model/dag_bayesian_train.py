@@ -28,9 +28,9 @@ PGM_PATH = PATH + "\\graph_model\\pg_model\\"
 fe_file = "FE0.pkl"
 struct_file = "Greedy_Bayes.gv"
 pgm_file = "Greedy_Bayes.bn"
-fea_num = 10
+fea_num = 8
 step_len=100
-epoch = 200
+epoch = 2000
 batch = 2000
 
 #load fe

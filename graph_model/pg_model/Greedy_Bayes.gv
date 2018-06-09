@@ -8,8 +8,6 @@ digraph {
 	fe5 [label=fe5 fillcolor=green style=filled]
 	fe6 [label=fe6 fillcolor=green style=filled]
 	fe7 [label=fe7 fillcolor=green style=filled]
-	fe8 [label=fe8 fillcolor=green style=filled]
-	fe9 [label=fe9 fillcolor=green style=filled]
 	r0 [label=r0 fillcolor=red style=filled]
 	r1 [label=r1 fillcolor=red style=filled]
 	r2 [label=r2 fillcolor=red style=filled]
@@ -21,13 +19,11 @@ digraph {
 	"F[0..6]" -> fe5
 	"F[0..6]" -> fe6
 	"F[0..6]" -> fe7
-	"F[0..6]" -> fe8
-	"F[0..6]" -> fe9
 	"F[0..6]" -> r0 [label="[0,1,5]"]
 	"F[0..6]" -> r1 [label="[2]"]
 	"F[0..6]" -> r2 [label="[4]"]
-	fe1 -> fe5
-	fe2 -> r0
-	fe2 -> r2
+	fe0 -> r0
+	fe1 -> r2
+	fe3 -> r2
 	fe6 -> r1
 }
