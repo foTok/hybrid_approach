@@ -14,19 +14,24 @@ from data_manger.utilities import get_file_list
 from graph_model.Bayesian_learning import Bayesian_structure
 from graph_model.Bayesian_learning import Bayesian_learning
 from graph_model.utilities import graphviz_Bayes
-from graph_model import graph_component as graph_component
 from ddd.utilities import organise_data
-from hybrid_algorithm.hybrid_search import hybrid_search
+from ddd.utilities import organise_tensor_data
+from hybrid_algorithm.hybrid_annbn_diagnoser import hybrid_annbn_diagnoser
+from hybrid_algorithm.hybrid_ann_diagnoser import hybrid_ann_diagnoser
 from hybrid_algorithm.utilities import priori_vec2tup
+from hybrid_algorithm.hybrid_stats import hybrid_stats
 
+#data amount
+small_data = False
 #settings
 PATH = parentdir
 DATA_PATH = PATH + "\\bpsk_navigate\\data\\test\\"
 ANN_PATH = PATH + "\\ddd\\ann_model\\"
 GRAPH_PATH = PATH + "\\graph_model\\pg_model\\"
-fe_file = "FE0.pkl"
-dia_file = "DIA0.pkl"
-graph_file = "Greedy_Bayes.bn"
+fe_file = "FE0.pkl" if not small_data else "FE1.pkl"
+dia_file = "DIA0.pkl" if not small_data else "DIA1.pkl"
+hdia_file = "HDIA0.pkl" if not small_data else "HDIA0.pkl"
+graph_file = "GSAN0.bn" if not small_data else "GSAN0.bn"
 step_len=100
 batch = 1000
 
@@ -35,6 +40,8 @@ FE = torch.load(ANN_PATH + fe_file)
 FE.eval()
 DIA = torch.load(ANN_PATH + dia_file)
 DIA.eval()
+HDIA = torch.load(ANN_PATH + hdia_file)
+HDIA.eval()
 
 #load graph model
 with open(GRAPH_PATH + graph_file, "rb") as f:
@@ -48,45 +55,64 @@ for file in list_files:
     mana.read_data(DATA_PATH+file, step_len=step_len, snr=20, norm=True)
 
 inputs, labels, _, res = mana.random_batch(batch, normal=0.2, single_fault=0, two_fault=10)
+#priori by data
+priori_by_data = DIA(inputs).detach().numpy()
+#priori by hybrid
+sen_res = organise_tensor_data(inputs, res)
+priori_by_hybrid = HDIA(sen_res).detach().numpy()
+#feature
 feature = FE.fe(inputs)
 batch_data = organise_data(inputs, labels, res, feature)
-priori_probability = DIA(inputs).detach().numpy()
-label = labels.detach().numpy()
+labels = labels.detach().numpy()
 
-all_ddd = np.round(priori_probability)
-all_hybrid = []
+#stats
+statistic = hybrid_stats()
 
-for label0, priori0, data in zip(label, priori_probability, batch_data):
-    #get priori
-    priori = priori_vec2tup(priori0)
-    hs = hybrid_search()
-    #load graph model
-    hs.set_graph_model(graph_model)
-    #set order
-    hs.set_order((0,1,2,3,4,5))
-    #set priori probability
-    hs.set_priori(priori)
-    #add obs
+#hybrid diagnosers
+ann = hybrid_ann_diagnoser()
+hann = hybrid_ann_diagnoser()
+annbn = hybrid_annbn_diagnoser()
+annbn.set_graph_model(graph_model)
+
+#set order
+order = (0,1,2,3,4,5)
+ann.set_order(order)
+hann.set_order(order)
+annbn.set_order(order)
+
+statistic.add_diagnoser("ann")
+statistic.add_diagnoser("hann")
+statistic.add_diagnoser("annbn")
+
+#diagnosis number
+num = 3
+for label, d_priori, h_priori, data, index in zip(labels, priori_by_data, priori_by_hybrid, batch_data, range(len(labels))):
+    print("sample ", index)
+    priori_d = priori_vec2tup(d_priori)
+    priori_h = priori_vec2tup(h_priori)
+    obs = []
     for i in range(6, len(data)):
-        hs.add_obs(i, data[i])
-    r = hs.search()
+        obs.append((i, data[i]))
 
-    #store results
-    all_hybrid.append(r[0][1])
-    print(label0, np.round(priori0), r[0][1])
-all_hybrid = np.array(all_hybrid)
+    #set priori probability
+    ann.set_priori(priori_d)
+    hann.set_priori(priori_h)
+    annbn.set_priori(priori_d)
+    #add obs
+    annbn.add_obs(obs)
 
-#ddd
-d_count = 0
-d_a = (label == all_ddd)
-for i in d_a:
-    d_count = d_count + (1 if i.all() else 0)
-print("data driven correct number = ", d_count)
+    dia_ann   = ann.search(num)
+    dia_hann  = hann.search(num)
+    dia_annbn = annbn.search(num)
 
-h_count = 0
-h_a = (label == all_hybrid)
-for i in h_a:
-    h_count = h_count + (1 if i.all() else 0)
-print("hybrid correct number = ", h_count)
+    statistic.append_label(label)
+    statistic.append_predicted("ann", dia_ann)
+    statistic.append_predicted("hann", dia_hann)
+    statistic.append_predicted("annbn", dia_annbn)
+
+statistic.print_stats()
+print("ann search time=", ann.search_time())
+print("hann search time=", hann.search_time())
+print("annbn search time=", annbn.search_time())
 
 print("DONE")

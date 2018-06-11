@@ -1,5 +1,5 @@
 """
-This file is used to conduct hybrid seach based on features and residuals
+This file is used to conduct hybrid seach based on features, residuals and Bayesian Network
 """
 import os
 import sys
@@ -12,7 +12,7 @@ from hybrid_algorithm.a_star_frame import a_star_frame
 from hybrid_algorithm.utilities import hypothesis_test as obs_pro
 from math import log
 
-class hybrid_search(a_star_frame):
+class hybrid_annbn_diagnoser(a_star_frame):
     """
     hybrid diagnosis
     operator, |entity|
@@ -30,7 +30,7 @@ class hybrid_search(a_star_frame):
     |graph model|, |features and residuals| and |initial probability|
     """
     def __init__(self):
-        super(hybrid_search, self).__init__()
+        super(hybrid_annbn_diagnoser, self).__init__()
         self.graph_model = None
 
     def set_graph_model(self, model):
@@ -39,13 +39,15 @@ class hybrid_search(a_star_frame):
         """
         self.graph_model = model
 
-    def add_obs(self, id, obs):
+    def add_obs(self, id_obs_list):
         """
         add obs to model
         """
-        self.graph_model.parameters.add_obs_ass(id, obs)
+        self.graph_model.parameters.clear_obs_ass()
+        for id, obs in id_obs_list:
+            self.graph_model.parameters.add_obs_ass(id, obs)
 
-    def cost(self, candidate):
+    def _cost(self, candidate):
         """
         compute the cost of candidate
         """
@@ -64,7 +66,7 @@ class hybrid_search(a_star_frame):
             cost_fml = self.fml_cost(fml, candidate)
             cost = cost + cost_fml
             _ = self.fml_cost(fml, candidate)
-        return cost            
+        return cost
 
     def fml_cost(self, fml, candidate):
         """
@@ -108,4 +110,3 @@ class hybrid_search(a_star_frame):
             if i == self.order[c_i]:
                 return True
         return False
-

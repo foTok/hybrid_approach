@@ -47,24 +47,31 @@ class BlockScanDiagnoser(nn.Module):
                             nn.MaxPool1d(window)
                           )
 
-        self.fc_sequence = nn.Sequential(
-                            nn.Linear(4*20*20, 4*64),
+        self.merge_sequence = nn.Sequential(
+                            nn.Conv1d(4*20, 40, 1),
                             nn.ReLU(),
-                            nn.BatchNorm1d(4*64),
-                            nn.Linear(4*64, 6),
-                            nn.Sigmoid()
+                        )
+
+        self.fc_sequence = nn.Sequential(
+                            nn.Linear(40*20, 64),
+                            nn.ReLU(),
+                            nn.BatchNorm1d(64),
+                            nn.Linear(64, 6),
+                            nn.Sigmoid(),
                           )
 
     def forward(self, x):
-        x1 = x[:, [1], :]
-        x2 = x[:, [2], :]
-        x3 = x[:, [1, 2, 3], :]
-        x4 = x[:, [3, 4], :]
-        x1 = self.p_sequence(x1)
-        x2 = self.c_sequence(x2)
-        x3 = self.m_sequence(x3)
-        x4 = self.a_sequence(x4)
-        x = torch.cat((x1, x2, x3, x4), 1)
-        x = x.view(-1, 4*20*20)
+        x0 = x[:, [1], :]
+        x1 = x[:, [2], :]
+        x2 = x[:, [1, 2, 3], :]
+        x3 = x[:, [3, 4], :]
+        x0 = self.p_sequence(x0)
+        x1 = self.c_sequence(x1)
+        x2 = self.m_sequence(x2)
+        x3 = self.a_sequence(x3)
+        x = torch.cat((x0, x1, x2, x3), 1)
+        x = x.view(-1, 4*20, 20)
+        x = self.merge_sequence(x)
+        x = x.view(-1, 40*20)
         x = self.fc_sequence(x)
         return x

@@ -164,11 +164,15 @@ def min_span_tree(MIEM):
     connection_block = []
     edges = []
     while len(edges) < n-1:
-        edge = queue.get()
+        _, edge = queue.get()
         if check_loop(connection_block, edge):
             edges.append(edge)
     #undirected tree
-    mst = und2d(edges)
+    #set order
+    order = []
+    for i in range(n):
+        order.append(i)
+    mst = und2od(edges, order)
     return mst
 
 def check_loop(connection_block, edge):
@@ -229,4 +233,21 @@ def und2d(edges):
                 graph[i, j] = 1
                 tmp_tail.add(j)
         tail = tmp_tail     
+    return graph
+
+def und2od(edges, order):
+    """
+    Transfer an undirected graph into a directed graph based on order.
+    edges: a list of edges
+    order: a list
+    """
+    n = len(edges) + 1
+    graph = np.zeros((n,n))
+    for edge in edges:
+        index0 = order.index(edge[0])
+        index1 = order.index(edge[1])
+        if index0 < index1:
+            graph[index0, index1] = 1
+        else:
+            graph[index1, index0] = 1
     return graph

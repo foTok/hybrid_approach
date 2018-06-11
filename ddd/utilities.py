@@ -1,6 +1,7 @@
 """
 some utilities
 """
+import torch
 import numpy as np
 import matplotlib.pyplot as pl
 from graph_model.utilities import vector2number as vec2num
@@ -73,3 +74,25 @@ def organise_data(inputs, labels, res, feature):
     s4 = inputs[:, 4]
     batch_data[:, -1] = np.mean(np.abs( s4 - 10 * s3), axis=1)
     return batch_data
+
+def organise_tensor_data(inputs, res):
+    """
+    organise inputs and residuals into a tensor to train or predict
+    inputs: tensor
+    res: list
+    """
+    if res == []:
+        return inputs
+    batch, _, step = inputs.shape
+    res = np.array(res)
+    res = np.array(res)
+    res01 = res[:, 0:2, :]
+    inputs_np = inputs.detach().numpy()
+    s3 = inputs_np[:, 3, :]
+    s4 = inputs_np[:, 4, :]
+    res2 = s4-10*s3
+    res2 = res2.reshape((batch, 1, step))
+    res_data = np.concatenate((res01, res2), 1)
+    res_data = torch.Tensor(res_data)
+    data = torch.cat((inputs, res_data), 1)
+    return data

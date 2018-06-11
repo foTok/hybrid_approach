@@ -18,12 +18,12 @@ PATH = parentdir
 DATA_PATH = PATH + "\\bpsk_navigate\\data\\test\\"
 ANN_PATH = PATH + "\\ddd\\ann_model\\"
 PGM_PATH = PATH + "\\graph_model\\pg_model\\"
-fe_file = "FE0.pkl"
+model_file = "FE0.pkl"
 step_len=100
 batch = 2000
 
 #load fe
-FE = torch.load(ANN_PATH+fe_file)
+FE = torch.load(ANN_PATH+model_file)
 FE.eval()
 
 #prepare data

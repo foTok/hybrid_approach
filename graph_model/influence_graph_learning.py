@@ -1,5 +1,7 @@
 """
 learning structure from data
+This file help to learn the influence graph based on the influence coefficients.
+Output: Influence Graph
 """
 import os
 import sys

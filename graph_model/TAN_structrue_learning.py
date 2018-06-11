@@ -16,6 +16,8 @@ from graph_model.utilities import priori_knowledge
 from graph_model.utilities import graphviz_Bayes
 from ddd.utilities import organise_data
 
+#data amount
+small_data = True
 #priori knowledge
 pri_knowledge = priori_knowledge()
 
@@ -24,11 +26,11 @@ PATH = parentdir
 DATA_PATH = PATH + "\\bpsk_navigate\\data\\test\\"
 ANN_PATH = PATH + "\\ddd\\ann_model\\"
 PGM_PATH = PATH + "\\graph_model\\pg_model\\"
-fe_file = "FE0.pkl"
-struct_file_body = "tan"            #"Greedy_Bayes.gv"
-pgm_file_body = "tan"               #"Greedy_Bayes.bn"
+fe_file = "FE0.pkl" if not small_data else "FE1.pkl"
+struct_file_body = "tan"
+pgm_file_body = "tan"
 step_len=100
-batch = 20000
+batch = 2000
 
 #load fe
 FE = torch.load(ANN_PATH+fe_file)
@@ -40,7 +42,7 @@ list_files = get_file_list(DATA_PATH)
 for file in list_files:
     mana.read_data(DATA_PATH+file, step_len=step_len, snr=20, norm=True)
 
-inputs, labels, _, res = mana.random_batch(batch, normal=0, single_fault=10, two_fault=0)
+inputs, labels, _, res = mana.random_batch(batch, normal=0.4, single_fault=10, two_fault=0)
 feature = FE.fe(inputs)
 batch_data = organise_data(inputs, labels, res, feature)
 

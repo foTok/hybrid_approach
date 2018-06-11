@@ -17,6 +17,8 @@ from graph_model.utilities import priori_knowledge
 from graph_model.utilities import graphviz_Bayes
 from ddd.utilities import organise_data
 
+#data amount
+small_data = True
 #priori knowledge
 pri_knowledge = priori_knowledge()
 
@@ -25,9 +27,9 @@ PATH = parentdir
 DATA_PATH = PATH + "\\bpsk_navigate\\data\\"
 ANN_PATH = PATH + "\\ddd\\ann_model\\"
 PGM_PATH = PATH + "\\graph_model\\pg_model\\"
-fe_file = "FE0.pkl"
-struct_file = "Greedy_Bayes.gv"
-pgm_file = "Greedy_Bayes.bn"
+fe_file = "FE0.pkl" if not small_data else "FE1.pkl"
+struct_file = "GSAN0.gv" if not small_data else "GSAN1.gv"
+pgm_file = "GSAN0.bn" if not small_data else "GSAN1.bn"
 fea_num = 12
 step_len=100
 epoch = 2000

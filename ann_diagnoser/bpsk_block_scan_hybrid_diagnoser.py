@@ -1,5 +1,6 @@
 """
-an autoencoder-decoder to extract features in unlabelled data
+This file uses block scan method to extract features from BPSK system
+and then combine the residuals and conduct a hybrid diagnosis
 """
 
 import torch
@@ -7,13 +8,13 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 
-class EncoderDecoder(nn.Module):#feature extracter, FE
+class BlockScanHD(nn.Module):#Hybrid Diagnoser, HD
     """
     The basic diagnoser constructed by block scan
     """
     def __init__(self):#step_len=100
-        super(EncoderDecoder, self).__init__()
-        #Encoder
+        super(BlockScanHD, self).__init__()
+        #feature extract
         window = 5
         #based on physical connection: dim_relation = [[1], [2], [0, 1, 2, 3], [3, 4]]
         #based on the influence graph: dim_relation = [[1], [2], [1, 2, 3], [3, 4]]
@@ -50,42 +51,69 @@ class EncoderDecoder(nn.Module):#feature extracter, FE
                             nn.MaxPool1d(window),
                           )
 
-        self.fc0_sequence = nn.Sequential(
-                            nn.Linear(4*20*20, 4*64),
+        #residual 0
+        self.re0_sequence = nn.Sequential(
+                            nn.Conv1d(1, 10, window, padding=window//2),
                             nn.ReLU(),
-                            nn.Linear(4*64, 64),
+                            nn.Conv1d(10, 20, window, padding=window//2),
                             nn.ReLU(),
-                            nn.BatchNorm1d(64),
+                            nn.MaxPool1d(window),
+                          )
+
+        #residual 1
+        self.re1_sequence = nn.Sequential(
+                            nn.Conv1d(1, 10, window, padding=window//2),
+                            nn.ReLU(),
+                            nn.Conv1d(10, 20, window, padding=window//2),
+                            nn.ReLU(),
+                            nn.MaxPool1d(window),
+                          )
+
+        #residual 0
+        self.re2_sequence = nn.Sequential(
+                            nn.Conv1d(1, 10, window, padding=window//2),
+                            nn.ReLU(),
+                            nn.Conv1d(10, 20, window, padding=window//2),
+                            nn.ReLU(),
+                            nn.MaxPool1d(window),
+                          )
+
+        self.merge_sequence = nn.Sequential(
+                            nn.Conv1d(7*20, 70, 1),
+                            nn.ReLU(),
+                        )
+
+        self.fc_sequence = nn.Sequential(
+                            nn.Linear(70*20, 128),
+                            nn.ReLU(),
+                            nn.BatchNorm1d(128),
+                            nn.Linear(128, 6),
+                            nn.Sigmoid(),
                           )
         
-        #Decoder
+        #fault predictor
         self.fc1 = nn.Sequential(
-                            nn.Linear(64, 128),
-                            nn.ReLU(),
-                            nn.Linear(128, 256),
-                            nn.ReLU(),
-                            nn.Linear(256, 500),
+                            nn.Linear(12, 6),
+                            nn.Sigmoid(),
                           )
-    def encoder(self, x):
+    def forward(self, x):
         x0 = x[:, [1], :]               #p
         x1 = x[:, [2], :]               #c
         x2 = x[:, [1, 2, 3], :]         #m      now, in influence graph mode. [0, 1, 2, 3] --> [1, 2, 3]
         x3 = x[:, [3, 4], :]            #a
+        r0 = x[:, [5], :]               #r0
+        r1 = x[:, [6], :]               #r1
+        r2 = x[:, [7], :]               #2
         x0 = self.fe0_sequence(x0)
         x1 = self.fe1_sequence(x1)
         x2 = self.fe2_sequence(x2)
         x3 = self.fe3_sequence(x3)
-        x = torch.cat((x0, x1, x2, x3), 1)
-        x = x.view(-1, 4*20*20)
-        x = self.fc0_sequence(x)
-        return x
-
-    def decoder(self, x):
-        x = self.fc1(x)
-        x = x.view(-1, 5, 100)
-        return x
-
-    def forward(self, x):
-        x = self.encoder(x)
-        x = self.decoder(x)
+        r0 = self.re0_sequence(r0)
+        r1 = self.re1_sequence(r1)
+        r2 = self.re2_sequence(r2)
+        x = torch.cat((x0, x1, x2, x3, r0, r1, r2), 1)
+        x = x.view(-1, 7*20, 20)
+        x = self.merge_sequence(x)
+        x = x.view(-1, 70*20)
+        x = self.fc_sequence(x)
         return x

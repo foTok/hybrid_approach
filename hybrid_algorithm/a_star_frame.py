@@ -1,6 +1,7 @@
 """
 Defines the framework of A* search algorithm
 """
+import time
 from queue import PriorityQueue
 
 class a_star_frame:
@@ -12,7 +13,7 @@ class a_star_frame:
     def __init__(self):
         #MEMBER
         #priority queue to stor candidate
-        self.queue      = PriorityQueue()
+        self.queue      = None
         #order should be a tuple that stores the search order of varibles
         #for example: (0, 1, 2, 3, 4, 5)
         #initialized as None
@@ -23,19 +24,8 @@ class a_star_frame:
         #for example: ((0.1, 0.9), (0.2, 0.8))
         #initialized as None
         self.priori     = None
-        #ACTION
-        #init queue
-        self.queue.put((0,()))
-
-    def cost(self, candidate):
-        """
-        return the cost of the candidate
-        candidate is a tuple where the variables are ordered in self.order
-        and the values are for each corresponding variables.
-        for example ()
-        """
-        pass
-
+        #search time
+        self.time_stats = 0
 
     def set_order(self, order):
         """
@@ -49,6 +39,22 @@ class a_star_frame:
         """
         self.priori = priori
 
+    def _cost(self, candidate):
+        """
+        return the cost of the candidate
+        candidate is a tuple where the variables are ordered in self.order
+        and the values are for each corresponding variables.
+        for example ()
+        """
+        pass
+
+    def __init_queue(self):
+        """
+        init the queue
+        """
+        self.queue = PriorityQueue()
+        self.queue.put((0,()))
+
     def __expand(self, candidate):
         """
         expand the candidate
@@ -60,7 +66,7 @@ class a_star_frame:
             new_candidate = list(candidate)
             new_candidate.append(i)
             new_candidate = tuple(new_candidate)
-            cost = self.cost(new_candidate)
+            cost = self._cost(new_candidate)
             self.queue.put((cost, new_candidate))
 
     def __goal_include(self, candidate):
@@ -77,14 +83,25 @@ class a_star_frame:
         """
         assert self.order is not None
         assert self.priori is not None
+        #init the queue
+        self.__init_queue()
+        start = time.clock()
         result = []
         while len(result) < num:
         #get best candidate
             if self.queue.empty():
                 return result
-            best_cost, best_candi = self.queue.get()
+            _, best_candi = self.queue.get()
             if self.__goal_include(best_candi):
-                result.append((best_cost, best_candi))
+                result.append(best_candi)
             else:
                 self.__expand(best_candi)
+        end = time.clock()
+        self.time_stats = self.time_stats + (end - start)
         return result
+
+    def search_time(self):
+        """
+        return the time consumed by search
+        """
+        return self.time_stats

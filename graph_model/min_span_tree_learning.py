@@ -115,16 +115,14 @@ class mst_learning:
         max_value = np.max(batch)
         min_value = np.min(batch)
         interval = (max_value - min_value) / self.bins
-        if not (interval>0):
-            print("debug here")
         assert interval > 0
-        for i in range(self.bins):
-            hist[i] = np.sum(self.bin_count(batch, min_value, interval, i)) + 1
+        for bin_i in range(self.bins):
+            number = np.sum(self.bin_count(i, bin_i, batch, min_value, interval)) + 1
+            hist[bin_i] = number
         #normalization
         hist = hist / (len(self.batch) + self.bins)
         return hist
-                
-    
+
     def histij_from_batch(self, i, j):
         """
         RT
@@ -142,32 +140,34 @@ class mst_learning:
         min_j = np.min(batch_j)
         int_j = (max_j - min_j) / self.bins
         #count start
-        for i in range(self.bins):
-            for j in range(self.bins):
-                hist_i = self.bin_count(batch_i, min_i, int_i, i)
-                hist_j = self.bin_count(batch_j, min_j, int_j, j)
+        for bin_i in range(self.bins):
+            for bin_j in range(self.bins):
+                hist_i = self.bin_count(i, bin_i, batch_i, min_i, int_i)
+                hist_j = self.bin_count(j, bin_j, batch_j, min_j, int_j)
                 hist_ij = hist_i * hist_j
-                hist[i, j] = np.sum(hist_ij) + 1
+                hist[bin_i, bin_j] = np.sum(hist_ij) + 1
         #normalization
         hist = hist / (len(self.batch) + self.bins**2)
         return hist
     
-    def bin_count(self, batch, min_value, interval, i):
+    def bin_count(self, var_id, bin_i, batch, min_value, interval):
         """
         return if the batch in the i_th bins
         """
-        if i in self.bin_cache:
-            hist = self.bin_cache[i]
+        assert 0 <= var_id <self.fn
+        assert 0 <= bin_i <self.bins
+        id = (var_id, bin_i)
+        if id in self.bin_cache:
+            hist = self.bin_cache[id]
         else:
-            hist = self.bin_count_from_batch(batch, min_value, interval, i)
-            self.bin_cache[i] = hist
+            hist = self.bin_count_from_batch(batch, min_value, interval, bin_i)
+            self.bin_cache[id] = hist
         return hist
 
     def bin_count_from_batch(self, batch, min_value, interval, i):
         """
         return if the batch in the i_th bins from batch
         """
-        assert 0 <= i <self.bins
         if i == 0:#first bin
             hist = (batch < (min_value + interval))
         elif i == (self.bins - 1): #last bin
