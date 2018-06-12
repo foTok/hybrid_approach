@@ -45,12 +45,12 @@ class mst_learning:
         """
         self.bins = bins
 
-    def learn_mst(self):
+    def learn_mst(self, priori=None):
         """
         learn a minimal span tree
         """
         MIEM = self.learn_feature_MIE()
-        mst = min_span_tree(MIEM)
+        mst = min_span_tree(MIEM, priori)
         return mst
 
     def learn_feature_MIE(self):

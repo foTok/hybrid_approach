@@ -60,7 +60,7 @@ def graphviz_Bayes(struct, file, fea_num):
     #6 is the number of faults and 1 is the number of the fault label.
     n = len(struct)
     for i in range(6, n):
-        for j in range(i+1, n):
+        for j in range(n):
             if struct[i, j] == 1:
                 G.edge(labels[i-5], labels[j-5])
     print(G)
@@ -157,7 +157,7 @@ def priori_knowledge(fea_num = 12):
     return pri_knowledge
 
 
-def min_span_tree(MIEM):
+def min_span_tree(MIEM, priori=None):
     """
     return a minimal span tree based on maximal information entropy matrix (MIEM)
     """
@@ -173,13 +173,14 @@ def min_span_tree(MIEM):
     while len(edges) < n-1:
         _, edge = queue.get()
         if check_loop(connection_block, edge):
-            edges.append(edge)
+            if priori is None:
+                edges.append(edge)
+            else:
+                i, j = edge
+                if priori[i, j] != -1:
+                    edges.append(edge)
     #undirected tree
-    #set order
-    order = []
-    for i in range(n):
-        order.append(i)
-    mst = und2od(edges, order)
+    mst = und2d(edges)
     return mst
 
 def check_loop(connection_block, edge):
@@ -222,16 +223,19 @@ def und2d(edges):
     """
     def _pop_connected_nodes(_i, _edges):
         _connected = set()
+        _tmp_edges = set()
         for _edge in _edges:
             if _edge[0] == _i or _edge[1] == _i:
                 _connected_node = _edge[0] if _edge[1] == _i else _edge[1]
                 _connected.add(_connected_node)
-                _id = _edges.index(_edge)
-                del _edges[_id]
+                _tmp_edges.add(_edge)
+        for _edge in _tmp_edges:
+            _edges.remove(_edge)
         return _connected
     n = len(edges) + 1
     graph = np.zeros((n,n))
-    tail = set(0)
+    first = edges[0][0]
+    tail = set([first])
     while len(tail) != 0:
         tmp_tail = set()
         for i in tail:

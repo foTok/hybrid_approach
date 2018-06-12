@@ -53,7 +53,7 @@ class Parameters_learning:
         p_inv = (X.T * X).I * X.T
         return p_inv
 
-    def GGM_from_batch(self, fml):
+    def GGM_from_batch(self, fml, cv):
         """
         compute GGM for FML in this batch
         !!!Please make sure parents are listed in increasing order
@@ -69,7 +69,10 @@ class Parameters_learning:
         p_inv  =self.get_p_inverse(x)
         beta = p_inv * Y
         res = (Y - X*beta)
-        var = p_inv * np.multiply(res, res)
+        if cv:
+            var = np.mean(np.multiply(res, res))
+        else:
+            var = p_inv * np.multiply(res, res)
         #avoid numeric problems
         var = var + 1e-8
         return beta, var
