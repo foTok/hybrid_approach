@@ -59,7 +59,7 @@ learner.set_priori(pri_knowledge)
 #learner.set_res_pri(res_priori)
 learner.learn_MTAN()
 #save
-file_name = "mtan_" + file_flag
+file_name = "mtan" + file_flag
 learner.save_graph(PGM_PATH + file_name)
 learner.save_MTAN(PGM_PATH + file_name)
 

@@ -1,0 +1,38 @@
+digraph {
+	f3 [label=f3 fillcolor=yellow style=filled]
+	fe0 [label=fe0 fillcolor=green style=filled]
+	fe1 [label=fe1 fillcolor=green style=filled]
+	fe2 [label=fe2 fillcolor=green style=filled]
+	fe3 [label=fe3 fillcolor=green style=filled]
+	fe4 [label=fe4 fillcolor=green style=filled]
+	fe5 [label=fe5 fillcolor=green style=filled]
+	fe6 [label=fe6 fillcolor=green style=filled]
+	fe7 [label=fe7 fillcolor=green style=filled]
+	fe8 [label=fe8 fillcolor=green style=filled]
+	fe9 [label=fe9 fillcolor=green style=filled]
+	fe10 [label=fe10 fillcolor=green style=filled]
+	fe11 [label=fe11 fillcolor=green style=filled]
+	f3 -> fe0
+	f3 -> fe1
+	f3 -> fe2
+	f3 -> fe3
+	f3 -> fe4
+	f3 -> fe5
+	f3 -> fe6
+	f3 -> fe7
+	f3 -> fe8
+	f3 -> fe9
+	f3 -> fe10
+	f3 -> fe11
+	fe1 -> fe0
+	fe1 -> fe3
+	fe1 -> fe4
+	fe1 -> fe6
+	fe1 -> fe7
+	fe1 -> fe8
+	fe1 -> fe9
+	fe1 -> fe10
+	fe4 -> fe5
+	fe4 -> fe11
+	fe7 -> fe2
+}
