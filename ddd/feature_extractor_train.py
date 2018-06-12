@@ -36,7 +36,7 @@ print(FE)
 
 #train
 epoch = 2000
-batch = 2000
+batch = 2000 if not small_data else 200
 train_loss = []
 running_loss = 0.0
 if small_data:

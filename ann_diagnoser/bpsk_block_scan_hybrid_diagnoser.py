@@ -90,12 +90,7 @@ class BlockScanHD(nn.Module):#Hybrid Diagnoser, HD
                             nn.Linear(128, 6),
                             nn.Sigmoid(),
                           )
-        
-        #fault predictor
-        self.fc1 = nn.Sequential(
-                            nn.Linear(12, 6),
-                            nn.Sigmoid(),
-                          )
+
     def forward(self, x):
         x0 = x[:, [1], :]               #p
         x1 = x[:, [2], :]               #c
