@@ -11,7 +11,7 @@ class Parameters_learning:
     def __init__(self):
         #batch
         #np.array(). Data for the current batch, batch × (label + residuals + features).
-        self.batch          = None
+        self.batch                  = None
         #cache pesudo inverse of X
         #{X:var}
         self.p_inverse_cache        = {}                #remember to clear

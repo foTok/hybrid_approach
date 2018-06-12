@@ -30,8 +30,8 @@ ANN_PATH = PATH + "\\ddd\\ann_model\\"
 GRAPH_PATH = PATH + "\\graph_model\\pg_model\\"
 fe_file = "FE0.pkl" if not small_data else "FE1.pkl"
 dia_file = "DIA0.pkl" if not small_data else "DIA1.pkl"
-hdia_file = "HDIA0.pkl" if not small_data else "HDIA0.pkl"
-graph_file = "GSAN0.bn" if not small_data else "GSAN0.bn"
+hdia_file = "HDIA0.pkl" if not small_data else "HDIA1.pkl"
+graph_file = "GSAN0.bn" if not small_data else "GSAN1.bn"
 step_len=100
 batch = 1000
 

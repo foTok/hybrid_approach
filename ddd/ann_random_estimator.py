@@ -20,7 +20,7 @@ from ddd.utilities import organise_tensor_data
 #data amount
 small_data = True
 #settings
-obj = "dia" #fe, dia, hdia
+obj = "fe" #fe, dia, hdia
 PATH = parentdir
 TEST_DATA_PATH = PATH + "\\bpsk_navigate\\data\\test\\"
 ANN_PATH = PATH + "\\ddd\\ann_model\\"

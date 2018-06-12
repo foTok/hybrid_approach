@@ -1,11 +1,15 @@
 """
 some utilities
 """
-
+import os
+import sys
+parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  
+sys.path.insert(0,parentdir)
 import numpy as np
 import matplotlib.pyplot as pl
 from graphviz import Digraph
 from queue import PriorityQueue
+from graph_model.graph_component import Bayesian_structure
 
 def number2vector(num, n):
     """
@@ -51,6 +55,9 @@ def graphviz_Bayes(struct, file, fea_num):
     G.edge(labels[0], labels[-1], label="[4]")
 
     #add edges in struct
+    #fault + feature + residual = 6 + fea_num (12) + 3
+    #if node i is not a fault, the label should be i - 6 + 1, where
+    #6 is the number of faults and 1 is the number of the fault label.
     n = len(struct)
     for i in range(6, n):
         for j in range(i+1, n):
@@ -251,3 +258,29 @@ def und2od(edges, order):
         else:
             graph[index1, index0] = 1
     return graph
+
+def compact_graphviz_struct(struct, file, labels):
+    """
+    graphviz the struct based on given labels and save the graph in file
+    struct: a numpy array or a Bayesian_struct
+    file: str
+    lables: a list of tuples, [(label, color),...]
+    """
+    #make sure, struct is a numpy array
+    if isinstance(struct, Bayesian_structure):
+        struct = struct.struct
+    n = len(struct)
+    G = Digraph()
+    #add nodes
+    for i in range(n):
+        if np.sum(struct[i, :]) + np.sum(struct[:, i]) > 0:
+            label, color = labels[i]
+            G.node(label, label, fillcolor=color, style="filled")
+    #add edges
+    for i in range(n):
+        for j in range(n):
+            if struct[i, j] == 1:
+                G.edge(labels[i][0], labels[j][0])
+    print(G)
+    G.render(file, view=True)
+    print("Saved in: ", file)

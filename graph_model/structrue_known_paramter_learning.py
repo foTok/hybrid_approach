@@ -15,12 +15,14 @@ from graph_model.graph_component import Bayesian_Gaussian_parameter
 from graph_model.parameter_learning import Parameters_learning
 from ddd.utilities import organise_data
 
+#data amount
+small_data = False
 #settings
 PATH = parentdir
 DATA_PATH = PATH + "\\bpsk_navigate\\data\\test\\"
 ANN_PATH = PATH + "\\ddd\\ann_model\\"
 PGM_PATH = PATH + "\\graph_model\\pg_model\\"
-fe_file = "FE0.pkl"
+fe_file = "FE0.pkl" if not small_data else "FE1.pkl"
 struct_file = "linear_graph.npy"
 step_len=100
 epoch = 2000

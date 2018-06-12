@@ -33,7 +33,7 @@ pgm_file = "GSAN0.bn" if not small_data else "GSAN1.bn"
 fea_num = 12
 step_len=100
 epoch = 2000
-batch = 2000
+batch = 2000 if not small_data else 200
 
 #load fe
 FE = torch.load(ANN_PATH+fe_file)
@@ -49,8 +49,11 @@ for file in list_files:
 BL = Bayesian_learning(6+fea_num+3)
 # BL.set_cv(True)
 BL.set_priori(pri_knowledge)
-for i in range(epoch):
+if small_data:
     inputs, labels, _, res = mana.random_batch(batch, normal=0.2, single_fault=10, two_fault=0)
+for i in range(epoch):
+    if not small_data:
+        inputs, labels, _, res = mana.random_batch(batch, normal=0.2, single_fault=10, two_fault=0)
     feature = FE.fe(inputs)
     batch_data = organise_data(inputs, labels, res, feature)
     BL.set_batch(batch_data)
