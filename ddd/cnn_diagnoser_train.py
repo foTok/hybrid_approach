@@ -19,7 +19,7 @@ import numpy as np
 from tensorboardX import SummaryWriter
 
 #data amount
-small_data = True
+small_data = False
 #settings
 PATH = parentdir
 DATA_PATH = PATH + "\\bpsk_navigate\\data\\test\\"

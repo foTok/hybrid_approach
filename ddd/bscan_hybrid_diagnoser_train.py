@@ -17,7 +17,7 @@ from ann_diagnoser.loss_function import CrossEntropy
 from ddd.utilities import organise_tensor_data
 
 #data amount
-small_data = True
+small_data = False
 #settings
 PATH = parentdir
 DATA_PATH = PATH + "\\bpsk_navigate\\data\\"

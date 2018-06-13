@@ -16,7 +16,7 @@ from data_manger.utilities import get_file_list
 from ann_diagnoser.loss_function import CrossEntropy
 
 #data amount
-small_data = True
+small_data = False
 #settings
 PATH = parentdir
 DATA_PATH = PATH + "\\bpsk_navigate\\data\\"

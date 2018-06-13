@@ -110,7 +110,7 @@ statistic.add_diagnoser("annmtan")
 statistic.add_diagnoser("anngsan")
 
 #diagnosis number
-num = 3
+num = 1
 for label, d_priori, h_priori, data, index in zip(labels, priori_by_data, priori_by_hybrid, batch_data, range(len(labels))):
     print("sample ", index)
     priori_d = priori_vec2tup(d_priori)
