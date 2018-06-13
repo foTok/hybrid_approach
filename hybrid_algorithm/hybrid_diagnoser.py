@@ -13,27 +13,30 @@ from data_manger.bpsk_data_tank import BpskDataTank
 from data_manger.utilities import get_file_list
 from graph_model.Bayesian_learning import Bayesian_structure
 from graph_model.Bayesian_learning import Bayesian_learning
-from graph_model.utilities import graphviz_Bayes
 from ddd.utilities import organise_data
 from ddd.utilities import organise_tensor_data
 from hybrid_algorithm.hybrid_annbn_diagnoser import hybrid_annbn_diagnoser
 from hybrid_algorithm.hybrid_ann_diagnoser import hybrid_ann_diagnoser
 from hybrid_algorithm.utilities import priori_vec2tup
 from hybrid_algorithm.hybrid_stats import hybrid_stats
+from hybrid_algorithm.hybrid_tan_diagnoser import hybrid_tan_diagnoser
+from graph_model.utilities import priori_knowledge
 
 #data amount
 small_data = False
 #settings
-PATH = parentdir
-DATA_PATH = PATH + "\\bpsk_navigate\\data\\test\\"
-ANN_PATH = PATH + "\\ddd\\ann_model\\"
-GRAPH_PATH = PATH + "\\graph_model\\pg_model\\"
-fe_file = "FE0.pkl" if not small_data else "FE1.pkl"
-dia_file = "DIA0.pkl" if not small_data else "DIA1.pkl"
-hdia_file = "HDIA0.pkl" if not small_data else "HDIA1.pkl"
-graph_file = "GSAN0.bn" if not small_data else "GSAN1.bn"
-step_len=100
-batch = 1000
+PATH            = parentdir
+DATA_PATH       = PATH + "\\bpsk_navigate\\data\\test\\"
+ANN_PATH        = PATH + "\\ddd\\ann_model\\"
+GRAPH_PATH      = PATH + "\\graph_model\\pg_model\\"
+fe_file         = "FE0.pkl" if not small_data else "FE1.pkl"
+dia_file        = "DIA0.pkl" if not small_data else "DIA1.pkl"
+hdia_file       = "HDIA0.pkl" if not small_data else "HDIA1.pkl"
+mtan_file       = "MTAN0.bn"  if not small_data else "MTAN1.bn"
+gsan_file       = "GSAN0.bn" if not small_data else "GSAN1.bn"
+tan_file_prefix = "TAN"
+step_len        = 100
+batch           = 1000
 
 #load fe and iso
 FE = torch.load(ANN_PATH + fe_file)
@@ -43,10 +46,18 @@ DIA.eval()
 HDIA = torch.load(ANN_PATH + hdia_file)
 HDIA.eval()
 
-#load graph model
-with open(GRAPH_PATH + graph_file, "rb") as f:
-    graph = f.read()
-    graph_model = pickle.loads(graph)
+#load gsan model
+with open(GRAPH_PATH + gsan_file, "rb") as f:
+    gsan = f.read()
+    gsan_model = pickle.loads(gsan)
+
+#load gsan model
+with open(GRAPH_PATH + mtan_file, "rb") as f:
+    mtan = f.read()
+    mtan_model = pickle.loads(mtan)
+
+#priori knowledge
+pri_knowledge = priori_knowledge()
 
 #prepare data
 mana = BpskDataTank()
@@ -69,20 +80,34 @@ labels = labels.detach().numpy()
 statistic = hybrid_stats()
 
 #hybrid diagnosers
+#ANN
 ann = hybrid_ann_diagnoser()
+#Hybrid ANN
 hann = hybrid_ann_diagnoser()
-annbn = hybrid_annbn_diagnoser()
-annbn.set_graph_model(graph_model)
+#TAN
+anntan = hybrid_tan_diagnoser()
+anntan.load_file(GRAPH_PATH + tan_file_prefix, "0")
+anntan.set_priori_knowledge(pri_knowledge)
+#ANN + MTAN
+annmtan = hybrid_annbn_diagnoser()
+annmtan.set_graph_model(mtan_model)
+#ANN + GSAN
+anngsan = hybrid_annbn_diagnoser()
+anngsan.set_graph_model(gsan_model)
 
 #set order
 order = (0,1,2,3,4,5)
 ann.set_order(order)
 hann.set_order(order)
-annbn.set_order(order)
+anntan.set_order(order)
+annmtan.set_order(order)
+anngsan.set_order(order)
 
 statistic.add_diagnoser("ann")
 statistic.add_diagnoser("hann")
-statistic.add_diagnoser("annbn")
+statistic.add_diagnoser("anntan")
+statistic.add_diagnoser("annmtan")
+statistic.add_diagnoser("anngsan")
 
 #diagnosis number
 num = 3
@@ -97,22 +122,36 @@ for label, d_priori, h_priori, data, index in zip(labels, priori_by_data, priori
     #set priori probability
     ann.set_priori(priori_d)
     hann.set_priori(priori_h)
-    annbn.set_priori(priori_d)
-    #add obs
-    annbn.add_obs(obs)
+    anntan.set_priori(priori_d)
+    annmtan.set_priori(priori_d)
+    anngsan.set_priori(priori_d)
 
-    dia_ann   = ann.search(num)
-    dia_hann  = hann.search(num)
-    dia_annbn = annbn.search(num)
+    #add obs
+    anntan.add_obs(obs)
+    annmtan.add_obs(obs)
+    anngsan.add_obs(obs)
+
+    #update
+    anntan.update_priori()
+
+    dia_ann     = ann.search(num)
+    dia_hann    = hann.search(num)
+    dia_anntan     = anntan.search(num)
+    dia_annmtan = annmtan.search(num)
+    dia_anngsan = anngsan.search(num)
 
     statistic.append_label(label)
     statistic.append_predicted("ann", dia_ann)
     statistic.append_predicted("hann", dia_hann)
-    statistic.append_predicted("annbn", dia_annbn)
+    statistic.append_predicted("anntan", dia_anntan)
+    statistic.append_predicted("annmtan", dia_annmtan)
+    statistic.append_predicted("anngsan", dia_anngsan)
 
 statistic.print_stats()
-print("ann search time=", ann.search_time())
-print("hann search time=", hann.search_time())
-print("annbn search time=", annbn.search_time())
+print("ann time cost=", ann.time_cost())
+print("hann time cost=", hann.time_cost())
+print("anntan time cost=", anntan.time_cost())
+print("annmtan time cost=", annmtan.time_cost())
+print("anngsan time cost=", anngsan.time_cost())
 
 print("DONE")

@@ -25,7 +25,7 @@ DATA_PATH = PATH + "\\bpsk_navigate\\data\\"
 ANN_PATH = PATH + "\\ddd\\ann_model\\"
 PGM_PATH = PATH + "\\graph_model\\pg_model\\"
 fe_file = "FE0.pkl" if not small_data else "FE1.pkl"
-file_flag = "_0" if not small_data else "_1"
+file_flag = "0" if not small_data else "1"
 step_len=100
 batch = 20000 if not small_data else 200
 
@@ -71,7 +71,7 @@ for i in range(6):
     learner.set_batch(batch_i)
     learner.learn_TAN()
     #save
-    file_name = "tan_" + str(i) + file_flag
+    file_name = "TAN" + str(i) + file_flag
     learner.save_graph(PGM_PATH + file_name, label_i)
     learner.save_TAN(PGM_PATH + file_name)
 

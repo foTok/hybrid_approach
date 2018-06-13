@@ -100,7 +100,7 @@ class a_star_frame:
         self.time_stats = self.time_stats + (end - start)
         return result
 
-    def search_time(self):
+    def time_cost(self):
         """
         return the time consumed by search
         """

@@ -22,6 +22,7 @@ class hybrid_ann_diagnoser(a_star_frame):
         """
         compute the cost of candidate
         """
+        alpha = 1e-20
         #initial cost
         cost = 0
         #priori cost
@@ -29,6 +30,7 @@ class hybrid_ann_diagnoser(a_star_frame):
             id = self.order[i]
             value = c
             p_c = self.priori[id][value]
+            p_c = (p_c + alpha) /(1 + alpha)
             cost_c = -log(p_c)
             cost = cost + cost_c
         return cost
