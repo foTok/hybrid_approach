@@ -18,10 +18,11 @@ class ann1svm_diagnoser(a_star_frame):
     """
     search diagnosis using 1svm as the likelihood estimator
     """
-    def __init__(self):
+    def __init__(self, p0=0.99):
         super(ann1svm_diagnoser, self).__init__()
         self.obs    = None
         self.svm    = None
+        self.p0     = p0
 
     def load_svm(self, file):
         """
@@ -40,7 +41,7 @@ class ann1svm_diagnoser(a_star_frame):
         compute the cost
         """
         alpha = 1e-20
-        p0    = 0.98
+        p0    = self.p0
         cost  = 0
         for c, i in zip(candidate, range(len(candidate))):
             id = self.order[i]

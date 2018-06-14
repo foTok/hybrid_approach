@@ -15,6 +15,8 @@ from ddd.utilities import organise_data
 
 #data amount
 small_data      = False
+nu              = 0.1   #0.01, 0.05, 0.1
+file_index      = str(2) #str(0), str(1), str(2)
 #settings
 PATH            = parentdir
 DATA_PATH       = PATH + "\\bpsk_navigate\\data\\"
@@ -22,7 +24,8 @@ ANN_PATH        = PATH + "\\ddd\\ann_model\\"
 SVM_PATH        = PATH + "\\ddd\\svm_model\\"
 step_len        = 100
 fe_name         = "FE0.pkl" if not small_data else "FE1.pkl"
-model_file      = "likelihood0.m" if not small_data else "likelihood1.m"
+name            = "likelihood" + file_index
+model_file      =  name + ("0.m" if not small_data else "1.m")
 
 #load fe
 FE = torch.load(ANN_PATH + fe_name)
@@ -43,7 +46,7 @@ feature = FE.fe(inputs)
 X_train = organise_data(inputs, labels, res, feature)
 
 #1-SVM Model
-clf = svm.OneClassSVM(nu=0.01, kernel="rbf", gamma=0.1)
+clf = svm.OneClassSVM(nu=nu, kernel="rbf", gamma=0.1)
 clf.fit(X_train)
 
 #save Model
