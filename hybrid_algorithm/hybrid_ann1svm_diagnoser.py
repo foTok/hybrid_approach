@@ -51,7 +51,8 @@ class ann1svm_diagnoser(a_star_frame):
             cost = cost + cost_c
         if len(candidate) == 6:
             inputs = np.concatenate((candidate, self.obs), 0)
-            if self.svm(inputs) == 1:
+            inputs = inputs.reshape(1, len(inputs))
+            if (self.svm.predict(inputs) == 1).all():
                 cost = cost - log(p0)
             else:
                 cost = cost - log(1-p0)

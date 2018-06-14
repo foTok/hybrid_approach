@@ -20,6 +20,7 @@ from hybrid_algorithm.hybrid_ann_diagnoser import hybrid_ann_diagnoser
 from hybrid_algorithm.utilities import priori_vec2tup
 from hybrid_algorithm.hybrid_stats import hybrid_stats
 from hybrid_algorithm.hybrid_tan_diagnoser import hybrid_tan_diagnoser
+from hybrid_algorithm.hybrid_ann1svm_diagnoser import ann1svm_diagnoser
 from graph_model.utilities import priori_knowledge
 
 #data amount
@@ -28,9 +29,11 @@ small_data = False
 PATH            = parentdir
 DATA_PATH       = PATH + "\\bpsk_navigate\\data\\test\\"
 ANN_PATH        = PATH + "\\ddd\\ann_model\\"
+SVM_PATH        = PATH + "\\ddd\\svm_model\\"
 GRAPH_PATH      = PATH + "\\graph_model\\pg_model\\"
 fe_file         = "FE0.pkl" if not small_data else "FE1.pkl"
 dia_file        = "DIA0.pkl" if not small_data else "DIA1.pkl"
+svm_file        = "likelihood0.m" if not small_data else "likelihood1.m"
 hdia_file       = "HDIA0.pkl" if not small_data else "HDIA1.pkl"
 mtan_file       = "MTAN0.bn"  if not small_data else "MTAN1.bn"
 gsan_file       = "GSAN0.bn" if not small_data else "GSAN1.bn"
@@ -65,7 +68,7 @@ list_files = get_file_list(DATA_PATH)
 for file in list_files:
     mana.read_data(DATA_PATH+file, step_len=step_len, snr=20, norm=True)
 
-inputs, labels, _, res = mana.random_batch(batch, normal=0.2, single_fault=0, two_fault=10)
+inputs, labels, _, res = mana.random_batch(batch, normal=0.2, single_fault=10, two_fault=0)
 #priori by data
 priori_by_data = DIA(inputs).detach().numpy()
 #priori by hybrid
@@ -82,6 +85,9 @@ statistic = hybrid_stats()
 #hybrid diagnosers
 #ANN
 ann = hybrid_ann_diagnoser()
+#ANN + 1SVM
+ann1svm = ann1svm_diagnoser()
+ann1svm.load_svm(SVM_PATH + svm_file)
 #Hybrid ANN
 hann = hybrid_ann_diagnoser()
 #TAN
@@ -98,19 +104,21 @@ anngsan.set_graph_model(gsan_model)
 #set order
 order = (0,1,2,3,4,5)
 ann.set_order(order)
+ann1svm.set_order(order)
 hann.set_order(order)
 anntan.set_order(order)
 annmtan.set_order(order)
 anngsan.set_order(order)
 
 statistic.add_diagnoser("ann")
+statistic.add_diagnoser("ann1svm")
 statistic.add_diagnoser("hann")
 statistic.add_diagnoser("anntan")
 statistic.add_diagnoser("annmtan")
 statistic.add_diagnoser("anngsan")
 
 #diagnosis number
-num = 1
+num = 3
 for label, d_priori, h_priori, data, index in zip(labels, priori_by_data, priori_by_hybrid, batch_data, range(len(labels))):
     print("sample ", index)
     priori_d = priori_vec2tup(d_priori)
@@ -118,15 +126,18 @@ for label, d_priori, h_priori, data, index in zip(labels, priori_by_data, priori
     obs = []
     for i in range(6, len(data)):
         obs.append((i, data[i]))
+    traits = data[6:]
 
     #set priori probability
     ann.set_priori(priori_d)
+    ann1svm.set_priori(priori_d)
     hann.set_priori(priori_h)
     anntan.set_priori(priori_d)
     annmtan.set_priori(priori_d)
     anngsan.set_priori(priori_d)
 
     #add obs
+    ann1svm.add_obs(traits)
     anntan.add_obs(obs)
     annmtan.add_obs(obs)
     anngsan.add_obs(obs)
@@ -135,22 +146,25 @@ for label, d_priori, h_priori, data, index in zip(labels, priori_by_data, priori
     anntan.update_priori()
 
     dia_ann     = ann.search(num)
+    dia_ann1svm = ann1svm.search(num)
     dia_hann    = hann.search(num)
-    dia_anntan     = anntan.search(num)
+    dia_anntan  = anntan.search(num)
     dia_annmtan = annmtan.search(num)
     dia_anngsan = anngsan.search(num)
 
     statistic.append_label(label)
-    statistic.append_predicted("ann", dia_ann)
-    statistic.append_predicted("hann", dia_hann)
-    statistic.append_predicted("anntan", dia_anntan)
-    statistic.append_predicted("annmtan", dia_annmtan)
-    statistic.append_predicted("anngsan", dia_anngsan)
+    statistic.append_predicted("ann",       dia_ann)
+    statistic.append_predicted("ann1svm",   dia_ann1svm)
+    statistic.append_predicted("hann",      dia_hann)
+    statistic.append_predicted("anntan",    dia_anntan)
+    statistic.append_predicted("annmtan",   dia_annmtan)
+    statistic.append_predicted("anngsan",   dia_anngsan)
 
 statistic.print_stats()
-print("ann time cost=", ann.time_cost())
-print("hann time cost=", hann.time_cost())
-print("anntan time cost=", anntan.time_cost())
+print("ann time cost=",     ann.time_cost())
+print("ann1svm time cost=", ann1svm.time_cost())
+print("hann time cost=",    hann.time_cost())
+print("anntan time cost=",  anntan.time_cost())
 print("annmtan time cost=", annmtan.time_cost())
 print("anngsan time cost=", anngsan.time_cost())
 
