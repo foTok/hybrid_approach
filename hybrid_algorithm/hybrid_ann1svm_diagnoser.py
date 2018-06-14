@@ -14,12 +14,12 @@ from hybrid_algorithm.a_star_frame import a_star_frame
 from hybrid_algorithm.utilities import hypothesis_test as obs_pro
 from math import log
 
-class ann1svm(a_star_frame):
+class ann1svm_diagnoser(a_star_frame):
     """
     search diagnosis using 1svm as the likelihood estimator
     """
     def __init__(self):
-        super(ann1svm, self).__init__()
+        super(ann1svm_diagnoser, self).__init__()
         self.obs    = None
         self.svm    = None
 
@@ -53,4 +53,6 @@ class ann1svm(a_star_frame):
             inputs = np.concatenate((candidate, self.obs), 0)
             if self.svm(inputs) == 1:
                 cost = cost - log(p0)
+            else:
+                cost = cost - log(1-p0)
         return cost
