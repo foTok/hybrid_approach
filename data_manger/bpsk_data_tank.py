@@ -153,8 +153,9 @@ class BpskDataTank():
             normalization = 0
             for m in fault_num:
                 normalization = normalization + fault_num[m]
-            for m in fault_num:
-                fault_num[m] = int(fault_num[m] * batch * (1 - normal)) // normalization
+            if normalization != 0:
+                for m in fault_num:
+                    fault_num[m] = int(fault_num[m] * batch * (1 - normal)) // normalization
 
             all_fault = 0
             for m in fault_num:
