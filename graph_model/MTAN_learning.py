@@ -17,17 +17,16 @@ from graph_model.MTAN import MTAN
 from ddd.utilities import organise_data
 
 #data amount
-small_data = False
+small_data = True
 
 #settings
 PATH = parentdir
-DATA_PATH = PATH + "\\bpsk_navigate\\data\\"
-ANN_PATH = PATH + "\\ddd\\ann_model\\"
-PGM_PATH = PATH + "\\graph_model\\pg_model\\"
-fe_file = "FE0.pkl" if not small_data else "FE1.pkl"
-file_flag = "0" if not small_data else "1"
+DATA_PATH = PATH + "\\bpsk_navigate\\data\\" + ("big_data\\" if not small_data else "small_data\\")
+ANN_PATH = PATH + "\\ddd\\ann_model\\" + ("big_data\\" if not small_data else "small_data\\")
+PGM_PATH = PATH + "\\graph_model\\pg_model\\" + ("big_data\\" if not small_data else "small_data\\")
+fe_file = "FE0.pkl"
 step_len=100
-batch = 20000 if not small_data else 200
+batch = 20000
 
 #prepare data
 mana = BpskDataTank()
@@ -59,7 +58,7 @@ learner.set_priori(pri_knowledge)
 #learner.set_res_pri(res_priori)
 learner.learn_MTAN()
 #save
-file_name = "MTAN" + file_flag
+file_name = "MTAN"
 learner.save_graph(PGM_PATH + file_name)
 learner.save_MTAN(PGM_PATH + file_name)
 

@@ -22,9 +22,9 @@ from tensorboardX import SummaryWriter
 small_data = False
 #settings
 PATH = parentdir
-DATA_PATH = PATH + "\\bpsk_navigate\\data\\test\\"
-ANN_PATH = PATH + "\\ddd\\ann_model\\"
-dia_name = "cnnDIA0.pkl" if not small_data else "cnnDIA1.pkl"
+DATA_PATH = PATH + "\\bpsk_navigate\\data\\test\\" + ("big_data\\" if not small_data else "small_data\\")
+ANN_PATH = PATH + "\\ddd\\ann_model\\" + ("big_data\\" if not small_data else "small_data\\")
+dia_name = "cnnDIA.pkl
 
 #prepare data
 mana = BpskDataTank()

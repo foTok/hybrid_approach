@@ -16,12 +16,12 @@ from data_manger.utilities import get_file_list
 from ann_diagnoser.loss_function import CrossEntropy
 
 #data amount
-small_data = False
+small_data = True
 #settings
 PATH = parentdir
-DATA_PATH = PATH + "\\bpsk_navigate\\data\\"
-ANN_PATH = PATH + "\\ddd\\ann_model\\"
-dia_name = "DIA0.pkl" if not small_data else "DIA1.pkl"
+DATA_PATH = PATH + "\\bpsk_navigate\\data\\" + ("big_data\\" if not small_data else "small_data\\")
+ANN_PATH = PATH + "\\ddd\\ann_model\\" + ("big_data\\" if not small_data else "small_data\\")
+dia_name = "DIA.pkl"
 
 #prepare data
 mana = BpskDataTank()
@@ -36,15 +36,12 @@ criterion = CrossEntropy
 optimizer = optim.Adam(diagnoser.parameters(), lr=0.001, weight_decay=8e-3)
 
 #train
-epoch = 2000
-batch = 2000 if not small_data else 200
+epoch = 1000
+batch = 2000 if not small_data else 1000
 train_loss = []
 running_loss = 0.0
-if small_data:
-    inputs, labels, _, _ = mana.random_batch(batch, normal=0.4, single_fault=10, two_fault=0)
 for i in range(epoch):
-    if not small_data:
-        inputs, labels, _, _ = mana.random_batch(batch, normal=0.4, single_fault=10, two_fault=0)
+    inputs, labels, _, _ = mana.random_batch(batch, normal=0.4, single_fault=10, two_fault=0)
     optimizer.zero_grad()
     outputs = diagnoser(inputs)
     loss = criterion(outputs, labels)

@@ -29,7 +29,7 @@ class hybrid_tan_diagnoser(a_star_frame):
         self.obs                   = None
 
     #interface
-    def load_file(self, file_prefix, flag):
+    def load_file(self, file_prefix, flag=""):
         """
         load model files into tan classifiers
         """

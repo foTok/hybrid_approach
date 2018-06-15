@@ -33,23 +33,23 @@ class hybrid_stats:
         assert len(self.labels) == (len(self.tank[name]) + 1)
         self.tank[name].append(label)
 
-    def stats(self, name, num=1):
+    def stats(self, name):
         """
         print the statistic informations one diagnoser
         """
         assert name in self.tank
-        _accuracy = self.__accuracy(name, num)
-        _correctness = self.__correctness(name, num)
+        _accuracy = self.__accuracy(name)
+        _correctness = self.__correctness(name)
         print(name, ": accuracy=", _accuracy, ", correctness=", _correctness)
 
-    def print_stats(self, num=1):
+    def print_stats(self):
         """
         print all the statistic information for each diagnoser
         """
         for name in self.tank:
-            self.stats(name, num)
+            self.stats(name)
 
-    def __accuracy(self, name, num=1):
+    def __accuracy(self, name):
         """
         accuracy = (number of predicted labels==real labels) / (label number)
         """
@@ -57,15 +57,15 @@ class hybrid_stats:
         label_number = len(self.labels)
         counter = 0
         predicted = self.tank[name]
-        for i, pred in zip(range(label_number), predicted):
-            for j in range(num):
-                if (self.labels[i] == pred[j]).all():
+        for i, pred in zip(range(len(self.labels)), predicted):
+            for j in pred:
+                if (self.labels[i] == j).all():
                     counter = counter + 1
                     break
         accuracy = counter / label_number
         return accuracy
 
-    def __correctness(self, name, num=1):
+    def __correctness(self, name):
         """
         correntess = (number of not wrong predicted labels) / (predicted number)
         for example:
@@ -75,9 +75,10 @@ class hybrid_stats:
         """
         assert name in self.tank
         label_number = len(self.labels)
-        predicted_number = num * label_number
         counter = 0
         predicted = self.tank[name]
+        num = len(predicted[0])
+        predicted_number = num * label_number
         for i, pred in zip(range(label_number), predicted):
             for j in range(num):
                 if (self.labels[i] >= pred[j]).all():

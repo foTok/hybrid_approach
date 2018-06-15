@@ -14,18 +14,16 @@ from data_manger.utilities import get_file_list
 from ddd.utilities import organise_data
 
 #data amount
-small_data      = False
-nu              = 0.1   #0.01, 0.05, 0.1
-file_index      = str(2) #str(0), str(1), str(2)
+small_data      = True
+nu              = 0.01   #0.01, 0.05, 0.1
 #settings
 PATH            = parentdir
-DATA_PATH       = PATH + "\\bpsk_navigate\\data\\"
-ANN_PATH        = PATH + "\\ddd\\ann_model\\"
-SVM_PATH        = PATH + "\\ddd\\svm_model\\"
+DATA_PATH       = PATH + "\\bpsk_navigate\\data\\" + ("big_data\\" if not small_data else "small_data\\")
+ANN_PATH        = PATH + "\\ddd\\ann_model\\" + ("big_data\\" if not small_data else "small_data\\")
+SVM_PATH        = PATH + "\\ddd\\svm_model\\" + ("big_data\\" if not small_data else "small_data\\")
 step_len        = 100
-fe_name         = "FE0.pkl" if not small_data else "FE1.pkl"
-name            = "likelihood" + file_index
-model_file      =  name + ("0.m" if not small_data else "1.m")
+fe_name         = "FE.pkl"
+model_file      = "likelihood.m"
 
 #load fe
 FE = torch.load(ANN_PATH + fe_name)
@@ -37,7 +35,7 @@ for file in list_files:
     mana.read_data(DATA_PATH+file, step_len=step_len, snr=20, norm=True)
 
 #train
-batch = 20000 if not small_data else 200
+batch = 20000
 train_loss = []
 running_loss = 0.0
 #sample data

@@ -14,13 +14,12 @@ from ddd.utilities import hist_batch
 from ddd.utilities import scatter_batch
 
 #data amount
-small_data = False
+small_data = True
 #settings
 PATH = parentdir
 DATA_PATH = PATH + "\\bpsk_navigate\\data\\test\\"
-ANN_PATH = PATH + "\\ddd\\ann_model\\"
-PGM_PATH = PATH + "\\graph_model\\pg_model\\"
-model_file = "FE0.pkl" if not small_data else "FE1.pkl"
+ANN_PATH = PATH + "\\ddd\\ann_model\\" + ("big_data\\" if not small_data else "small_data\\")
+model_file = "FE0.pkl"
 step_len=100
 batch = 2000
 

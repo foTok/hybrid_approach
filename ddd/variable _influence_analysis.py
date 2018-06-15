@@ -18,16 +18,13 @@ import torch.nn as nn
 import torch.optim as optim
 import matplotlib.pyplot as pl
 import numpy as np
-from tensorboardX import SummaryWriter
-
+#data amount
+small_data = True
 #prepare data
 PATH = parentdir
-DATA_PATH = PATH + "\\bpsk_navigate\\data\\"
+DATA_PATH = PATH + "\\bpsk_navigate\\data\\" + ("big_data\\" if not small_data else "small_data\\")
 step_len=100
 criterion = CrossEntropy
-
-#visual
-writer = SummaryWriter()
 
 mana = BpskDataTank()
 list_files = get_file_list(DATA_PATH)
@@ -51,7 +48,7 @@ epoch = 2000
 batch = 2000
 print("start training!")
 for i in range(epoch):
-    inputs, labels, _, _ = mana.random_batch(batch, normal=0, single_fault=10, two_fault=1)
+    inputs, labels, _, _ = mana.random_batch(batch, normal=0, single_fault=10, two_fault=0)
     x0 = inputs[:, [0], :]
     x1 = inputs[:, [1], :]
     x2 = inputs[:, [2], :]
@@ -61,35 +58,30 @@ for i in range(epoch):
     opt0.zero_grad()
     out0    = nn0(x0)
     loss0   = criterion(out0, labels)
-    writer.add_scalar('Loss0', loss0.item(), i) #visual
     loss0.backward()
     opt0.step()
 
     opt1.zero_grad()
     out1    = nn1(x1)
     loss1   = criterion(out1, labels)
-    writer.add_scalar('Loss1', loss1.item(), i) #visual
     loss1.backward()
     opt1.step()
 
     opt2.zero_grad()
     out2    = nn2(x2)
     loss2   = criterion(out2, labels)
-    writer.add_scalar('Loss2', loss2.item(), i) #visual
     loss2.backward()
     opt2.step()
 
     opt3.zero_grad()
     out3    = nn3(x3)
     loss3   = criterion(out3, labels)
-    writer.add_scalar('Loss3', loss3.item(), i) #visual
     loss3.backward()
     opt3.step()
 
     opt4.zero_grad()
     out4    = nn4(x4)
     loss4   = criterion(out4, labels)
-    writer.add_scalar('Loss4', loss4.item(), i) #visual
     loss4.backward()
     opt4.step()
 
@@ -100,8 +92,7 @@ torch.save(nn1, "ann_model\\nn1.pkl")
 torch.save(nn2, "ann_model\\nn2.pkl")
 torch.save(nn3, "ann_model\\nn3.pkl")
 torch.save(nn4, "ann_model\\nn4.pkl")
-#visual
-writer.close()
+
 
 
 #test
@@ -127,7 +118,7 @@ print("Start evaluation!")
 for i in range(epoch2):
     alpha = i / (i + 1)
     beta  = 1 / (i + 1)
-    inputs, labels, _, _ = mana2.random_batch(batch2, normal=0, single_fault=10, two_fault=1)
+    inputs, labels, _, _ = mana2.random_batch(batch2, normal=0, single_fault=10, two_fault=0)
     x0 = inputs[:, [0], :]
     x1 = inputs[:, [1], :]
     x2 = inputs[:, [2], :]

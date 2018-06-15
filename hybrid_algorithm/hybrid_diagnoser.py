@@ -25,21 +25,19 @@ from hybrid_algorithm.hybrid_ann1svm_diagnoser import ann1svm_diagnoser
 from graph_model.utilities import priori_knowledge
 
 #data amount
-small_data = False
+small_data = True
 #settings
 PATH            = parentdir
 DATA_PATH       = PATH + "\\bpsk_navigate\\data\\test\\"
-ANN_PATH        = PATH + "\\ddd\\ann_model\\"
-SVM_PATH        = PATH + "\\ddd\\svm_model\\"
-GRAPH_PATH      = PATH + "\\graph_model\\pg_model\\"
-fe_file         = "FE0.pkl" if not small_data else "FE1.pkl"
-dia_file        = "DIA0.pkl" if not small_data else "DIA1.pkl"
-svm_file0       = "likelihood00.m" if not small_data else "likelihood01.m"
-svm_file1       = "likelihood10.m" if not small_data else "likelihood21.m"
-svm_file2       = "likelihood10.m" if not small_data else "likelihood21.m"
-hdia_file       = "HDIA0.pkl" if not small_data else "HDIA1.pkl"
-mtan_file       = "MTAN0.bn"  if not small_data else "MTAN1.bn"
-gsan_file       = "GSAN0.bn" if not small_data else "GSAN1.bn"
+ANN_PATH        = PATH + "\\ddd\\ann_model\\" + ("big_data\\" if not small_data else "small_data\\")
+SVM_PATH        = PATH + "\\ddd\\svm_model\\" + ("big_data\\" if not small_data else "small_data\\")
+GRAPH_PATH      = PATH + "\\graph_model\\pg_model\\" + ("big_data\\" if not small_data else "small_data\\")
+fe_file         = "FE.pkl"
+dia_file        = "DIA.pkl"
+svm_file        = "likelihood.m"
+hdia_file       = "HDIA.pkl"
+mtan_file       = "MTAN.bn"
+gsan_file       = "GSAN.bn"
 tan_file_prefix = "TAN"
 step_len        = 100
 batch           = 1000
@@ -71,7 +69,7 @@ list_files = get_file_list(DATA_PATH)
 for file in list_files:
     mana.read_data(DATA_PATH+file, step_len=step_len, snr=20, norm=True)
 
-inputs, labels, _, res = mana.random_batch(batch, normal=0.2, single_fault=10, two_fault=0)
+inputs, labels, _, res = mana.random_batch(batch, normal=0.4, single_fault=10, two_fault=0)
 #priori by data
 ann_start = time.clock()
 priori_by_data = DIA(inputs).detach().numpy()
@@ -93,19 +91,14 @@ statistic = hybrid_stats()
 #ANN
 ann = hybrid_ann_diagnoser()
 #ANN + 1SVM
-ann1svm0 = ann1svm_diagnoser(0.99)
-ann1svm0.load_svm(SVM_PATH + svm_file0)
+ann1svm = ann1svm_diagnoser(0.99)
+ann1svm.load_svm(SVM_PATH + svm_file)
 
-ann1svm1 = ann1svm_diagnoser(0.95)
-ann1svm1.load_svm(SVM_PATH + svm_file1)
-
-ann1svm2 = ann1svm_diagnoser(0.90)
-ann1svm2.load_svm(SVM_PATH + svm_file2)
 #Hybrid ANN
 hann = hybrid_ann_diagnoser()
 #TAN
 anntan = hybrid_tan_diagnoser()
-anntan.load_file(GRAPH_PATH + tan_file_prefix, "0")
+anntan.load_file(GRAPH_PATH + tan_file_prefix)
 anntan.set_priori_knowledge(pri_knowledge)
 #ANN + MTAN
 annmtan = hybrid_annbn_diagnoser()
@@ -117,25 +110,21 @@ anngsan.set_graph_model(gsan_model)
 #set order
 order = (0,1,2,3,4,5)
 ann.set_order(order)
-ann1svm0.set_order(order)
-ann1svm1.set_order(order)
-ann1svm2.set_order(order)
+ann1svm.set_order(order)
 hann.set_order(order)
 anntan.set_order(order)
 annmtan.set_order(order)
 anngsan.set_order(order)
 
 statistic.add_diagnoser("ann")
-statistic.add_diagnoser("ann1svm0")
-statistic.add_diagnoser("ann1svm1")
-statistic.add_diagnoser("ann1svm2")
+statistic.add_diagnoser("ann1svm")
 statistic.add_diagnoser("hann")
 statistic.add_diagnoser("anntan")
 statistic.add_diagnoser("annmtan")
 statistic.add_diagnoser("anngsan")
 
 #diagnosis number
-num = 3
+num = 1
 for label, d_priori, h_priori, data, index in zip(labels, priori_by_data, priori_by_hybrid, batch_data, range(len(labels))):
     print("sample ", index)
     priori_d = priori_vec2tup(d_priori)
@@ -147,18 +136,14 @@ for label, d_priori, h_priori, data, index in zip(labels, priori_by_data, priori
 
     #set priori probability
     ann.set_priori(priori_d)
-    ann1svm0.set_priori(priori_d)
-    ann1svm1.set_priori(priori_d)
-    ann1svm2.set_priori(priori_d)
+    ann1svm.set_priori(priori_d)
     hann.set_priori(priori_h)
     anntan.set_priori(priori_d)
     annmtan.set_priori(priori_d)
     anngsan.set_priori(priori_d)
 
     #add obs
-    ann1svm0.add_obs(traits)
-    ann1svm1.add_obs(traits)
-    ann1svm2.add_obs(traits)
+    ann1svm.add_obs(traits)
     anntan.add_obs(obs)
     annmtan.add_obs(obs)
     anngsan.add_obs(obs)
@@ -167,9 +152,7 @@ for label, d_priori, h_priori, data, index in zip(labels, priori_by_data, priori
     anntan.update_priori()
 
     dia_ann      = ann.search(num)
-    dia_ann1svm0 = ann1svm0.search(num)
-    dia_ann1svm1 = ann1svm1.search(num)
-    dia_ann1svm2 = ann1svm2.search(num)
+    dia_ann1svm  = ann1svm.search(num)
     dia_hann     = hann.search(num)
     dia_anntan   = anntan.search(num)
     dia_annmtan  = annmtan.search(num)
@@ -177,9 +160,7 @@ for label, d_priori, h_priori, data, index in zip(labels, priori_by_data, priori
 
     statistic.append_label(label)
     statistic.append_predicted("ann",       dia_ann)
-    statistic.append_predicted("ann1svm0",   dia_ann1svm0)
-    statistic.append_predicted("ann1svm1",   dia_ann1svm1)
-    statistic.append_predicted("ann1svm2",   dia_ann1svm2)
+    statistic.append_predicted("ann1svm",   dia_ann1svm)
     statistic.append_predicted("hann",      dia_hann)
     statistic.append_predicted("anntan",    dia_anntan)
     statistic.append_predicted("annmtan",   dia_annmtan)
@@ -191,9 +172,7 @@ print("ann cost=",           ann_cost)
 print("hann cost=",          hann_cost)
 #ann time search cost
 print("ann time cost=",      ann.time_cost())
-print("ann1svm0 time cost=", ann1svm0.time_cost())
-print("ann1svm1 time cost=", ann1svm1.time_cost())
-print("ann1svm2 time cost=", ann1svm2.time_cost())
+print("ann1svm0 time cost=", ann1svm.time_cost())
 print("hann time cost=",     hann.time_cost())
 print("anntan time cost=",   anntan.time_cost())
 print("annmtan time cost=",  annmtan.time_cost())

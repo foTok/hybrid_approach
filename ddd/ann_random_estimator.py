@@ -23,16 +23,16 @@ small_data = True
 obj = "fe" #fe, dia, hdia
 PATH = parentdir
 TEST_DATA_PATH = PATH + "\\bpsk_navigate\\data\\test\\"
-ANN_PATH = PATH + "\\ddd\\ann_model\\"
+ANN_PATH = PATH + "\\ddd\\ann_model\\" + ("big_data\\" if not small_data else "small_data\\")
 step_len=100
 criterion = CrossEntropy
 norm = False
 if obj == "fe":
-    dia_name = "FE0.pkl" if not small_data else "FE1.pkl"
+    dia_name = "FE.pkl"
 elif obj == "dia":
-    dia_name = "DIA0.pkl" if not small_data else "DIA1.pkl"
+    dia_name = "DIA.pkl"
 elif obj == "hdia":
-    dia_name = "HDIA0.pkl" if not small_data else "HDIA1.pkl"
+    dia_name = "HDIA.pkl"
     norm = True
 else:
     print("unkown object!")
@@ -48,7 +48,7 @@ eval_loss = []
 batch = 1000
 epoch = 100
 for i in range(epoch):
-    inputs, labels, _, res = mana.random_batch(batch, normal=0.2, single_fault=10, two_fault=1)
+    inputs, labels, _, res = mana.random_batch(batch, normal=0.2, single_fault=10, two_fault=0)
     sen_res = organise_tensor_data(inputs, res)
     outputs = diagnoser(sen_res)
     loss = criterion(outputs, labels)

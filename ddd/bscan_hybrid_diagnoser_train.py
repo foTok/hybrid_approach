@@ -17,14 +17,14 @@ from ann_diagnoser.loss_function import CrossEntropy
 from ddd.utilities import organise_tensor_data
 
 #data amount
-small_data = False
+small_data = True
 #settings
 PATH = parentdir
-DATA_PATH = PATH + "\\bpsk_navigate\\data\\"
-ANN_PATH = PATH + "\\ddd\\ann_model\\"
+DATA_PATH = PATH + "\\bpsk_navigate\\data\\" + ("big_data\\" if not small_data else "small_data\\")
+ANN_PATH = PATH + "\\ddd\\ann_model\\" + ("big_data\\" if not small_data else "small_data\\")
 step_len=100
 criterion = CrossEntropy
-hdia_name = "HDIA0.pkl" if not small_data else "HDIA1.pkl"
+hdia_name = "HDIA.pkl"
 
 #prepare data
 mana = BpskDataTank()
@@ -37,15 +37,12 @@ print(diagnoser)
 optimizer = optim.Adam(diagnoser.parameters(), lr=0.001, weight_decay=8e-3)
 
 #train
-epoch = 2000
-batch = 2000 if not small_data else 200
+epoch = 1000
+batch = 2000 if not small_data else 1000
 train_loss = []
 running_loss = 0.0
-if small_data:
-    inputs, labels, _, res = mana.random_batch(batch, normal=0.4, single_fault=10, two_fault=0)
 for i in range(epoch):
-    if not small_data:
-        inputs, labels, _, res = mana.random_batch(batch, normal=0.4, single_fault=10, two_fault=0)
+    inputs, labels, _, res = mana.random_batch(batch, normal=0.4, single_fault=10, two_fault=0)
     sen_res = organise_tensor_data(inputs, res)
     optimizer.zero_grad()
     outputs = diagnoser(sen_res)

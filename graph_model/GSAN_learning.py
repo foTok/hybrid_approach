@@ -24,16 +24,16 @@ pri_knowledge = priori_knowledge()
 
 #settings
 PATH = parentdir
-DATA_PATH = PATH + "\\bpsk_navigate\\data\\"
-ANN_PATH = PATH + "\\ddd\\ann_model\\"
-PGM_PATH = PATH + "\\graph_model\\pg_model\\"
-fe_file = "FE0.pkl" if not small_data else "FE1.pkl"
-struct_file = "GSAN0.gv" if not small_data else "GSAN1.gv"
-pgm_file = "GSAN0.bn" if not small_data else "GSAN1.bn"
+DATA_PATH = PATH + "\\bpsk_navigate\\data\\" + ("big_data\\" if not small_data else "small_data\\")
+ANN_PATH = PATH + "\\ddd\\ann_model\\" + ("big_data\\" if not small_data else "small_data\\")
+PGM_PATH = PATH + "\\graph_model\\pg_model\\" + ("big_data\\" if not small_data else "small_data\\")
+fe_file = "FE0.pkl"
+struct_file = "GSAN0.gv"
+pgm_file = "GSAN0.bn"
 fea_num = 12
 step_len=100
-epoch = 2000
-batch = 2000 if not small_data else 200
+epoch = 1000
+batch = 2000 if not small_data else 1000
 
 #load fe
 FE = torch.load(ANN_PATH+fe_file)
@@ -49,11 +49,8 @@ for file in list_files:
 BL = Bayesian_learning(6+fea_num+3)
 # BL.set_cv(True)
 BL.set_priori(pri_knowledge)
-if small_data:
-    inputs, labels, _, res = mana.random_batch(batch, normal=0.2, single_fault=10, two_fault=0)
 for i in range(epoch):
-    if not small_data:
-        inputs, labels, _, res = mana.random_batch(batch, normal=0.2, single_fault=10, two_fault=0)
+    inputs, labels, _, res = mana.random_batch(batch, normal=0.2, single_fault=10, two_fault=0)
     feature = FE.fe(inputs)
     batch_data = organise_data(inputs, labels, res, feature)
     BL.set_batch(batch_data)
