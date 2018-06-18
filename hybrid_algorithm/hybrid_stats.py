@@ -40,7 +40,7 @@ class hybrid_stats:
         assert name in self.tank
         _accuracy = self.__accuracy(name)
         _correctness = self.__correctness(name)
-        print(name, ": accuracy=", _accuracy, ", correctness=", _correctness)
+        print(name, ":\naccuracy =", _accuracy, ", correctness =", _correctness)
 
     def print_stats(self):
         """

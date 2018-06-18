@@ -22,7 +22,7 @@ small_data = True
 #settings
 obj = ["dia", "hdia","bsshdia"] #fe, dia, hdia, bsshdia
 PATH = parentdir
-TEST_DATA_PATH = PATH + "\\bpsk_navigate\\data\\test\\" # + "big_data\\"
+TEST_DATA_PATH = PATH + "\\bpsk_navigate\\data\\test\\"
 ANN_PATH = PATH + "\\ddd\\ann_model\\" + ("big_data\\" if not small_data else "small_data\\")
 step_len=100
 criterion = CrossEntropy
@@ -59,7 +59,7 @@ epoch       = 100
 eval_loss   = [0]*len(dia_name)
 accuracy    = [0] *len(dia_name)
 for i in range(epoch):
-    inputs, labels, _, res = mana.random_batch(batch, normal=0.0, single_fault=10, two_fault=1)
+    inputs, labels, _, res = mana.random_batch(batch, normal=0.0, single_fault=10, two_fault=0)
     sen_res = organise_tensor_data(inputs, res)
     for k, d in zip(range(len(dia_name)), diagnoser):
         outputs = d(sen_res)

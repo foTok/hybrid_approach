@@ -84,10 +84,10 @@ class BSSHD(nn.Module):#Block Scan and Structure based Hybrid Diagnoser, BSSHD
                             nn.ReLU(),
                           )
         self.fp0          = nn.Sequential(
-                            nn.Linear(20*20, 20),
+                            nn.Linear(20*20, 40),
                             nn.ReLU(),
-                            nn.BatchNorm1d(20),
-                            nn.Linear(20, 1),
+                            nn.BatchNorm1d(40),
+                            nn.Linear(40, 1),
                             nn.Sigmoid(),
                           )
 
@@ -96,10 +96,10 @@ class BSSHD(nn.Module):#Block Scan and Structure based Hybrid Diagnoser, BSSHD
                             nn.ReLU(),
                           )
         self.fp1          = nn.Sequential(
-                            nn.Linear(20*20, 20),
+                            nn.Linear(20*20, 40),
                             nn.ReLU(),
-                            nn.BatchNorm1d(20),
-                            nn.Linear(20, 1),
+                            nn.BatchNorm1d(40),
+                            nn.Linear(40, 1),
                             nn.Sigmoid(),
                           )
 
@@ -108,10 +108,10 @@ class BSSHD(nn.Module):#Block Scan and Structure based Hybrid Diagnoser, BSSHD
                             nn.ReLU(),
                           )
         self.fp2          = nn.Sequential(
-                            nn.Linear(20*20, 20),
+                            nn.Linear(20*20, 40),
                             nn.ReLU(),
-                            nn.BatchNorm1d(20),
-                            nn.Linear(20, 1),
+                            nn.BatchNorm1d(40),
+                            nn.Linear(40, 1),
                             nn.Sigmoid(),
                           )
 
@@ -120,10 +120,10 @@ class BSSHD(nn.Module):#Block Scan and Structure based Hybrid Diagnoser, BSSHD
                             nn.ReLU(),
                           )
         self.fp3          = nn.Sequential(
-                            nn.Linear(20*20, 20),
+                            nn.Linear(20*20, 40),
                             nn.ReLU(),
-                            nn.BatchNorm1d(20),
-                            nn.Linear(20, 1),
+                            nn.BatchNorm1d(40),
+                            nn.Linear(40, 1),
                             nn.Sigmoid(),
                           )
 
@@ -132,10 +132,10 @@ class BSSHD(nn.Module):#Block Scan and Structure based Hybrid Diagnoser, BSSHD
                             nn.ReLU(),
                           )
         self.fp4          = nn.Sequential(
-                            nn.Linear(20*20, 20),
+                            nn.Linear(20*20, 40),
                             nn.ReLU(),
-                            nn.BatchNorm1d(20),
-                            nn.Linear(20, 1),
+                            nn.BatchNorm1d(40),
+                            nn.Linear(40, 1),
                             nn.Sigmoid(),
                           )
 
@@ -144,10 +144,10 @@ class BSSHD(nn.Module):#Block Scan and Structure based Hybrid Diagnoser, BSSHD
                             nn.ReLU(),
                           )
         self.fp5          = nn.Sequential(
-                            nn.Linear(20*20, 20),
+                            nn.Linear(20*20, 40),
                             nn.ReLU(),
-                            nn.BatchNorm1d(20),
-                            nn.Linear(20, 1),
+                            nn.BatchNorm1d(40),
+                            nn.Linear(40, 1),
                             nn.Sigmoid(),
                           )
 

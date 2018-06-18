@@ -53,10 +53,10 @@ class BlockScanDiagnoser(nn.Module):
                         )
 
         self.fc_sequence = nn.Sequential(
-                            nn.Linear(40*20, 64),
+                            nn.Linear(40*20, 80),
                             nn.ReLU(),
-                            nn.BatchNorm1d(64),
-                            nn.Linear(64, 6),
+                            nn.BatchNorm1d(80),
+                            nn.Linear(80, 6),
                             nn.Sigmoid(),
                           )
 
