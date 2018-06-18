@@ -46,7 +46,7 @@ list_files = get_file_list(DATA_PATH)
 for file in list_files:
     mana.read_data(DATA_PATH+file, step_len=step_len, snr=20, norm=True)
 
-inputs, labels, _, res = mana.random_batch(batch, normal=0, single_fault=0, two_fault=10)
+inputs, labels, _, res = mana.random_batch(batch, normal=0, single_fault=10, two_fault=0)
 #priori by data
 ann_start       = time.clock()
 priori_by_data  = DIA(inputs).detach().numpy()
