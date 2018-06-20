@@ -2,9 +2,12 @@
 this script is used to generate data
 """
 import os
+import sys
+parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  
+sys.path.insert(0,parentdir)
 import random
 import numpy as np
-from bpsk_generator import Bpsk
+from bpsk_navigate.bpsk_generator import Bpsk
 
 PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '.'))
 #fault types

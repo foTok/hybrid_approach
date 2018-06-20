@@ -5,7 +5,9 @@ import os
 import sys
 parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  
 sys.path.insert(0,parentdir)
+import random
 import numpy as np
+from bpsk_navigate.utilities import compose_file_name
 from data_manger.bpsk_data_tank import BpskDataTank
 from data_manger.utilities import get_file_list
 from scipy import stats
@@ -53,3 +55,87 @@ def get_conflicts(results, conflict_table):
         if not pas:
             conflicts.append(c)
     return conflicts
+
+def sample_parameters(N, fault_type, grids, begin, end, pref, para_set):
+    """
+    sample parameters
+    """
+    parameters = {}
+    #single-fault
+    if pref == 1 or pref == 3:
+        for fault, grid, be, en in zip(fault_type, grids, begin, end):
+            para = sample_para1(N, fault, grid, be, en, para_set)
+            parameters[fault] = para
+    if pref == 2 or pref == 3:
+        for i in range((len(fault_type))):
+            for j in range(i+1, len(fault_type)):
+                fault = (fault_type[i], fault_type[j])
+                grid  = (grids[i], grids[j])
+                be    = (begin[i], begin[j])
+                en    = (end[i], end[j])
+                para  = sample_para2(fault, grid, be, en, para_set)
+                parameters[fault] = para
+    return parameters
+
+def sample_para0(begin, end):
+    if not (isinstance(begin, tuple) or isinstance(begin, list)):
+        para    = random.uniform(begin, end) 
+    else:#TMB fault
+        begin1  = begin[0]
+        begin2  = begin[1]
+        end1    = end[0]
+        end2    = end[1]
+        sigma   = random.uniform(begin1, end1)
+        f_d     = random.uniform(begin2, end2)
+        para    = (sigma, f_d)
+    return para
+
+def sample_para1(N, fault, grid, begin, end, para_set):
+    """
+    sample parameters for a single-fault
+    N: int
+    fault_ytpe: str
+    """
+    if fault not in para_set:
+        para_set[fault] = []
+    para_list = []
+    max_iter  = 10*N
+    it        = 0 #iter count
+    n         = 0 #count
+    while n < N:
+        it = it + 1
+        if it > max_iter:
+            break
+        para = sample_para0(begin, end)
+        if is_new(fault, grid, para, para_set[fault]):
+                para_list.append(para)
+                para_set[fault].append(para)
+                n = n + 1
+    return para_list
+
+def sample_para2(N, fault, grid, begin, end, para_set):
+    """
+    fault: tuple
+    """
+    if fault not in para_set:
+        para_set[fault] = []
+    para_list = []
+    max_iter  = 10*N
+    it        = 0 #iter count
+    n         = 0 #count
+    while n < N:
+        it = it + 1
+        if it > max_iter:
+            break
+        p1 = sample_para0(begin[0], end[0])
+        p2 = sample_para0(begin[1], end[1])
+        if is_new(fault, grid, (p1, p2), para_set[fault]):
+            para_list.append((p1, p2))
+            para_set[fault].append((p1, p2))
+    return para_list
+
+def is_new(fault_type, grid, para, para_set):
+    """
+    check if para is new for para_set
+    """
+    pass

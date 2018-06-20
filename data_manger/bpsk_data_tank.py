@@ -55,6 +55,12 @@ class BpskDataTank():
         #map from mode to data
         self.map = defaultdict(list)
 
+    def set_fault_type(self, fault_type):
+        """
+        RT
+        """
+        self.fault_type = fault_type
+
     def read_data(self, file_name, **kwargs):
         """
         read data and store them
