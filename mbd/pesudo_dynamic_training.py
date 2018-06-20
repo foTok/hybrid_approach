@@ -20,6 +20,7 @@ fault_type      = ["tma", "pseudo_rate", "tmb"]
 rang            = [[0.2, (0.8 * 10**6, 7.3 * 10**6), -0.05], [0.9, (8.8 * 10**6, 13 * 10**6), 0.05]]
 pref            = 3 #1->single-fault, 2->two-fault, 3->single-,two-fault
 loss            = 0.4
+grids           = None  #TODO
 diagnoser       = None  #TODO
 training_data   = BpskDataTank()
 para_set        = {}
@@ -27,7 +28,7 @@ DATA_PATH       = parentdir + "\\mbd\\data\\"
 
 while True:
     file_list  = []
-    parameters = sample_parameters(N, fault_type, rang[0], rang[1], pref, para_set)
+    parameters = sample_parameters(N, fault_type, grids, rang[0], rang[1], pref, para_set)
     for para in parameters:
         simulator = Pseudo()
         #TODO
