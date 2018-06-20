@@ -3,6 +3,7 @@ a pseudo code generator
 """
 
 import fractions
+import numpy as np
 from math import sin
 from math import cos
 from math import exp
@@ -122,3 +123,19 @@ class Pseudo:
         self.code = self.initial_code
         self.initial_time = fractions.Fraction(0)
         self.real_initial_time = fractions.Fraction(0)
+
+    def generate_signal(self, end_time):
+        """
+        generate similation signal
+        the unit of end_time is s(second)
+        Used to generate signal with random input
+        """
+        length = int(end_time*self.sample_rate)
+        sample_step = fractions.Fraction(1, self.sample_rate)
+        data = np.zeros([length, 1])    #msg, pseudo, carrier, s0, s1
+        #generate input signal randomly
+        for i in range(length):
+            time = i * sample_step
+            p_code = self.sample(time)
+            data[i, 0] = p_code
+        return data

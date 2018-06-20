@@ -7,6 +7,8 @@ parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0,parentdir)
 import random
 import numpy as np
+from math import sqrt
+from bpsk_navigate.bpsk_generator import Bpsk
 from bpsk_navigate.utilities import compose_file_name
 from data_manger.bpsk_data_tank import BpskDataTank
 from data_manger.utilities import get_file_list
@@ -77,9 +79,12 @@ def sample_parameters(N, fault_type, grids, begin, end, pref, para_set):
                 parameters[fault] = para
     return parameters
 
-def sample_para0(begin, end):
+def sample_para0(fault, begin, end):
     if not (isinstance(begin, tuple) or isinstance(begin, list)):
-        para    = random.uniform(begin, end) 
+        while True:
+            para    = random.uniform(begin, end)
+            if abs(para) > 0.01:
+                break
     else:#TMB fault
         begin1  = begin[0]
         begin2  = begin[1]
@@ -106,7 +111,7 @@ def sample_para1(N, fault, grid, begin, end, para_set):
         it = it + 1
         if it > max_iter:
             break
-        para = sample_para0(begin, end)
+        para = sample_para0(fault, begin, end)
         if is_new(fault, grid, para, para_set[fault]):
                 para_list.append(para)
                 para_set[fault].append(para)
@@ -127,15 +132,87 @@ def sample_para2(N, fault, grid, begin, end, para_set):
         it = it + 1
         if it > max_iter:
             break
-        p1 = sample_para0(begin[0], end[0])
-        p2 = sample_para0(begin[1], end[1])
+        p1 = sample_para0(fault[0], begin[0], end[0])
+        p2 = sample_para0(fault[1], begin[1], end[1])
         if is_new(fault, grid, (p1, p2), para_set[fault]):
             para_list.append((p1, p2))
             para_set[fault].append((p1, p2))
+            n = n + 1
     return para_list
 
 def is_new(fault_type, grid, para, para_set):
     """
     check if para is new for para_set
     """
-    pass
+    if isinstance(fault_type, str):
+        for para0 in para_set:
+            if distance1(para0, para) < grid:
+                return False
+    else:
+        for para0 in para_set:
+            d1, d2 = distance2(para0, para)
+            if (d1<grid[0]) and (d2<grid[1]):
+                return False
+    return True
+
+def distance1(para0, para1):
+    """
+    compute the distance between two points for single-fault
+    """
+    if not isinstance(para0, tuple):
+        return abs(para0 - para1)
+    else:
+        return sqrt((para0[0] - para1[0])**2 + (para0[1] - para1[1])**2)
+
+def distance2(para0, para1):
+    """
+    compute the distance betwwen two points for two-fault
+    """
+    return distance1(para0[0], para1[0]), distance1(para0[1], para1[1])
+
+def sample_data(fault_time, end_time, parameters, path):
+    """
+    sample data based on parameters and save them in path
+    """
+    normal_path = path + "normal\\"
+    file_list  = []
+    for fault in parameters:
+        if isinstance(fault, str):#single-fault
+            for para in parameters[fault]:
+                simulator = Bpsk()
+                simulator.insert_fault_para(fault, para)
+                simulator.insert_fault_time("all", fault_time)
+                data = simulator.generate_signal(end_time)
+                file_name = compose_file_name(fault, para)
+                #add to file list
+                file_list.append(file_name)
+                bpsk_pre = Bpsk()
+                data_pre = bpsk_pre.generate_signal_with_input(end_time, data[:, 0])
+                #save data
+                np.save(path + file_name, data)
+                np.save(normal_path + file_name, data_pre)
+        else:
+            for para in parameters[fault]:
+                fault1, fault2 = fault
+                para1, para2   = para
+                bpsk = Bpsk()
+                bpsk.insert_fault_para(fault1, para1)
+                bpsk.insert_fault_para(fault2, para2)
+                bpsk.insert_fault_time("all", fault_time)
+                data = bpsk.generate_signal(end_time)
+                file_name = compose_file_name(fault, para)
+                #add to file list
+                file_list.append(file_name)
+                bpsk_pre = Bpsk()
+                data_pre = bpsk_pre.generate_signal_with_input(end_time, data[:, 0])
+                #save data
+                np.save(path + file_name, data)
+                np.save(normal_path + file_name, data_pre)
+    return file_list
+
+def add_files(path, file_list, mana, step_len, snr):
+    """
+    add files in file_list into tank
+    """
+    for the_file in file_list:
+        mana.read_data(path + the_file, step_len=step_len, snr=snr, norm=True)

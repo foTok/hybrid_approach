@@ -14,33 +14,25 @@ from data_manger.utilities import get_file_list
 from ddd.utilities import organise_data
 
 #data amount
-small_data      = True
 nu              = 0.01   #0.01, 0.05, 0.1
 #settings
-PATH            = parentdir
-DATA_PATH       = PATH + "\\bpsk_navigate\\data\\" + ("big_data\\" if not small_data else "small_data\\")
-ANN_PATH        = PATH + "\\ddd\\ann_model\\" + ("big_data\\" if not small_data else "small_data\\")
-SVM_PATH        = PATH + "\\ddd\\svm_model\\" + ("big_data\\" if not small_data else "small_data\\")
+DATA_PATH       = parentdir + "\\bpsk_navigate\\data\\small_data\\"
+SVM_PATH        = parentdir + "\\ddd\\svm_model\\small_data\\"
 step_len        = 100
-fe_name         = "FE.pkl"
-model_file      = "likelihood.m"
+model_file      = "small_data.m"
 
-#load fe
-FE = torch.load(ANN_PATH + fe_name)
-FE.eval()
 #prepare data
 mana = BpskDataTank()
 list_files = get_file_list(DATA_PATH)
 for file in list_files:
-    mana.read_data(DATA_PATH+file, step_len=step_len, snr=20, norm=True)
+    mana.read_data(DATA_PATH+file, step_len=step_len, snr=20)
 
 #train
 batch = 20000
 #sample data
 inputs, labels, _, res = mana.random_batch(batch, normal=0.4, single_fault=10, two_fault=0)
-feature = FE.fe(inputs)
-X_train = organise_data(inputs, labels, res, feature)
-
+inputs  = inputs.view(-1, 5*step_len)
+X_train = inputs.detach().numpy()
 #1-SVM Model
 clf = svm.OneClassSVM(nu=nu, kernel="rbf", gamma=0.1)
 clf.fit(X_train)
@@ -50,8 +42,8 @@ joblib.dump(clf, SVM_PATH + model_file)
 
 #sample test
 inputs, labels, _, res = mana.random_batch(2000, normal=0.4, single_fault=10, two_fault=0)
-feature = FE.fe(inputs)
-X_test = organise_data(inputs, labels, res, feature)
+inputs  = inputs.view(-1, 5*step_len)
+X_test = inputs.detach().numpy()
 #evaluate
 y_pred_train = clf.predict(X_train)
 y_pred_test = clf.predict(X_test)
@@ -60,5 +52,5 @@ error_test = y_pred_test[y_pred_test == -1].size / len(y_pred_test)
 
 #print
 print("error rate train=", error_train)
-print("error ratetest=", error_test)
+print("error rate test=", error_test)
 print("DONE")

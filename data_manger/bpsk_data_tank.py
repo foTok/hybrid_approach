@@ -47,13 +47,15 @@ class BpskDataTank():
         #list of numpy ndarray
         self.input = []
         #list of list
-        self.mode = []
+        self.mode  = []
         #list of list
-        self.para = []
+        self.para  = []
         #list of residuals
-        self.res = []
+        self.res   = []
         #map from mode to data
-        self.map = defaultdict(list)
+        self.map   = defaultdict(list)
+        self.fe    = None
+        self.step  = None
 
     def set_fault_type(self, fault_type):
         """
@@ -65,12 +67,15 @@ class BpskDataTank():
         """
         read data and store them
         """
-        step_len = None if "step_len" not in kwargs else kwargs["step_len"]
+        step_len = 100 if "step_len" not in kwargs else kwargs["step_len"]
         split_point = None if "split_point" not in kwargs else kwargs["split_point"]
         snr = None if "snr" not in kwargs else kwargs["snr"]
         norm = False if "norm" not in kwargs else kwargs["norm"]
         normal, fault, n_res, f_res = read_data(file_name, step_len, split_point, snr, norm)
         list_fault, list_parameters = parse_filename(file_name)
+
+        self.step = step_len
+        self.fe   = len(normal[0])
 
         mode = [0, 0, 0, 0, 0, 0]
         #para = [0, 0, 0, 0, 0, [0, 0]]
@@ -119,13 +124,13 @@ class BpskDataTank():
         """
         return the step_len
         """
-        return len(self.input[0][0])
+        return self.step
 
     def feature_num(self):
         """
         return the feature number
         """
-        return len(self.input[0])
+        return self.fe
 
     def info(self):
         """
