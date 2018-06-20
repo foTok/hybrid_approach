@@ -27,7 +27,7 @@ DATA_PATH       = parentdir + "\\mbd\\data\\"
 
 while True:
     file_list  = []
-    parameters = sample_parameters(N, fault_type, rang, pref, para_set)
+    parameters = sample_parameters(N, fault_type, rang[0], rang[1], pref, para_set)
     for para in parameters:
         simulator = Pseudo()
         #TODO

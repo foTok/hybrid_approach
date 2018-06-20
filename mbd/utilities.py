@@ -73,7 +73,7 @@ def sample_parameters(N, fault_type, grids, begin, end, pref, para_set):
                 grid  = (grids[i], grids[j])
                 be    = (begin[i], begin[j])
                 en    = (end[i], end[j])
-                para  = sample_para2(fault, grid, be, en, para_set)
+                para  = sample_para2(N, fault, grid, be, en, para_set)
                 parameters[fault] = para
     return parameters
 
