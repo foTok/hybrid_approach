@@ -22,9 +22,10 @@ class DiagnoerCNN(nn.Module):
                         )
 
         self.fc_sequence = nn.Sequential(
-                            nn.Linear(80 * 33, 40),
+                            nn.Linear(80 * 33, 256),
                             nn.ReLU(),
-                            nn.Linear(40, 6),
+                            nn.BatchNorm1d(256),
+                            nn.Linear(256, 6),
                             nn.Sigmoid(),
                         )
 

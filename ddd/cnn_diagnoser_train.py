@@ -19,12 +19,11 @@ import numpy as np
 from tensorboardX import SummaryWriter
 
 #data amount
-small_data = False
+small_data = True
 #settings
-PATH = parentdir
-DATA_PATH = PATH + "\\bpsk_navigate\\data\\test\\" + ("big_data\\" if not small_data else "small_data\\")
-ANN_PATH = PATH + "\\ddd\\ann_model\\" + ("big_data\\" if not small_data else "small_data\\")
-dia_name = "cnnDIA.pkl
+DATA_PATH = parentdir + "\\bpsk_navigate\\data\\" + ("big_data\\" if not small_data else "small_data\\")
+ANN_PATH  = parentdir + "\\ddd\\ann_model\\" + ("big_data\\" if not small_data else "small_data\\")
+dia_name  = "cnnDIA.pkl"
 
 #prepare data
 mana = BpskDataTank()
@@ -39,15 +38,12 @@ criterion = CrossEntropy
 optimizer = optim.Adam(diagnoser.parameters(), lr=0.001, weight_decay=8e-3)
 
 #train
-epoch = 2000
-batch = 2000
+epoch = 1000
+batch = 2000 if not small_data else 1000
 train_loss = []
 running_loss = 0.0
-if small_data:
-    inputs, labels, _, _ = mana.random_batch(batch, normal=0.4, single_fault=10, two_fault=0)
 for i in range(epoch):
-    if not small_data:
-        inputs, labels, _, _ = mana.random_batch(batch, normal=0.4, single_fault=10, two_fault=0)
+    inputs, labels, _, _ = mana.random_batch(batch, normal=0.4, single_fault=10, two_fault=0)
     inputs = inputs.view(-1,1,5,100)
     optimizer.zero_grad()
     outputs = diagnoser(inputs)

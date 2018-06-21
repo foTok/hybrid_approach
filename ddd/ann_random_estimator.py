@@ -20,7 +20,7 @@ from ddd.utilities import organise_tensor_data
 #data amount
 small_data = True
 #settings
-obj = ["dia", "hdia","bsshdia"] #fe, dia, hdia, bsshdia
+obj = ["cnn", "dia", "hdia","bsshdia"] #fe, dia, hdia, bsshdia
 PATH = parentdir
 TEST_DATA_PATH = PATH + "\\bpsk_navigate\\data\\test\\"
 ANN_PATH = PATH + "\\ddd\\ann_model\\" + ("big_data\\" if not small_data else "small_data\\")
@@ -29,7 +29,9 @@ criterion = CrossEntropy
 norm = False
 dia_name = []
 for dia in obj:
-    if dia == "fe":
+    if dia == "cnn":
+        model_name = "cnnDIA.pkl"
+    elif dia == "fe":
         model_name = "FE.pkl"
     elif dia == "dia":
         model_name = "DIA.pkl"
@@ -59,10 +61,15 @@ epoch       = 100
 eval_loss   = [0]*len(dia_name)
 accuracy    = [0] *len(dia_name)
 for i in range(epoch):
-    inputs, labels, _, res = mana.random_batch(batch, normal=0.0, single_fault=10, two_fault=0)
+    inputs, labels, _, res = mana.random_batch(batch, normal=0.0, single_fault=10, two_fault=1)
     sen_res = organise_tensor_data(inputs, res)
     for k, d in zip(range(len(dia_name)), diagnoser):
-        outputs = d(sen_res)
+        if obj[k] == "cnn":
+            sen_res0 = sen_res[:, :5, :]
+            sen_res0 = sen_res0.view(-1,1,5,100)
+            outputs = d(sen_res0)
+        else:
+            outputs = d(sen_res)
         loss = criterion(outputs, labels)
         eval_loss[k] = eval_loss[k] + loss.item() / epoch
         prob = outputs.detach().numpy()
