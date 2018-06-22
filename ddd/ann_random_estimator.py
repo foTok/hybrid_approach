@@ -10,7 +10,6 @@ import torch.nn as nn
 import torch.optim as optim
 import matplotlib.pyplot as pl
 import numpy as np
-from ann_diagnoser.bpsk_block_scan_hybrid_diagnoser import BlockScanHD
 from data_manger.bpsk_data_tank import BpskDataTank
 from data_manger.utilities import get_file_list
 from ann_diagnoser.loss_function import CrossEntropy
@@ -20,7 +19,7 @@ from ddd.utilities import organise_tensor_data
 #data amount
 small_data = True
 #settings
-obj = ["cnn", "dia", "hdia","bsshdia"] #fe, dia, hdia, bsshdia
+obj = ["cnn", "igcnn", "igscnn", "higcnn", "higscnn"] #fe, dia, hdia, bsshdia
 PATH = parentdir
 TEST_DATA_PATH = PATH + "\\bpsk_navigate\\data\\test\\"
 ANN_PATH = PATH + "\\ddd\\ann_model\\" + ("big_data\\" if not small_data else "small_data\\")
@@ -30,16 +29,16 @@ norm = False
 dia_name = []
 for dia in obj:
     if dia == "cnn":
-        model_name = "cnnDIA.pkl"
-    elif dia == "fe":
-        model_name = "FE.pkl"
-    elif dia == "dia":
-        model_name = "DIA.pkl"
-    elif dia == "hdia":
-        model_name = "HDIA.pkl"
+        model_name = "cnn.pkl"
+    elif dia == "igcnn":
+        model_name = "igcnn.pkl"
+    elif dia == "igscnn":
+        model_name = "igscnn.pkl"
+    elif dia == "higcnn":
+        model_name = "higcnn.pkl"
         norm = True
-    elif dia == "bsshdia":
-        model_name = "BSSHDIA.pkl"
+    elif dia == "higscnn":
+        model_name = "higscnn.pkl"
         norm = True
     else:
         print("unkown object!")
@@ -61,7 +60,8 @@ epoch       = 100
 eval_loss   = [0]*len(dia_name)
 accuracy    = [0] *len(dia_name)
 for i in range(epoch):
-    inputs, labels, _, res = mana.random_batch(batch, normal=0.0, single_fault=10, two_fault=1)
+    print("i=", i)
+    inputs, labels, _, res = mana.random_batch(batch, normal=0.0, single_fault=0, two_fault=10)
     sen_res = organise_tensor_data(inputs, res)
     for k, d in zip(range(len(dia_name)), diagnoser):
         if obj[k] == "cnn":

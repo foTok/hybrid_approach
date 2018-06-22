@@ -20,7 +20,7 @@ class BSSHD(nn.Module):#Block Scan and Structure based Hybrid Diagnoser, BSSHD
         #based on the influence graph: dim_relation = [[1], [2], [1, 2, 3], [3, 4]]
         #pesudo
         self.fe0          = nn.Sequential(
-                            nn.Conv1d(1, 10, window, padding=window//2),
+                            nn.Conv1d(2, 10, window, padding=window//2),
                             nn.ReLU(),
                             nn.Conv1d(10, 20, window, padding=window//2),
                             nn.ReLU(),
@@ -28,7 +28,7 @@ class BSSHD(nn.Module):#Block Scan and Structure based Hybrid Diagnoser, BSSHD
                           )
         #carrier
         self.fe1          = nn.Sequential(
-                            nn.Conv1d(1, 10, window, padding=window//2),
+                            nn.Conv1d(2, 10, window, padding=window//2),
                             nn.ReLU(),
                             nn.Conv1d(10, 20, window, padding=window//2),
                             nn.ReLU(),
@@ -36,7 +36,7 @@ class BSSHD(nn.Module):#Block Scan and Structure based Hybrid Diagnoser, BSSHD
                           )
         #mixer  now, in influence graph mode. 4-->3 in nn.Conv1d(4, 10, window, padding=window//2)
         self.fe2          = nn.Sequential(
-                            nn.Conv1d(3, 10, window, padding=window//2),
+                            nn.Conv1d(5, 10, window, padding=window//2),
                             nn.ReLU(),
                             nn.Conv1d(10, 20, window, padding=window//2),
                             nn.ReLU(),
@@ -44,34 +44,7 @@ class BSSHD(nn.Module):#Block Scan and Structure based Hybrid Diagnoser, BSSHD
                           )
         #amplifier
         self.fe3          = nn.Sequential(
-                            nn.Conv1d(2, 10, window, padding=window//2),
-                            nn.ReLU(),
-                            nn.Conv1d(10, 20, window, padding=window//2),
-                            nn.ReLU(),
-                            nn.MaxPool1d(window),
-                          )
-
-        #residual 0
-        self.re0          = nn.Sequential(
-                            nn.Conv1d(1, 10, window, padding=window//2),
-                            nn.ReLU(),
-                            nn.Conv1d(10, 20, window, padding=window//2),
-                            nn.ReLU(),
-                            nn.MaxPool1d(window),
-                          )
-
-        #residual 1
-        self.re1          = nn.Sequential(
-                            nn.Conv1d(1, 10, window, padding=window//2),
-                            nn.ReLU(),
-                            nn.Conv1d(10, 20, window, padding=window//2),
-                            nn.ReLU(),
-                            nn.MaxPool1d(window),
-                          )
-
-        #residual 0
-        self.re2          = nn.Sequential(
-                            nn.Conv1d(1, 10, window, padding=window//2),
+                            nn.Conv1d(3, 10, window, padding=window//2),
                             nn.ReLU(),
                             nn.Conv1d(10, 20, window, padding=window//2),
                             nn.ReLU(),
@@ -80,7 +53,7 @@ class BSSHD(nn.Module):#Block Scan and Structure based Hybrid Diagnoser, BSSHD
 
         #fault predictor
         self.m0           = nn.Sequential(
-                            nn.Conv1d(4*20, 20, 1),
+                            nn.Conv1d(3*20, 20, 1),
                             nn.ReLU(),
                           )
         self.fp0          = nn.Sequential(
@@ -92,7 +65,7 @@ class BSSHD(nn.Module):#Block Scan and Structure based Hybrid Diagnoser, BSSHD
                           )
 
         self.m1           = nn.Sequential(
-                            nn.Conv1d(4*20, 20, 1),
+                            nn.Conv1d(3*20, 20, 1),
                             nn.ReLU(),
                           )
         self.fp1          = nn.Sequential(
@@ -104,7 +77,7 @@ class BSSHD(nn.Module):#Block Scan and Structure based Hybrid Diagnoser, BSSHD
                           )
 
         self.m2           = nn.Sequential(
-                            nn.Conv1d(4*20, 20, 1),
+                            nn.Conv1d(3*20, 20, 1),
                             nn.ReLU(),
                           )
         self.fp2          = nn.Sequential(
@@ -116,7 +89,7 @@ class BSSHD(nn.Module):#Block Scan and Structure based Hybrid Diagnoser, BSSHD
                           )
 
         self.m3           = nn.Sequential(
-                            nn.Conv1d(3*20, 20, 1),
+                            nn.Conv1d(2*20, 20, 1),
                             nn.ReLU(),
                           )
         self.fp3          = nn.Sequential(
@@ -140,7 +113,7 @@ class BSSHD(nn.Module):#Block Scan and Structure based Hybrid Diagnoser, BSSHD
                           )
 
         self.m5           = nn.Sequential(
-                            nn.Conv1d(4*20, 20, 1),
+                            nn.Conv1d(3*20, 20, 1),
                             nn.ReLU(),
                           )
         self.fp5          = nn.Sequential(
@@ -152,23 +125,17 @@ class BSSHD(nn.Module):#Block Scan and Structure based Hybrid Diagnoser, BSSHD
                           )
 
     def forward(self, x):
-        x0 = x[:, [1], :]               #p
-        x1 = x[:, [2], :]               #c
-        x2 = x[:, [1, 2, 3], :]         #m      now, in influence graph mode. [0, 1, 2, 3] --> [1, 2, 3]
-        x3 = x[:, [3, 4], :]            #a
-        r0 = x[:, [5], :]               #r0
-        r1 = x[:, [6], :]               #r1
-        r2 = x[:, [7], :]               #2
+        x0 = x[:, [1, 5], :]
+        x1 = x[:, [2, 6], :]
+        x2 = x[:, [1, 2, 3, 5, 6], :]
+        x3 = x[:, [3, 4, 7], :]
         x0 = self.fe0(x0)
         x1 = self.fe1(x1)
         x2 = self.fe2(x2)
         x3 = self.fe3(x3)
-        r0 = self.re0(r0)
-        r1 = self.re1(r1)
-        r2 = self.re2(r2)
-        m015 = torch.cat((x0, x2, x3, r0), 1)
-        m2 = torch.cat((x1, x2, x3, r1), 1)
-        m3 = torch.cat((x2, x3, r2), 1)
+        m015 = torch.cat((x0, x2, x3), 1)
+        m2 = torch.cat((x1, x2, x3), 1)
+        m3 = torch.cat((x2, x3), 1)
         m4 = x3
         m0 = self.m0(m015)
         m1 = self.m1(m015)

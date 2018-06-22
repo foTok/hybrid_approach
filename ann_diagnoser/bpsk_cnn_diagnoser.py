@@ -6,12 +6,12 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 
-class DiagnoerCNN(nn.Module):
+class cnn_diagnoser(nn.Module):
     """
-    The basic diagnoser constructed by block scan
+    The basic diagnoser constructed by Classic CNN
     """
     def __init__(self):
-        super(DiagnoerCNN, self).__init__()
+        super(cnn_diagnoser, self).__init__()
         window = 3
         self.cnn_sequence = nn.Sequential(
                             nn.Conv2d(1, 40, window, padding=window//3),

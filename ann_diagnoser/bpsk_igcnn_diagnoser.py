@@ -1,20 +1,19 @@
 """
-This file uses block scan method to diagnosis BPSK system
+influence graph based CNN diagnoser
 """
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 
-class BlockScanDiagnoser(nn.Module):
+class igcnn_diagnoser(nn.Module):
     """
-    The basic diagnoser constructed by block scan
+    using influence graph to extract features from historical data and predict fault directly after merging.
     """
     def __init__(self):
-        super(BlockScanDiagnoser, self).__init__()
+        super(igcnn_diagnoser, self).__init__()
         window = 5
-        #based on physical connection: dim_relation = [[1], [2], [0, 1, 2, 3], [3, 4]]
-        #based on the influence graph: dim_relation = [[1], [2], [1, 2, 3], [3, 4]]    << currently
+        #influence graph: dim_relation = [[1], [2], [1, 2, 3], [3, 4]]
         self.p_sequence = nn.Sequential(
                             nn.Conv1d(1, 10, window, padding=window//2),
                             nn.ReLU(),

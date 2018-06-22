@@ -5,22 +5,23 @@ import os
 import sys
 parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  
 sys.path.insert(0,parentdir)
-from ann_diagnoser.bpsk_cnn_diagnoser import cnn_diagnoser
-from data_manger.bpsk_data_tank import BpskDataTank
-from data_manger.utilities import get_file_list
-from ann_diagnoser.loss_function import CrossEntropy
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import matplotlib.pyplot as pl
 import numpy as np
+from ann_diagnoser.bpsk_igcnn_diagnoser import igcnn_diagnoser
+from data_manger.bpsk_data_tank import BpskDataTank
+from data_manger.utilities import get_file_list
+from ann_diagnoser.loss_function import CrossEntropy
 
 #data amount
 small_data = True
 #settings
-DATA_PATH = parentdir + "\\bpsk_navigate\\data\\" + ("big_data\\" if not small_data else "small_data\\")
-ANN_PATH  = parentdir + "\\ddd\\ann_model\\" + ("big_data\\" if not small_data else "small_data\\")
-dia_name  = "cnn.pkl"
+PATH = parentdir
+DATA_PATH = PATH + "\\bpsk_navigate\\data\\" + ("big_data\\" if not small_data else "small_data\\")
+ANN_PATH = PATH + "\\ddd\\ann_model\\" + ("big_data\\" if not small_data else "small_data\\")
+dia_name = "igcnn.pkl"
 
 #prepare data
 mana = BpskDataTank()
@@ -29,7 +30,7 @@ list_files = get_file_list(DATA_PATH)
 for file in list_files:
     mana.read_data(DATA_PATH+file, step_len=step_len, snr=20)
 
-diagnoser = cnn_diagnoser()
+diagnoser = igcnn_diagnoser()
 print(diagnoser)
 criterion = CrossEntropy
 optimizer = optim.Adam(diagnoser.parameters(), lr=0.001, weight_decay=8e-3)
@@ -41,7 +42,6 @@ train_loss = []
 running_loss = 0.0
 for i in range(epoch):
     inputs, labels, _, _ = mana.random_batch(batch, normal=0.4, single_fault=10, two_fault=0)
-    inputs = inputs.view(-1,1,5,100)
     optimizer.zero_grad()
     outputs = diagnoser(inputs)
     loss = criterion(outputs, labels)
