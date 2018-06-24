@@ -54,8 +54,8 @@ class higsecnn_sub0(nn.Module):
         super(higsecnn_sub0, self).__init__()
         self.fe_r0         = embeded
         window = 5
-        #feature extractors
-        self.fe_p          = nn.Sequential(
+        #feature extractor
+        self.fe_p         = nn.Sequential(
                             nn.Conv1d(1, 10, window, padding=window//2),
                             nn.ReLU(),
                             nn.Conv1d(10, 20, window, padding=window//2),
@@ -63,15 +63,23 @@ class higsecnn_sub0(nn.Module):
                             nn.MaxPool1d(window)
                           )
 
-        self.fe_cr1        = nn.Sequential(
-                            nn.Conv1d(2, 10, window, padding=window//2),
+        self.fe_c         = nn.Sequential(
+                            nn.Conv1d(1, 10, window, padding=window//2),
                             nn.ReLU(),
                             nn.Conv1d(10, 20, window, padding=window//2),
                             nn.ReLU(),
                             nn.MaxPool1d(window)
                           )
 
-        self.fe_pcmr01     = nn.Sequential(
+        self.fe_r1        = nn.Sequential(
+                            nn.Conv1d(1, 10, window, padding=window//2),
+                            nn.ReLU(),
+                            nn.Conv1d(10, 20, window, padding=window//2),
+                            nn.ReLU(),
+                            nn.MaxPool1d(window)
+                          )
+
+        self.fe_pcmr01    = nn.Sequential(
                             nn.Conv1d(5, 10, window, padding=window//2),
                             nn.ReLU(),
                             nn.Conv1d(10, 20, window, padding=window//2),
@@ -79,17 +87,25 @@ class higsecnn_sub0(nn.Module):
                             nn.MaxPool1d(window)
                           )
 
-        self.fe_mar2       = nn.Sequential(
-                            nn.Conv1d(3, 10, window, padding=window//2),
+        self.fe_ma        = nn.Sequential(
+                            nn.Conv1d(2, 10, window, padding=window//2),
                             nn.ReLU(),
                             nn.Conv1d(10, 20, window, padding=window//2),
                             nn.ReLU(),
                             nn.MaxPool1d(window)
                           )
 
-        #internal connectors
+        self.fe_r2        = nn.Sequential(
+                            nn.Conv1d(1, 10, window, padding=window//2),
+                            nn.ReLU(),
+                            nn.Conv1d(10, 20, window, padding=window//2),
+                            nn.ReLU(),
+                            nn.MaxPool1d(window)
+                          )
+
+        #internal connector
         self.ic0         = nn.Sequential(
-                            nn.Conv1d(20*2, 20, 1),
+                            nn.Conv1d(20*5, 20, 1),
                             nn.ReLU(),
                           )
 
@@ -97,24 +113,19 @@ class higsecnn_sub0(nn.Module):
                             nn.Conv1d(20*3, 20, 1),
                             nn.ReLU(),
                           )
-
-        self.ic2         = nn.Sequential(
-                            nn.Conv1d(20*2, 20, 1),
-                            nn.ReLU(),
-                          )
-        #information mergers
+        #information merger
         self.m0          = nn.Sequential(
-                            nn.Conv1d(3*20, 20, 1),
+                            nn.Conv1d(4*20, 20, 1),
                             nn.ReLU(),
                           )
 
         self.m1          = nn.Sequential(
-                            nn.Conv1d(3*20, 20, 1),
+                            nn.Conv1d(4*20, 20, 1),
                             nn.ReLU(),
                           )
 
         self.m2          = nn.Sequential(
-                            nn.Conv1d(3*20, 20, 1),
+                            nn.Conv1d(4*20, 20, 1),
                             nn.ReLU(),
                           )
         
@@ -129,10 +140,10 @@ class higsecnn_sub0(nn.Module):
                           )
         
         self.m5          = nn.Sequential(
-                            nn.Conv1d(3*20, 20, 1),
+                            nn.Conv1d(4*20, 20, 1),
                             nn.ReLU(),
                           )
-        #fault predictors
+        #fault predictor
         self.fp0         = nn.Sequential(
                             nn.Linear(20*20, 40),
                             nn.ReLU(),
@@ -182,29 +193,30 @@ class higsecnn_sub0(nn.Module):
                           )
 
     def forward(self, x):
-        #x: batch × 8 × 100, 8=1(msg)+4(p, c, m, a)+3(r0, r1, r2), 100 timestep
         #extract family
         x0 = x[:, [1], :]               #p
-        r0 = x[:, [5], :]               #r0
-        x1 = x[:, [2, 6], :]            #c, r1
+        x1 = x[:, [2], :]               #c
         x2 = x[:, [1, 2, 3, 5, 6], :]   #p, c, m, r0, r1
-        x3 = x[:, [3, 4, 7], :]         #m, a, r2
+        x3 = x[:, [3, 4], :]            #m, a
+        r0 = x[:, [5], :]               #r0
+        r1 = x[:, [6], :]               #r1
+        r2 = x[:, [7], :]               #r2
         #extract features
         x0 = self.fe_p(x0)
-        r0 = self.fe_r0(r0)
-        x1 = self.fe_cr1(x1)
+        x1 = self.fe_c(x1)
         x2 = self.fe_pcmr01(x2)
-        x3 = self.fe_mar2(x3)
-        #connect internal 
-        i0 = torch.cat((x0, r0), 1)
-        x0 = self.ic0(i0)
-        i1 = torch.cat((x0, x1, x2), 1)
-        x2 = self.ic1(i1)
-        i2 = torch.cat((x2, x3), 1)
-        x3 = self.ic2(i2)
+        x3 = self.fe_ma(x3)
+        r0 = self.fe_r0(r0)
+        r1 = self.fe_r1(r1)
+        r2 = self.fe_r2(r2)
+        #connect internal nodes
+        i0 = torch.cat((x0, x1, x2, r0, r1), 1)
+        x2 = self.ic0(i0)
+        i1 = torch.cat((x2, x3, r2), 1)
+        x3 = self.ic1(i1)
         #merge information
-        m015 = torch.cat((x0, x2, x3), 1)
-        m2 = torch.cat((x1, x2, x3), 1)
+        m015 = torch.cat((x0, x2, x3, r0), 1)
+        m2 = torch.cat((x1, x2, x3, r1), 1)
         m3 = torch.cat((x2, x3), 1)
         m4 = x3
         m0 = self.m0(m015)
@@ -228,6 +240,7 @@ class higsecnn_sub0(nn.Module):
         y5 = self.fp5(m5)
         y  = torch.cat((y0, y1, y2, y3, y4, y5), 1)
         return y
+
 
 #sub model one
 class higsecnn_sub1(nn.Module):
