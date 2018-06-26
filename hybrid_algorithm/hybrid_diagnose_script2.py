@@ -22,14 +22,14 @@ from hybrid_algorithm.hybrid_ann_consistency_diagnoser import hybrid_ann_consist
 #data amount
 small_data      = True
 #settings
+snr             = 20
 PATH            = parentdir
 DATA_PATH       = PATH + "\\bpsk_navigate\\data\\test\\"
-ANN_PATH        = PATH + "\\ddd\\ann_model\\" + ("big_data\\" if not small_data else "small_data\\")
-ANN_PATH2       = PATH + "\\mbd\\ann_model\\"
-dia_file        = "DIA.pkl"
-hdia_file       = "HDIA.pkl"
-bsshdia_file    = "BSSHDIA.pkl"
-pdia_file       = "PDIA.pkl"
+ANN_PATH        = PATH + "\\ddd\\ann_model\\" + ("big_data\\" if not small_data else "small_data\\") + str(snr) + "db\\"
+dia_file        = "igcnn.pkl"
+hdia_file       = "higcnn.pkl"
+bsshdia_file    = "igscnn.pkl"
+pdia_file       = "higscnn.pkl"
 step_len        = 100
 batch           = 5000
 p0              = 0.95
@@ -41,19 +41,15 @@ HDIA        = torch.load(ANN_PATH + hdia_file)
 HDIA.eval()
 BSSHDIA     = torch.load(ANN_PATH + bsshdia_file)
 BSSHDIA.eval()
-PHDIA       = torch.load(ANN_PATH2 + pdia_file)
+PHDIA       = torch.load(ANN_PATH + pdia_file)
 PHDIA.eval()
 #prepare data
 mana = BpskDataTank()
 list_files = get_file_list(DATA_PATH)
 for file in list_files:
-    mana.read_data(DATA_PATH+file, step_len=step_len, snr=20, norm=True)
+    mana.read_data(DATA_PATH+file, step_len=step_len, snr=snr, norm=True)
 
-inputs, labels, _, res = mana.random_batch(batch, normal=0, single_fault=10, two_fault=1)
-#residual 0
-r0      = np.array([r[0] for r in res])
-r0      = torch.Tensor(r0)
-r0      = r0.view(-1, 1, 100)
+inputs, labels, _, res = mana.random_batch(batch, normal=0, single_fault=10, two_fault=0)
 #priori by data
 ann_start       = time.clock()
 priori_by_data  = DIA(inputs).detach().numpy()
@@ -69,7 +65,7 @@ priori_by_bsshybrid = BSSHDIA(sen_res).detach().numpy()
 bsshann_cost        = time.clock() - bsshann_start
 #priori by pdia
 hannm_start         = time.clock()
-priori_by_pdia      = PHDIA(r0).detach().numpy()
+priori_by_pdia      = PHDIA(sen_res).detach().numpy()
 hannm_cost          = time.clock() - hannm_start + bsshann_cost
 #priori by ddd+mbd
 priori_by_dm        = priori_by_bsshybrid.copy()

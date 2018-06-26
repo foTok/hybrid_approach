@@ -19,10 +19,11 @@ from ddd.utilities import organise_tensor_data
 #data amount
 small_data = True
 #settings
-obj = ["cnn", "igcnn", "igscnn", "higcnn", "higscnn"] #fe, dia, hdia, bsshdia
+snr = 20
+obj = ["cnn", "igcnn", "igscnn", "higcnn", "higscnn", "higsecnn"] #fe, dia, hdia, bsshdia
 PATH = parentdir
 TEST_DATA_PATH = PATH + "\\bpsk_navigate\\data\\test\\"
-ANN_PATH = PATH + "\\ddd\\ann_model\\" + ("big_data\\" if not small_data else "small_data\\")
+ANN_PATH = PATH + "\\ddd\\ann_model\\" + ("big_data\\" if not small_data else "small_data\\") + str(snr) + "db\\"
 step_len=100
 criterion = CrossEntropy
 norm = False
@@ -40,6 +41,9 @@ for dia in obj:
     elif dia == "higscnn":
         model_name = "higscnn.pkl"
         norm = True
+    elif dia == "higsecnn":
+        model_name = "higsecnn.pkl"
+        norm = True
     else:
         print("unkown object!")
         exit(0)
@@ -48,7 +52,7 @@ for dia in obj:
 mana = BpskDataTank()
 list_files = get_file_list(TEST_DATA_PATH)
 for file in list_files:
-    mana.read_data(TEST_DATA_PATH+file, step_len=step_len, snr=20, norm=norm)
+    mana.read_data(TEST_DATA_PATH+file, step_len=step_len, snr=snr, norm=norm)
 #load diagnoser
 diagnoser = []
 for name in dia_name:
@@ -61,7 +65,7 @@ eval_loss   = [0]*len(dia_name)
 accuracy    = [0] *len(dia_name)
 for i in range(epoch):
     print("i=", i)
-    inputs, labels, _, res = mana.random_batch(batch, normal=0.0, single_fault=0, two_fault=10)
+    inputs, labels, _, res = mana.random_batch(batch, normal=0.0, single_fault=10, two_fault=0)
     sen_res = organise_tensor_data(inputs, res)
     for k, d in zip(range(len(dia_name)), diagnoser):
         if obj[k] == "cnn":

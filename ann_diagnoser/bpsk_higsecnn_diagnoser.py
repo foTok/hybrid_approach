@@ -13,47 +13,6 @@ class higsecnn_diagnoser(nn.Module):
     def __init__(self):
         super(higsecnn_diagnoser, self).__init__()
         window = 5
-        #embedded part
-        self.fe_r0        = nn.Sequential(
-                            nn.Conv1d(1, 10, window, padding=window//2),
-                            nn.ReLU(),
-                            nn.Conv1d(10, 20, window, padding=window//2),
-                            nn.ReLU(),
-                            nn.MaxPool1d(window)
-                          )
-        self.higsecnn0    = higsecnn_sub0(self.fe_r0)
-        self.higsecnn1    = higsecnn_sub1(self.fe_r0)
-
-    def diagnoser0(self, x):
-        x   = self.higsecnn0(x)
-        return x
-
-    def diagnoser1(self, x):
-        x   = self.higsecnn1(x)
-        return x
-
-    def parameters0(self):
-        para = self.higsecnn0.parameters()
-        return para
-
-    def parameters1(self):
-        para = self.higsecnn1.parameters()
-        return para
-
-    def forward(self, x):
-        x   = self.higsecnn0(x)
-        return x
-
-
-#sub model zero
-class higsecnn_sub0(nn.Module):
-    """
-    use the sub model to predict 6 faults
-    """
-    def __init__(self, embeded):
-        super(higsecnn_sub0, self).__init__()
-        self.fe_r0         = embeded
-        window = 5
         #feature extractor
         self.fe_p         = nn.Sequential(
                             nn.Conv1d(1, 10, window, padding=window//2),
@@ -62,6 +21,14 @@ class higsecnn_sub0(nn.Module):
                             nn.ReLU(),
                             nn.MaxPool1d(window)
                           )
+
+        self.fe_r0        = nn.Sequential(
+                          nn.Conv1d(1, 10, window, padding=window//2),
+                          nn.ReLU(),
+                          nn.Conv1d(10, 20, window, padding=window//2),
+                          nn.ReLU(),
+                          nn.MaxPool1d(window)
+                         )
 
         self.fe_c         = nn.Sequential(
                             nn.Conv1d(1, 10, window, padding=window//2),
@@ -192,6 +159,30 @@ class higsecnn_sub0(nn.Module):
                             nn.Sigmoid(),
                           )
 
+        #embedded part
+        self.embedded   = embedded(r0=self.fe_r0,\
+                                   m0=self.m0,\
+                                   m1=self.m1,\
+                                   m5=self.m5,\
+                                   fp0=self.fp0,\
+                                   fp1=self.fp1,
+                                   fp5=self.fp5)
+
+    def freeze_share(self):
+        for para in self.fe_r0.parameters():
+            para.requires_grad = False
+
+    def thaw_share(self):
+        for para in self.fe_r0.parameters():
+            para.requires_grad = True
+
+    def embedded_parameters(self):
+        return self.embedded.parameters()
+
+    def embedded_forward(self, x):
+        x = self.embedded(x)
+        return x
+
     def forward(self, x):
         #extract family
         x0 = x[:, [1], :]               #p
@@ -241,26 +232,32 @@ class higsecnn_sub0(nn.Module):
         y  = torch.cat((y0, y1, y2, y3, y4, y5), 1)
         return y
 
-
-#sub model one
-class higsecnn_sub1(nn.Module):
-    """
-    use the sub model to predict 6 faults
-    """
-    def __init__(self, embeded):
-        super(higsecnn_sub1, self).__init__()
-        self.fe_r0      = embeded
-        #predictor
-        self.fp         = nn.Sequential(
-                          nn.Linear(20*20, 40),
-                          nn.ReLU(),
-                          nn.BatchNorm1d(40),
-                          nn.Linear(40, 3),
-                          nn.Sigmoid(),
-                        )
+class embedded(nn.Module):
+    def __init__(self, r0, m0, m1, m5, fp0, fp1, fp5):
+        super(embedded, self).__init__()
+        self.fe_r0 = r0
+        self.m0    = m0
+        self.m1    = m1
+        self.m5    = m5
+        self.fp0   = fp0
+        self.fp1   = fp1
+        self.fp5   = fp5
 
     def forward(self, x):
-        #x: batch × 1 × 100
-        x = self.fe_r0(x)
-        y = self.fp(x)
+        r0    = x.view(-1, 1, 100)
+        r0    = self.fe_r0(r0)
+        shape = r0.shape
+        t     = torch.zeros(shape)
+        m015  = torch.cat((t, t, t, r0), 1)
+        m0 = self.m0(m015)
+        m1 = self.m1(m015)
+        m5 = self.m5(m015)
+        m0 = m0.view(-1, 400)
+        m1 = m1.view(-1, 400)
+        m5 = m5.view(-1, 400)
+        #predict fault
+        y0 = self.fp0(m0)
+        y1 = self.fp1(m1)
+        y5 = self.fp5(m5)
+        y  = torch.cat((y0, y1, y5), 1)
         return y

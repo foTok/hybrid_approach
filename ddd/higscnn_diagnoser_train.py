@@ -19,9 +19,10 @@ from ddd.utilities import organise_tensor_data
 #data amount
 small_data = True
 #settings
+snr  = 15
 PATH = parentdir
 DATA_PATH = PATH + "\\bpsk_navigate\\data\\" + ("big_data\\" if not small_data else "small_data\\")
-ANN_PATH = PATH + "\\ddd\\ann_model\\" + ("big_data\\" if not small_data else "small_data\\")
+ANN_PATH = PATH + "\\ddd\\ann_model\\" + ("big_data\\" if not small_data else "small_data\\")  + str(snr) + "db\\"
 step_len=100
 criterion = CrossEntropy
 hdia_name = "higscnn.pkl"
@@ -30,7 +31,7 @@ hdia_name = "higscnn.pkl"
 mana = BpskDataTank()
 list_files = get_file_list(DATA_PATH)
 for file in list_files:
-    mana.read_data(DATA_PATH+file, step_len=step_len, snr=20, norm=True)
+    mana.read_data(DATA_PATH+file, step_len=step_len, snr=snr, norm=True)
 
 diagnoser = higscnn_diagnoser()
 print(diagnoser)

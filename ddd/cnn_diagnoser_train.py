@@ -18,8 +18,9 @@ import numpy as np
 #data amount
 small_data = True
 #settings
+snr       = 15
 DATA_PATH = parentdir + "\\bpsk_navigate\\data\\" + ("big_data\\" if not small_data else "small_data\\")
-ANN_PATH  = parentdir + "\\ddd\\ann_model\\" + ("big_data\\" if not small_data else "small_data\\")
+ANN_PATH  = parentdir + "\\ddd\\ann_model\\" + ("big_data\\" if not small_data else "small_data\\") + str(snr) + "db\\"
 dia_name  = "cnn.pkl"
 
 #prepare data
@@ -27,7 +28,7 @@ mana = BpskDataTank()
 step_len=100
 list_files = get_file_list(DATA_PATH)
 for file in list_files:
-    mana.read_data(DATA_PATH+file, step_len=step_len, snr=20)
+    mana.read_data(DATA_PATH+file, step_len=step_len, snr=snr)
 
 diagnoser = cnn_diagnoser()
 print(diagnoser)

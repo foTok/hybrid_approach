@@ -74,12 +74,12 @@ class higcnn_diagnoser(nn.Module):
                           )
         #information merger
         self.merge_sequence = nn.Sequential(
-                            nn.Conv1d(20*7, 40, 1),
+                            nn.Conv1d(20*7, 70, 1),
                             nn.ReLU(),
                         )
         #fault predictor
         self.fc_sequence = nn.Sequential(
-                            nn.Linear(40*20, 128),
+                            nn.Linear(70*20, 128),
                             nn.ReLU(),
                             nn.BatchNorm1d(128),
                             nn.Linear(128, 6),
@@ -104,6 +104,6 @@ class higcnn_diagnoser(nn.Module):
         x = torch.cat((x0, x1, x2, x3, r0, r1, r2), 1)
         x = x.view(-1, 20*7, 20)
         x = self.merge_sequence(x)
-        x = x.view(-1, 40*20)
+        x = x.view(-1, 70*20)
         x = self.fc_sequence(x)
         return x
