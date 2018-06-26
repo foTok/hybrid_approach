@@ -4,7 +4,6 @@ hybrid influence graph based structrual convolutional neural network
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.autograd import Variable
 
 class higsecnn_diagnoser(nn.Module):
     """
@@ -12,6 +11,101 @@ class higsecnn_diagnoser(nn.Module):
     """
     def __init__(self):
         super(higsecnn_diagnoser, self).__init__()
+        window = 5
+        self.fe_r0        = nn.Sequential(
+                            nn.Conv1d(1, 10, window, padding=window//2),
+                            nn.ReLU(),
+                            nn.Conv1d(10, 20, window, padding=window//2),
+                            nn.ReLU(),
+                            nn.MaxPool1d(window)
+                  )
+        self.diagnoser0   = sub_diagnoser0(self.fe_r0)
+        self.diagnoser1   = sub_diagnoser1(self.fe_r0)
+        self.merger0      = nn.Linear(2, 1, bias=False)
+        self.merger1      = nn.Linear(2, 1, bias=False)
+        self.merger5      = nn.Linear(2, 1, bias=False)
+
+    def parameters0(self):
+        return self.diagnoser0.parameters()
+
+    def parameters1(self):
+        return self.diagnoser1.parameters()
+
+    def freeze_sub0(self):
+        for para in self.diagnoser0.parameters():
+            para.requires_grad=False
+
+    def freeze_sub1(self):
+        for para in self.diagnoser1.parameters():
+            para.requires_grad=False
+
+    def forward0(self, x):
+        x  = self.diagnoser0(x)
+        x   = F.sigmoid(x)
+        return x
+
+    def forward1(self, x):
+        x = self.diagnoser1(x)
+        x = F.sigmoid(x)
+        return x
+
+    def merge_forward0(self, x):
+        x0  = self.diagnoser0(x)
+        x00 = x0[:,[0]]
+        x10 = x0[:,[1]]
+        x2  = x0[:,[2]]
+        x3  = x0[:,[3]]
+        x4  = x0[:,[4]]
+        x50 = x0[:,[5]]
+        x1  = self.diagnoser1(x[:, [5], :])
+        x01 = x1[:, [0]]
+        x11 = x1[:, [1]]
+        x51 = x1[:, [2]]
+        x0  = self.merger0(torch.cat((x00, x01), 1))
+        x1  = self.merger1(torch.cat((x10, x11), 1))
+        x5  = self.merger5(torch.cat((x50, x51), 1))
+        x   = torch.cat((x0, x1, x2, x3, x4, x5), 1)
+        x   = F.sigmoid(x)
+        return x
+
+    def merge_forward1(self, x):
+        x   = self.diagnoser1(x)
+        x01 = x[:, [0]]
+        x11 = x[:, [1]]
+        x51 = x[:, [2]]
+        shape = x01.shape
+        x00 = torch.zeros(shape)
+        x10 = torch.zeros(shape)
+        x50 = torch.zeros(shape)
+        x0  = self.merger0(torch.cat((x00, x01), 1))
+        x1  = self.merger1(torch.cat((x10, x11), 1))
+        x5  = self.merger5(torch.cat((x50, x51), 1))
+        x   = torch.cat((x0, x1, x5), 1)
+        x   = F.sigmoid(x)
+        return x
+
+    def forward(self, x):
+        x0  = self.diagnoser0(x)
+        x00 = x0[:,[0]]
+        x10 = x0[:,[1]]
+        x2  = x0[:,[2]]
+        x3  = x0[:,[3]]
+        x4  = x0[:,[4]]
+        x50 = x0[:,[5]]
+        x1  = self.diagnoser1(x[:, [5], :])
+        x01 = x1[:, [0]]
+        x11 = x1[:, [1]]
+        x51 = x1[:, [2]]
+        x0  = self.merger0(torch.cat((x00, x01), 1))
+        x1  = self.merger1(torch.cat((x10, x11), 1))
+        x5  = self.merger5(torch.cat((x50, x51), 1))
+        x   = torch.cat((x0, x1, x2, x3, x4, x5), 1)
+        x   = F.sigmoid(x)
+        return x
+
+class sub_diagnoser0(nn.Module):
+    def __init__(self, r0):
+        super(sub_diagnoser0, self).__init__()
         window = 5
         #feature extractor
         self.fe_p         = nn.Sequential(
@@ -22,13 +116,7 @@ class higsecnn_diagnoser(nn.Module):
                             nn.MaxPool1d(window)
                           )
 
-        self.fe_r0        = nn.Sequential(
-                          nn.Conv1d(1, 10, window, padding=window//2),
-                          nn.ReLU(),
-                          nn.Conv1d(10, 20, window, padding=window//2),
-                          nn.ReLU(),
-                          nn.MaxPool1d(window)
-                         )
+        self.fe_r0        = r0
 
         self.fe_c         = nn.Sequential(
                             nn.Conv1d(1, 10, window, padding=window//2),
@@ -111,40 +199,17 @@ class higsecnn_diagnoser(nn.Module):
                             nn.ReLU(),
                           )
         #fault predictor
-        self.fp00        = nn.Sequential(
-                            nn.Linear(20*20, 40),
-                            nn.ReLU(),
-                            nn.BatchNorm1d(40),
-                            nn.Linear(40, 1),
-                          )
-        self.fp01        = nn.Sequential(
-                            nn.Linear(20*20, 40),
-                            nn.ReLU(),
-                            nn.BatchNorm1d(40),
-                            nn.Linear(40, 1),
-                          )
         self.fp0         = nn.Sequential(
-                            nn.Linear(2, 1),
-                            nn.Sigmoid(),
-                          )
-
-        self.fp10        = nn.Sequential(
                             nn.Linear(20*20, 40),
                             nn.ReLU(),
                             nn.BatchNorm1d(40),
                             nn.Linear(40, 1),
-                            nn.Sigmoid(),
-                          )
-        self.fp11        = nn.Sequential(
-                            nn.Linear(20*20, 40),
-                            nn.ReLU(),
-                            nn.BatchNorm1d(40),
-                            nn.Linear(40, 1),
-                            nn.Sigmoid(),
                           )
         self.fp1         = nn.Sequential(
-                            nn.Linear(2, 1),
-                            nn.Sigmoid(),
+                            nn.Linear(20*20, 40),
+                            nn.ReLU(),
+                            nn.BatchNorm1d(40),
+                            nn.Linear(40, 1),
                           )
 
         self.fp2         = nn.Sequential(
@@ -152,7 +217,6 @@ class higsecnn_diagnoser(nn.Module):
                             nn.ReLU(),
                             nn.BatchNorm1d(40),
                             nn.Linear(40, 1),
-                            nn.Sigmoid(),
                           )
 
         self.fp3         = nn.Sequential(
@@ -160,7 +224,6 @@ class higsecnn_diagnoser(nn.Module):
                             nn.ReLU(),
                             nn.BatchNorm1d(40),
                             nn.Linear(40, 1),
-                            nn.Sigmoid(),
                           )
 
         self.fp4         = nn.Sequential(
@@ -168,48 +231,14 @@ class higsecnn_diagnoser(nn.Module):
                             nn.ReLU(),
                             nn.BatchNorm1d(40),
                             nn.Linear(40, 1),
-                            nn.Sigmoid(),
                           )
 
-        self.fp50         = nn.Sequential(
-                            nn.Linear(20*20, 40),
-                            nn.ReLU(),
-                            nn.BatchNorm1d(40),
-                            nn.Linear(40, 1),
-                            nn.Sigmoid(),
-                          )
-        self.fp51        = nn.Sequential(
-                            nn.Linear(20*20, 40),
-                            nn.ReLU(),
-                            nn.BatchNorm1d(40),
-                            nn.Linear(40, 1),
-                            nn.Sigmoid(),
-                          )
         self.fp5         = nn.Sequential(
-                            nn.Linear(2, 1),
-                            nn.Sigmoid(),
+                            nn.Linear(20*20, 40),
+                            nn.ReLU(),
+                            nn.BatchNorm1d(40),
+                            nn.Linear(40, 1),
                           )
-
-        #embedded part
-        self.embedded   = embedded(r0=self.fe_r0,\
-                                   fp0=self.fp01,\
-                                   fp1=self.fp11,
-                                   fp5=self.fp51)
-
-    def freeze_share(self):
-        for para in self.fe_r0.parameters():
-            para.requires_grad = False
-
-    def thaw_share(self):
-        for para in self.fe_r0.parameters():
-            para.requires_grad = True
-
-    def embedded_parameters(self):
-        return self.embedded.parameters()
-
-    def embedded_forward(self, x):
-        x = self.embedded(x)
-        return x
 
     def forward(self, x):
         #extract family
@@ -251,40 +280,30 @@ class higsecnn_diagnoser(nn.Module):
         m4 = m4.view(-1, 400)
         m5 = m5.view(-1, 400)
         #predict fault
-        y00 = self.fp00(m0)
-        y01 = self.fp01(r0)
-        y0  = self.cat((y00, y01), 1)
-        y0  = self.fp0(y0)
-        y10 = self.fp10(m1)
-        y11 = self.fp11(r0)
-        y1  = self.cat((y10, y11), 1)
-        y1  = self.fp1(y1)
+        y0  = self.fp0(m0)
+        y1  = self.fp1(m1)
         y2  = self.fp2(m2)
         y3  = self.fp3(m3)
         y4  = self.fp4(m4)
-        y50 = self.fp50(m5)
-        y51 = self.fp51(r0)
-        y5  = self.cat((y50, y51), 1)
-        y5  = self.fp5(y5)
-        y  = torch.cat((y0, y1, y2, y3, y4, y5), 1)
+        y5  = self.fp5(m5)
+        y   = torch.cat((y0, y1, y2, y3, y4, y5), 1)
         return y
 
-class embedded(nn.Module):
-    def __init__(self, r0, fp0, fp1, fp5):
-        super(embedded, self).__init__()
-        self.fe_r0 = r0
-        self.fp0   = fp0
-        self.fp1   = fp1
-        self.fp5   = fp5
+class sub_diagnoser1(nn.Module):
+    def __init__(self, r0):
+        super(sub_diagnoser1, self).__init__()
+        self.fe_r0      = r0
+        self.fp         = nn.Sequential(
+                            nn.Linear(20*20, 40),
+                            nn.ReLU(),
+                            nn.BatchNorm1d(40),
+                            nn.Linear(40, 3),
+                          )
 
     def forward(self, x):
         r0 = x.view(-1, 1, 100)
         r0 = self.fe_r0(r0)
         r0 = r0.view(-1, 400)
         #predict fault
-        y0 = self.fp0(r0)
-        y1 = self.fp1(r0)
-        y5 = self.fp5(r0)
-        y  = torch.cat((y0, y1, y5), 1)
-        y  = F.sigmoid(y)
+        y  = self.fp(r0)
         return y

@@ -44,12 +44,13 @@ mana1           = BpskDataTank()                       #generated data
 step_len        = 100
 batch           = 1000
 criterion       = CrossEntropy
+epoch           = 2000
 epoch1          = 500
 epoch0          = 1000
 file_name       = "higsecnn.pkl"
 
 #embedded part only
-optimizer1      = optim.Adam(diagnoser.embedded_parameters(), lr=lr, weight_decay=weight_decay)
+optimizer1      = optim.Adam(diagnoser.parameters1(), lr=lr, weight_decay=weight_decay)
 while True:
     parameters = sample_parameters(N, fault_type, grids, rang[0], rang[1], pref, para_set)
     file_list  = sample_data(FAULT_TIME, TIME, parameters, generated_path)
@@ -60,58 +61,78 @@ while True:
     mana_t = BpskDataTank()
     add_files(generated_path, file_list, mana_t, step_len, snr=snr)
     #sample batch
-    _, labels, _, res = mana_t.random_batch(batch, normal=0.25, single_fault=10, two_fault=1)
-    r0      = np.array([r[0] for r in res])
+    _, labels1, _, res1 = mana_t.random_batch(batch, normal=0.25, single_fault=10, two_fault=1)
+    r0      = np.array([r[0] for r in res1])
     r0      = torch.Tensor(r0)
-    labels1 = labels[:, [0, 1, 5]]
-    output1 = diagnoser.embedded_forward(r0)
+    labels1 = labels1[:, [0, 1, 5]]
+    output1 = diagnoser.forward1(r0)
     loss1   = criterion(output1, labels1)
     print("evaluation loss=", loss1.item())
     if loss1 > loss:
         add_files(generated_path, file_list, mana1, step_len, snr=snr)
         while loss1.item() > loss:
-            _, labels, _, res = mana1.random_batch(batch, normal=0.25, single_fault=10, two_fault=1)
-            r0      = np.array([r[0] for r in res])
+            _, labels1, _, res1 = mana1.random_batch(batch, normal=0.25, single_fault=10, two_fault=1)
+            r0      = np.array([r[0] for r in res1])
             r0      = torch.Tensor(r0)
-            labels1  = labels[:, [0, 1, 5]]
+            labels1  = labels1[:, [0, 1, 5]]
             optimizer1.zero_grad()
-            output1 = diagnoser.embedded_forward(r0)
+            output1 = diagnoser.forward1(r0)
             loss1   = criterion(output1, labels1)
             loss1.backward()
             optimizer1.step()
             print("generated training loss=", loss1.item())
     else:
         break
-#continue optimazation
+#sub 1
 for i in range(epoch1):
-    _, labels, _, res = mana1.random_batch(batch, normal=0.25, single_fault=10, two_fault=1)
-    r0      = np.array([r[0] for r in res])
+    _, labels1, _, res1 = mana1.random_batch(batch, normal=0.25, single_fault=10, two_fault=1)
+    r0      = np.array([r[0] for r in res1])
     r0      = torch.Tensor(r0)
-    labels1  = labels[:, [0, 1, 5]]
+    labels1  = labels1[:, [0, 1, 5]]
     optimizer1.zero_grad()
-    output1 = diagnoser.embedded_forward(r0)
-    loss1   = criterion(output1, labels1)
+    outputs1 = diagnoser.forward1(r0)
+    loss1   = criterion(outputs1, labels1)
     loss1.backward()
     optimizer1.step()
     print("generated training loss ", i, "=", loss1.item())
-#historical data training
+# #sub 0
 list_files     = get_file_list(data_path)
 for file in list_files:
     mana0.read_data(data_path+file, step_len=step_len, snr=snr, norm=True)
-diagnoser.freeze_share()
-optimizer0     = optim.Adam(diagnoser.parameters(), lr=lr, weight_decay=weight_decay)
+diagnoser.freeze_sub1()
+optimizer0     = optim.Adam(filter(lambda p: p.requires_grad, diagnoser.parameters0()), lr=lr, weight_decay=weight_decay)
 for i in range(epoch0):
     #historical data
     inputs0, labels0, _, res0 = mana0.random_batch(batch, normal=0.4, single_fault=10, two_fault=0)
     sen_res = organise_tensor_data(inputs0, res0)
     #optimization
     optimizer0.zero_grad()
-    outputs0 = diagnoser(sen_res)
+    outputs0 = diagnoser.forward0(sen_res)
     loss0    = criterion(outputs0, labels0)
-    loss     = loss0
-    loss.backward()
+    loss0.backward()
     optimizer0.step()
-    print("historical training loss", i, "=", loss.item())
-diagnoser.thaw_share()
+    print("historical training loss", i, "=", loss0.item())
+#sub 0 + sub 1
+diagnoser.freeze_sub0()
+optimizer     = optim.Adam(filter(lambda p: p.requires_grad, diagnoser.parameters()), lr=lr, weight_decay=weight_decay)
+for i in range(epoch):
+    #generated data
+    _, labels1, _, res1 = mana1.random_batch(batch, normal=0.25, single_fault=10, two_fault=1)
+    r0      = np.array([r[0] for r in res1])
+    r0      = torch.Tensor(r0)
+    labels1  = labels1[:, [0, 1, 5]]
+    #historical data
+    inputs0, labels0, _, res0 = mana0.random_batch(batch, normal=0.4, single_fault=10, two_fault=0)
+    sen_res = organise_tensor_data(inputs0, res0)
+    #optimization
+    optimizer.zero_grad()
+    outputs0 = diagnoser.merge_forward0(sen_res)
+    outputs1 = diagnoser.merge_forward1(r0)
+    loss0    = criterion(outputs0, labels0)
+    loss1    = criterion(outputs1, labels1)
+    loss     = loss0 + loss1
+    loss.backward()
+    optimizer.step()
+    print("merger training loss", i, "=", loss0.item())
 #save model
 torch.save(diagnoser, ann_path + file_name)
