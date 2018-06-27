@@ -26,23 +26,26 @@ snr             = 20
 PATH            = parentdir
 DATA_PATH       = PATH + "\\bpsk_navigate\\data\\test\\"
 ANN_PATH        = PATH + "\\ddd\\ann_model\\" + ("big_data\\" if not small_data else "small_data\\") + str(snr) + "db\\"
-dia_file        = "igcnn.pkl"
-hdia_file       = "higcnn.pkl"
-bsshdia_file    = "igscnn.pkl"
-pdia_file       = "higscnn.pkl"
+igcnn           = "igcnn.pkl"
+higcnn          = "igscnn.pkl"
+igscnn          = "higcnn.pkl"
+higscnn         = "higscnn.pkl"
+higsecnn        = "higsecnn.pkl"
 step_len        = 100
 batch           = 5000
-p0              = 0.95
+alpha           = 0.95
 
 #load fe and iso
-DIA         = torch.load(ANN_PATH + dia_file)
-DIA.eval()
-HDIA        = torch.load(ANN_PATH + hdia_file)
-HDIA.eval()
-BSSHDIA     = torch.load(ANN_PATH + bsshdia_file)
-BSSHDIA.eval()
-PHDIA       = torch.load(ANN_PATH + pdia_file)
-PHDIA.eval()
+igcnn           = torch.load(ANN_PATH + igcnn)
+igcnn.eval()
+igscnn          = torch.load(ANN_PATH + igscnn)
+igscnn.eval()
+higcnn          = torch.load(ANN_PATH + higcnn)
+higcnn.eval()
+higscnn         = torch.load(ANN_PATH + higscnn)
+higscnn.eval()
+higsecnn        = torch.load(ANN_PATH + higsecnn)
+higsecnn.eval()
 #prepare data
 mana = BpskDataTank()
 list_files = get_file_list(DATA_PATH)
@@ -50,28 +53,14 @@ for file in list_files:
     mana.read_data(DATA_PATH+file, step_len=step_len, snr=snr, norm=True)
 
 inputs, labels, _, res = mana.random_batch(batch, normal=0, single_fault=10, two_fault=0)
+sen_res = organise_tensor_data(inputs, res)
 #priori by data
-ann_start       = time.clock()
-priori_by_data  = DIA(inputs).detach().numpy()
-ann_cost        = time.clock() - ann_start
-#priori by hybrid
-sen_res          = organise_tensor_data(inputs, res)
-hann_start       = time.clock()
-priori_by_hybrid = HDIA(sen_res).detach().numpy()
-hann_cost        = time.clock() - hann_start
-#priori by bbshybrid
-bsshann_start       = time.clock()
-priori_by_bsshybrid = BSSHDIA(sen_res).detach().numpy()
-bsshann_cost        = time.clock() - bsshann_start
-#priori by pdia
-hannm_start         = time.clock()
-priori_by_pdia      = PHDIA(sen_res).detach().numpy()
-hannm_cost          = time.clock() - hannm_start + bsshann_cost
-#priori by ddd+mbd
-priori_by_dm        = priori_by_bsshybrid.copy()
-priori_by_dm[:, 0]  = priori_by_dm[:, 0] * 0.2 + priori_by_pdia[:, 0] * 0.8
-priori_by_dm[:, 1]  = priori_by_dm[:, 1] * 0.2 + priori_by_pdia[:, 1] * 0.8
-priori_by_dm[:, 5]  = priori_by_dm[:, 5] * 0.2 + priori_by_pdia[:, 2] * 0.8
+priori0  = igcnn(sen_res).detach().numpy()
+priori1  = igscnn(sen_res).detach().numpy()
+priori2  = higcnn(sen_res).detach().numpy()
+priori3  = higscnn(sen_res).detach().numpy()
+priori4  = higsecnn(sen_res).detach().numpy()
+
 #res
 conflict_table  = [[1, 1, 0, 0, 0, 1],
                    [0, 0, 1, 0, 0, 0],
@@ -86,99 +75,97 @@ labels = labels.detach().numpy()
 statistic = hybrid_stats()
 
 #hybrid diagnosers
-#ANN
-ann0    = hybrid_ann_diagnoser()
-ann     = hybrid_ann_consistency_diagnoser(p0)
-#Hybrid ANN
-hann0   = hybrid_ann_diagnoser()
-hann    = hybrid_ann_consistency_diagnoser(p0)
-#BSSHybrid
-bsshann0= hybrid_ann_diagnoser()
-bsshann = hybrid_ann_consistency_diagnoser(p0)
-#ANN + MBD
-hannm0  = hybrid_ann_diagnoser()
-hannm   = hybrid_ann_consistency_diagnoser(p0)
+dia_igcnn0     = hybrid_ann_diagnoser()
+dia_igcnn1     = hybrid_ann_consistency_diagnoser(alpha)
+
+dia_igscnn0    = hybrid_ann_diagnoser()
+dia_igscnn1    = hybrid_ann_consistency_diagnoser(alpha)
+
+dia_higcnn0    = hybrid_ann_diagnoser()
+dia_higcnn1    = hybrid_ann_consistency_diagnoser(alpha)
+
+dia_higscnn0   = hybrid_ann_diagnoser()
+dia_higscnn1   = hybrid_ann_consistency_diagnoser(alpha)
+
+dia_higsecnn0  = hybrid_ann_diagnoser()
+dia_higsecnn1  = hybrid_ann_consistency_diagnoser(alpha)
 #set order
 order = (0,1,2,3,4,5)
-ann.set_order(order)
-hann.set_order(order)
-bsshann.set_order(order)
-hannm.set_order(order)
-ann0.set_order(order)
-hann0.set_order(order)
-bsshann0.set_order(order)
-hannm0.set_order(order)
+dia_igcnn0.set_order(order)
+dia_igcnn1.set_order(order)
+dia_igscnn0.set_order(order)
+dia_igscnn1.set_order(order)
+dia_higcnn0.set_order(order)
+dia_higcnn1.set_order(order)
+dia_higscnn0.set_order(order)
+dia_higscnn1.set_order(order)
+dia_higsecnn0.set_order(order)
+dia_higsecnn1.set_order(order)
 
-statistic.add_diagnoser("ann")
-statistic.add_diagnoser("hann")
-statistic.add_diagnoser("bsshann")
-statistic.add_diagnoser("hannm")
-statistic.add_diagnoser("ann0")
-statistic.add_diagnoser("hann0")
-statistic.add_diagnoser("bsshann0")
-statistic.add_diagnoser("hannm0")
+statistic.add_diagnoser("igcnn0")
+statistic.add_diagnoser("igscnn0")
+statistic.add_diagnoser("higcnn0")
+statistic.add_diagnoser("higscnn0")
+statistic.add_diagnoser("higsecnn0")
+statistic.add_diagnoser("igcnn1")
+statistic.add_diagnoser("igscnn1")
+statistic.add_diagnoser("higcnn1")
+statistic.add_diagnoser("higscnn1")
+statistic.add_diagnoser("higsecnn1")
 #diagnosis number
 num = 1
-for label, d_priori, h_priori, bh_priori, hm_priori, res in zip(labels, priori_by_data, priori_by_hybrid, priori_by_bsshybrid, priori_by_dm, residuals):
-    priori_d    = priori_vec2tup(d_priori)
-    priori_h    = priori_vec2tup(h_priori)
-    priori_bh   = priori_vec2tup(bh_priori)
-    priori_hm   = priori_vec2tup(hm_priori)
-
+for label, p0, p1, p2, p3, p4, res in zip(labels, priori0, priori1, priori2, priori3, priori4, residuals):
+    p0    = priori_vec2tup(p0)
+    p1    = priori_vec2tup(p1)
+    p2    = priori_vec2tup(p2)
+    p3    = priori_vec2tup(p3)
+    p4    = priori_vec2tup(p4)
     #set priori probability
-    ann.set_priori(priori_d)
-    hann.set_priori(priori_h)
-    bsshann.set_priori(priori_bh)
-    hannm.set_priori(priori_hm)
-    ann0.set_priori(priori_d)
-    hann0.set_priori(priori_h)
-    bsshann0.set_priori(priori_bh)
-    hannm0.set_priori(priori_hm)
+    dia_igcnn0.set_priori(p0)
+    dia_igcnn1.set_priori(p0)
+    dia_igscnn0.set_priori(p1)
+    dia_igscnn1.set_priori(p1)
+    dia_higcnn0.set_priori(p2)
+    dia_higcnn1.set_priori(p2)
+    dia_higscnn0.set_priori(p3)
+    dia_higscnn1.set_priori(p3)
+    dia_higsecnn0.set_priori(p4)
+    dia_higsecnn1.set_priori(p4)
 
     #residuals
-    results         = hypothesis_test(res, var, p0)
+    results         = hypothesis_test(res, var, alpha)
     conflicts       = get_conflicts(results, conflict_table)
 
     #add conflicts
-    ann.add_conflicts(conflicts)
-    hann.add_conflicts(conflicts)
-    bsshann.add_conflicts(conflicts)
-    hannm.add_conflicts(conflicts)
+    dia_igcnn1.add_conflicts(conflicts)
+    dia_igscnn1.add_conflicts(conflicts)
+    dia_higcnn1.add_conflicts(conflicts)
+    dia_higscnn1.add_conflicts(conflicts)
+    dia_higsecnn1.add_conflicts(conflicts)
 
-    dia_ann      = ann.search(num)
-    dia_hann     = hann.search(num)
-    dia_bsshann  = bsshann.search(num)
-    dia_hannm    = hannm.search(num)
-    dia_ann0     = ann0.search(num)
-    dia_hann0    = hann0.search(num)
-    dia_bsshann0 = bsshann0.search(num)
-    dia_hannm0   = hannm0.search(num)
+    re_igcnn0          = dia_igcnn0.search(num)
+    re_igcnn1          = dia_igcnn1.search(num)
+    re_igscnn0         = dia_igscnn0.search(num)
+    re_igscnn1         = dia_igscnn1.search(num)
+    re_higcnn0         = dia_higcnn0.search(num)
+    re_higcnn1         = dia_higcnn1.search(num)
+    re_higscnn0        = dia_higscnn0.search(num)
+    re_higscnn1        = dia_higscnn1.search(num)
+    re_higsecnn0       = dia_higsecnn0.search(num)
+    re_higsecnn1       = dia_higsecnn1.search(num)
 
 
     statistic.append_label(label)
-    statistic.append_predicted("ann",       dia_ann)
-    statistic.append_predicted("hann",      dia_hann)
-    statistic.append_predicted("bsshann",   dia_bsshann)
-    statistic.append_predicted("hannm",     dia_hannm)
-    statistic.append_predicted("ann0",      dia_ann0)
-    statistic.append_predicted("hann0",     dia_hann0)
-    statistic.append_predicted("bsshann0",  dia_bsshann0)
-    statistic.append_predicted("hannm0",    dia_hannm0)
+    statistic.append_predicted("igcnn0",    re_igcnn0)
+    statistic.append_predicted("igcnn1",    re_igcnn1)
+    statistic.append_predicted("igscnn0",   re_igscnn0)
+    statistic.append_predicted("igscnn1",   re_igscnn1)
+    statistic.append_predicted("higcnn0",   re_higcnn0)
+    statistic.append_predicted("higcnn1",   re_higcnn1)
+    statistic.append_predicted("higscnn0",  re_higscnn0)
+    statistic.append_predicted("higscnn1",  re_higscnn1)
+    statistic.append_predicted("higsecnn0", re_higsecnn0)
+    statistic.append_predicted("higsecnn1", re_higsecnn1)
 
 statistic.print_stats()
-#ann time cost
-print("ann      cost=",       ann_cost)
-print("hann     cost=",       hann_cost)
-print("bsshann  cost=",       bsshann_cost)
-print("hannm    cost=",       hannm_cost)
-#ann time search cost
-print("ann      time cost=",  ann.time_cost())
-print("hann     time cost=",  hann.time_cost())
-print("bsshann  time cost=",  bsshann.time_cost())
-print("hannm    time cost=",  hannm.time_cost())
-print("ann      time cost0=", ann0.time_cost())
-print("hann     time cost0=", hann0.time_cost())
-print("bsshann  time cost0=", bsshann0.time_cost())
-print("hannm0   time cost=",  hannm0.time_cost())
-
 print("DONE")
