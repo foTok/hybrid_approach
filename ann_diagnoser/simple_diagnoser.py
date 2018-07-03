@@ -15,9 +15,9 @@ class SimpleDiagnoer(nn.Module):
         window = 5
         self.CNN = nn.Sequential(
                             nn.Conv1d(1, 10, window, padding=window//2),
-                            nn.LeakyReLU(),
+                            nn.ReLU(),
                             nn.Conv1d(10, 20, window, padding=window//2),
-                            nn.LeakyReLU(),
+                            nn.ReLU(),
                             nn.MaxPool1d(window)
                           )
 

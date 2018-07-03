@@ -96,3 +96,15 @@ def organise_tensor_data(inputs, res):
     res_data = torch.Tensor(res_data)
     data = torch.cat((inputs, res_data), 1)
     return data
+
+def accuracy(outputs, labels):
+    """
+    compute the accuracy
+    """
+    outputs    = outputs.detach().numpy()
+    outputs    = np.round(outputs)
+    labels     = labels.detach().numpy()
+    acc        = ((outputs + labels) == 2)
+    length     = len(labels) / len(labels[0,:])
+    acc        = np.sum(acc, 0)/length
+    return acc

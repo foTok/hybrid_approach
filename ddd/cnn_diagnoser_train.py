@@ -18,7 +18,7 @@ import numpy as np
 #data amount
 small_data = True
 #settings
-snr       = 15
+snr       = 20
 DATA_PATH = parentdir + "\\bpsk_navigate\\data\\" + ("big_data\\" if not small_data else "small_data\\")
 ANN_PATH  = parentdir + "\\ddd\\ann_model\\" + ("big_data\\" if not small_data else "small_data\\") + str(snr) + "db\\"
 dia_name  = "cnn.pkl"

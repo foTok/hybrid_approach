@@ -19,7 +19,7 @@ from ddd.utilities import organise_tensor_data
 #data amount
 small_data = True
 #settings
-snr  = 15
+snr  = 20
 PATH = parentdir
 DATA_PATH = PATH + "\\bpsk_navigate\\data\\" + ("big_data\\" if not small_data else "small_data\\")
 ANN_PATH = PATH + "\\ddd\\ann_model\\" + ("big_data\\" if not small_data else "small_data\\")  + str(snr) + "db\\"
