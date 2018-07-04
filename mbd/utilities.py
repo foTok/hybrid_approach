@@ -48,15 +48,18 @@ def hypothesis_test(res, var, alpha):
             result.append(False)
     return result
 
-def get_conflicts(results, conflict_table):
+def get_conflicts_consistencies(results, conflict_table):
     """
     find conflict based on results and conflic table
     """
     conflicts       = []
-    for c, pas in zip(conflict_table, results):
+    consistency     = []
+    for r, pas in zip(conflict_table, results):
         if not pas:
-            conflicts.append(c)
-    return conflicts
+            conflicts.append(r)
+        else:
+            consistency.append(r)
+    return conflicts, consistency
 
 def sample_parameters(N, fault_type, grids, begin, end, pref, para_set):
     """

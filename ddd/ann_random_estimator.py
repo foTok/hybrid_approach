@@ -60,7 +60,7 @@ for name in dia_name:
     d.eval()
     diagnoser.append(d)
 batch       = 1000
-epoch       = 100
+epoch       = 10
 eval_loss   = [0]*len(dia_name)
 accuracy    = [0] *len(dia_name)
 for i in range(epoch):
