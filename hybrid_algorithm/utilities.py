@@ -43,7 +43,7 @@ def priori_vec2tup(priori):
     tup_pri = tuple(tup_pri)
     return tup_pri
 
-def plot_bar(y, label, std=None, xlabel=None, ylabel=None, xticks=None):
+def plot_bar(y, label, ylim=None, std=None, xlabel=None, ylabel=None, xticks=None):
     """
     plot data in a bar
     """
@@ -72,4 +72,6 @@ def plot_bar(y, label, std=None, xlabel=None, ylabel=None, xticks=None):
         plt.ylabel(ylabel)
     if xticks is not None:
         plt.xticks(x0, xticks)
+    if ylim is not None:
+        plt.ylim(ylim[0], ylim[1])
     plt.show()

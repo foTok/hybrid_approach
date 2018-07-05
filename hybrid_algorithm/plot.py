@@ -21,6 +21,6 @@ mean1 = np.array([[0.774509804,0.797919168,0.826130452,0.849939976,0.951380552],
 #accuracy for multiple-fault (2-fault)
 mean2 = np.array([[0.361,0.3144,0.5302,0.5366,0.8584],[0.475,0.455,0.574,0.5632,0.8808]])
 
-plot_bar(mean1, label, xlabel=xlabel, ylabel=ylabel, xticks=xticks)
+plot_bar(mean1, label, ylim=(0.4, 1.15), xlabel=xlabel, ylabel=ylabel, xticks=xticks)
 
 plot_bar(mean2, label, xlabel=xlabel, ylabel=ylabel, xticks=xticks)
