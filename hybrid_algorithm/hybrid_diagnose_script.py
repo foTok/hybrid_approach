@@ -52,15 +52,33 @@ list_files = get_file_list(DATA_PATH)
 for file in list_files:
     mana.read_data(DATA_PATH+file, step_len=step_len, snr=snr, norm=True)
 
-inputs, labels, _, res = mana.random_batch(batch, normal=0, single_fault=0, two_fault=10)
+inputs, labels, _, res = mana.random_batch(batch, normal=0, single_fault=10, two_fault=0)
 cnn_inputs = inputs.view(-1,1,5,100)
 sen_res    = organise_tensor_data(inputs, res)
 #priori by data
+ann_time = [0]*5
+
+start = time.clock()
 priori0  = cnn(cnn_inputs).detach().numpy()
+ann_time[0] = time.clock() - start
+
+start = time.clock()
 priori1  = igcnn(inputs).detach().numpy()
+ann_time[1] = time.clock() - start
+
+start = time.clock()
 priori2  = igscnn(inputs).detach().numpy()
+ann_time[2] = time.clock() - start
+
+start = time.clock()
 priori3  = higscnn(sen_res).detach().numpy()
+ann_time[3] = time.clock() - start
+
+start = time.clock()
 priori4  = higsecnn(sen_res).detach().numpy()
+ann_time[4] = time.clock() - start
+
+ann_time = np.array(ann_time)
 
 #res
 conflict_table  = [[1, 1, 0, 0, 0, 1],
@@ -176,4 +194,10 @@ for label, p0, p1, p2, p3, p4, res in zip(labels, priori0, priori1, priori2, pri
     statistic.append_predicted("higsecnn1", re_higsecnn1)
 
 statistic.print_stats()
+print("ANN TIME = ", ann_time)
+print("cnn1 search time = ",     dia_cnn1.time_cost())
+print("igcnn1 search time = ",   dia_igcnn1.time_cost())
+print("igscnn1 search time = ",  dia_igscnn1.time_cost())
+print("higscnn1 search time = ", dia_higscnn1.time_cost())
+print("higsecnn1 search time = ",dia_higsecnn1.time_cost())
 print("DONE")
