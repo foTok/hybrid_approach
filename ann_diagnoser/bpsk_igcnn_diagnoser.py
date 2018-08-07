@@ -6,12 +6,12 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 
-class igcnn_diagnoser(nn.Module):
+class dcnn_diagnoser(nn.Module):
     """
     using influence graph to extract features from historical data and predict fault directly after merging.
     """
     def __init__(self):
-        super(igcnn_diagnoser, self).__init__()
+        super(dcnn_diagnoser, self).__init__()
         window = 5
         #influence graph: dim_relation = [[1], [2], [1, 2, 3], [3, 4]]
         self.p_sequence = nn.Sequential(
@@ -31,7 +31,7 @@ class igcnn_diagnoser(nn.Module):
                           )
 
         self.m_sequence = nn.Sequential(
-                            nn.Conv1d(3, 10, window, padding=window//2),
+                            nn.Conv1d(4, 10, window, padding=window//2),
                             nn.ReLU(),
                             nn.Conv1d(10, 20, window, padding=window//2),
                             nn.ReLU(),
@@ -39,7 +39,7 @@ class igcnn_diagnoser(nn.Module):
                           )
 
         self.a_sequence = nn.Sequential(
-                            nn.Conv1d(2, 10, window, padding=window//2),
+                            nn.Conv1d(3, 10, window, padding=window//2),
                             nn.ReLU(),
                             nn.Conv1d(10, 20, window, padding=window//2),
                             nn.ReLU(),
