@@ -13,7 +13,6 @@ class dcnn_diagnoser(nn.Module):
     def __init__(self):
         super(dcnn_diagnoser, self).__init__()
         window = 5
-        #influence graph: dim_relation = [[1], [2], [1, 2, 3], [3, 4]]
         self.p_sequence = nn.Sequential(
                             nn.Conv1d(1, 10, window, padding=window//2),
                             nn.ReLU(),
@@ -37,9 +36,9 @@ class dcnn_diagnoser(nn.Module):
                             nn.ReLU(),
                             nn.MaxPool1d(window)
                           )
-
+        #test
         self.a_sequence = nn.Sequential(
-                            nn.Conv1d(3, 10, window, padding=window//2),
+                            nn.Conv1d(2, 10, window, padding=window//2),
                             nn.ReLU(),
                             nn.Conv1d(10, 20, window, padding=window//2),
                             nn.ReLU(),
@@ -60,9 +59,10 @@ class dcnn_diagnoser(nn.Module):
                           )
 
     def forward(self, x):
+        #m p c s0 s1
         x0 = x[:, [1], :]
         x1 = x[:, [2], :]
-        x2 = x[:, [1, 2, 3], :]
+        x2 = x[:, [0, 1, 2, 3], :]
         x3 = x[:, [3, 4], :]
         x0 = self.p_sequence(x0)
         x1 = self.c_sequence(x1)

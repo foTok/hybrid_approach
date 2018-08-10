@@ -10,21 +10,22 @@ import torch.nn as nn
 import torch.optim as optim
 import matplotlib.pyplot as pl
 import numpy as np
-from ann_diagnoser.bpsk_igscnn_diagnoser import igscnn_diagnoser
+from ann_diagnoser.bpsk_rdscnn_diagnoser import rdscnn_diagnoser
 from data_manger.bpsk_data_tank import BpskDataTank
 from data_manger.utilities import get_file_list
 from ann_diagnoser.loss_function import CrossEntropy
+from ddd.utilities import organise_tensor_data
 
 #data amount
 small_data = True
 #settings
-snr       = 20
-PATH      = parentdir
+snr  = 20
+PATH = parentdir
 DATA_PATH = PATH + "\\bpsk_navigate\\data\\" + ("big_data\\" if not small_data else "small_data\\")
-ANN_PATH  = PATH + "\\ddd\\ann_model\\" + ("big_data\\" if not small_data else "small_data\\")  + str(snr) + "db\\"
-step_len  =100
+ANN_PATH = PATH + "\\ddd\\ann_model\\" + ("big_data\\" if not small_data else "small_data\\")  + str(snr) + "db\\"
+step_len=100
 criterion = CrossEntropy
-hdia_name = "igscnn.pkl"
+hdia_name = "rdscnn.pkl"
 
 #prepare data
 mana = BpskDataTank()
@@ -32,7 +33,7 @@ list_files = get_file_list(DATA_PATH)
 for file in list_files:
     mana.read_data(DATA_PATH+file, step_len=step_len, snr=snr, norm=True)
 
-diagnoser = igscnn_diagnoser()
+diagnoser = rdscnn_diagnoser()
 print(diagnoser)
 optimizer = optim.Adam(diagnoser.parameters(), lr=0.001, weight_decay=8e-3)
 
@@ -43,8 +44,9 @@ train_loss = []
 running_loss = 0.0
 for i in range(epoch):
     inputs, labels, _, res = mana.random_batch(batch, normal=0.4, single_fault=10, two_fault=0)
+    sen_res = organise_tensor_data(inputs, res)
     optimizer.zero_grad()
-    outputs = diagnoser(inputs)
+    outputs = diagnoser(sen_res)
     loss = criterion(outputs, labels)
     loss.backward()
     optimizer.step()

@@ -5,6 +5,7 @@ import os
 import sys
 parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  
 sys.path.insert(0,parentdir)
+import time
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -15,12 +16,15 @@ from data_manger.utilities import get_file_list
 from ann_diagnoser.loss_function import CrossEntropy
 from ann_diagnoser.loss_function import MSE
 from ddd.utilities import organise_tensor_data
+from ddd.utilities import single_fault_statistic
+from ddd.utilities import acc_fnr_and_fpr
+
 
 #data amount
 small_data = True
 #settings
 snr = 20
-obj = ["cnn", "igcnn", "igscnn", "higcnn", "higscnn", "higsecnn"] #fe, dia, hdia, bsshdia
+obj = ["cnn", "dcnn", "dscnn", "rdscnn", "rdsecnn"]
 PATH = parentdir
 TEST_DATA_PATH = PATH + "\\bpsk_navigate\\data\\test\\"
 ANN_PATH = PATH + "\\ddd\\ann_model\\" + ("big_data\\" if not small_data else "small_data\\") + str(snr) + "db\\"
@@ -29,20 +33,17 @@ criterion = CrossEntropy
 norm = False
 dia_name = []
 for dia in obj:
-    if dia == "cnn":
-        model_name = "cnn.pkl"
-    elif dia == "igcnn":
-        model_name = "igcnn.pkl"
-    elif dia == "igscnn":
-        model_name = "igscnn.pkl"
-    elif dia == "higcnn":
-        model_name = "higcnn.pkl"
+    if dia   == "cnn":
+        model_name      = "cnn.pkl"
+    elif dia == "dcnn":
+        model_name      = "dcnn.pkl"
+    elif dia == "dscnn":
+        model_name      = "dscnn.pkl"
+    elif dia == "rdscnn":
+        model_name      = "rdscnn.pkl"
         norm = True
-    elif dia == "higscnn":
-        model_name = "higscnn.pkl"
-        norm = True
-    elif dia == "higsecnn":
-        model_name = "higsecnn.pkl"
+    elif dia == "rdsecnn":
+        model_name      = "rdsecnn.pkl"
         norm = True
     else:
         print("unkown object!")
@@ -59,29 +60,25 @@ for name in dia_name:
     d = torch.load(ANN_PATH + name)
     d.eval()
     diagnoser.append(d)
-batch       = 1000
-epoch       = 10
-eval_loss   = [0]*len(dia_name)
-accuracy    = [0] *len(dia_name)
-for i in range(epoch):
-    print("i=", i)
-    inputs, labels, _, res = mana.random_batch(batch, normal=0.0, single_fault=10, two_fault=0)
-    sen_res = organise_tensor_data(inputs, res)
-    for k, d in zip(range(len(dia_name)), diagnoser):
-        if obj[k] == "cnn":
-            sen_res0 = sen_res[:, :5, :]
-            sen_res0 = sen_res0.view(-1,1,5,100)
-            outputs = d(sen_res0)
-        else:
-            outputs = d(sen_res)
-        loss = criterion(outputs, labels)
-        eval_loss[k] = eval_loss[k] + loss.item() / epoch
-        prob = outputs.detach().numpy()
-        pred = np.round(prob)
-        targ = labels.detach().numpy()
-        acc  = [c.all() for c in (pred==targ)]
-        length = len(acc)
-        accuracy[k] = accuracy[k] + np.sum(acc)/(length * epoch)
+batch       = 10000
 
-print("mean loss = ", eval_loss)
-print("accuracy = ",  accuracy)
+inputs, labels, _, res = mana.random_batch(batch, normal=0.4, single_fault=10, two_fault=0)
+sen_res = organise_tensor_data(inputs, res)
+for k, d in zip(range(len(dia_name)), diagnoser):
+    start = time.clock()            # time start
+    if obj[k] == "cnn":
+        sen_res0 = sen_res[:, :5, :]
+        sen_res0 = sen_res0.view(-1,1,5,100)
+        outputs = d(sen_res0)
+    else:
+        outputs = d(sen_res)
+    dig_time = time.clock() - start # time end
+    prob = outputs.detach().numpy()
+    pred = np.round(prob)
+    targ = labels.detach().numpy()
+    acc_mat = single_fault_statistic(pred, targ)
+    acc, fnr, fpr = acc_fnr_and_fpr(pred, targ)
+    print(dia_name[k])
+    print("time=", dig_time)
+    print("acc_mat=", acc_mat)
+    print("acc=", acc, "fnr=", fnr, "fpr=", fpr)
